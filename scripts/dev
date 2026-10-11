@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""Local operations entry point. T002 currently implements `doctor` only.
+
+No service is started and no secret value is printed. Later task commands are
+added only with their implementation and tests, not as success-shaped stubs.
+"""
+from __future__ import annotations
+
+import argparse
+import ctypes
+import json
+import os
+from pathlib import Path
+import platform
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REQUIRED_SECRETS = ('POSTGRES_PASSWORD', 'SESSION_SIGNING_KEY', 'FIELD_ENCRYPTION_KEY')
+DEPENDENCY_HOSTS = ('pypi.org', 'registry.npmjs.org', 'registry-1.docker.io')
+
+
+def command_ok(*args: str) -> bool:
+    try:
+        result = subprocess.run(args, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, timeout=8, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def memory_bytes() -> int | None:
+    if os.name == 'nt':
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [('length', ctypes.c_ulong), ('load', ctypes.c_ulong),
+                        ('total_physical', ctypes.c_ulonglong),
+                        ('available_physical', ctypes.c_ulonglong),
+                        ('total_page', ctypes.c_ulonglong),
+                        ('available_page', ctypes.c_ulonglong),
+                        ('total_virtual', ctypes.c_ulonglong),
+                        ('available_virtual', ctypes.c_ulonglong),
+                        ('available_extended', ctypes.c_ulonglong)]
+        status = MemoryStatus()
+        status.length = ctypes.sizeof(status)
+        return status.total_physical if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)) else None
+    try:
+        for line in Path('/proc/meminfo').read_text().splitlines():
+            if line.startswith('MemTotal:'):
+                return int(line.split()[1]) * 1024
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def port_available() -> bool:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.bind(('127.0.0.1', 3000))
+        return True
+    except OSError:
+        return False
+
+
+def read_env_presence(path: Path) -> dict[str, bool]:
+    values: dict[str, str] = {}
+    try:
+        for line in path.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or '=' not in stripped:
+                continue
+            key, value = stripped.split('=', 1)
+            values[key.strip()] = value.strip().strip('"\'')
+    except OSError:
+        pass
+    # Report keys and presence only. Never put values in diagnostics.
+    return {key: bool(values.get(key)) for key in REQUIRED_SECRETS}
+
+
+def dependency_reachable(host: str) -> bool:
+    try:
+        with socket.create_connection((host, 443), timeout=3):
+            return True
+    except OSError:
+        return False
+
+
+def doctor(root: Path = ROOT) -> dict:
+    checks: dict[str, dict] = {}
+
+    def add(name: str, ok: bool, detail: str, essential: bool = True) -> None:
+        checks[name] = {'ok': ok, 'essential': essential, 'detail': detail}
+
+    is_windows = platform.system() == 'Windows'
+    wsl = command_ok('wsl.exe', '--list', '--quiet') if is_windows else True
+    add('linux_environment', wsl, 'WSL distro available' if is_windows else 'native Linux')
+    on_mounted_windows_drive = (not is_windows and
+                                len(root.resolve().parts) >= 3 and
+                                root.resolve().parts[1] == 'mnt' and
+                                len(root.resolve().parts[2]) == 1)
+    add('linux_filesystem', not is_windows and not on_mounted_windows_drive,
+        'repository must be on a Linux filesystem (not /mnt/c or another Windows drive)')
+
+    docker = shutil.which('docker')
+    add('docker_cli', bool(docker), 'Docker executable found' if docker else 'Docker executable missing')
+    add('docker_compose', bool(docker and command_ok(docker, 'compose', 'version')),
+        'Docker Compose plugin required')
+    add('docker_daemon', bool(docker and command_ok(docker, 'info')),
+        'Docker daemon must answer docker info')
+
+    mem = memory_bytes()
+    add('memory', mem is not None and mem >= 16 * 1024**3,
+        f'{round(mem / 1024**3, 1)} GiB detected; 16 GiB minimum' if mem else 'physical memory unavailable')
+    disk = shutil.disk_usage(root)
+    minimum = max(10 * 1024**3, int(disk.total * 0.15))
+    add('disk', disk.free >= minimum,
+        f'{round(disk.free / 1024**3, 1)} GiB free; {round(minimum / 1024**3, 1)} GiB required')
+    add('port_3000', port_available(), '127.0.0.1:3000 must be available')
+
+    template = root / '.env.example'
+    env = root / '.env'
+    add('env_template', template.is_file(), '.env.example must exist')
+    add('env_file', env.is_file(), '.env must be created locally and ignored by Git')
+    for key, present in read_env_presence(env).items():
+        add('env_' + key.lower(), present, key + ' must be set locally; value never printed')
+
+    add('compose_file', (root / 'infra/compose.yaml').is_file(), 'infra/compose.yaml must exist')
+    add('python_lock', (root / 'uv.lock').is_file(), 'uv.lock must exist')
+    add('frontend_lock', (root / 'frontend/package-lock.json').is_file(),
+        'frontend/package-lock.json must exist')
+
+    tools_dir = root / '.tools'
+    tools_dir.mkdir(exist_ok=True)
+    try:
+        with tempfile.TemporaryDirectory(prefix='doctor-', dir=tools_dir):
+            volume_write = True
+    except OSError:
+        volume_write = False
+    add('local_write', volume_write, 'ignored .tools directory writable (host only)')
+    for host in DEPENDENCY_HOSTS:
+        add('network_' + host.replace('.', '_').replace('-', '_'), dependency_reachable(host),
+            'TLS port reachable for dependency download: ' + host)
+
+    essential_failures = sorted(name for name, item in checks.items()
+                                if item['essential'] and not item['ok'])
+    degraded = sorted(name for name, item in checks.items()
+                      if not item['essential'] and not item['ok'])
+    return {'status': 'READY' if not essential_failures else 'BLOCKED',
+            'essential_failures': essential_failures, 'degraded': degraded,
+            'checks': checks}
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('command', choices=('doctor',))
+    args = parser.parse_args(argv)
+    if args.command == 'doctor':
+        result = doctor()
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result['status'] == 'READY' else 1
+    return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main())
