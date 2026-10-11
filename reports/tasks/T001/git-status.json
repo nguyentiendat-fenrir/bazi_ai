@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "status",
+    "--short"
+  ],
+  "exit_code": 128,
+  "seconds": 0.019,
+  "stdout": "",
+  "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+}

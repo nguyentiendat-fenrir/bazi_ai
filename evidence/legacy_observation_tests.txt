@@ -1,0 +1,15 @@
+test_01_naive_host_timezone_changes_hour (__main__.AuditObservations.test_01_naive_host_timezone_changes_hour) ... ok
+test_02_aware_keeps_clock (__main__.AuditObservations.test_02_aware_keeps_clock) ... ok
+test_03_unknown_timezone_silent_fallback (__main__.AuditObservations.test_03_unknown_timezone_silent_fallback) ... ok
+test_04_eot_differs_from_noaa_reference (__main__.AuditObservations.test_04_eot_differs_from_noaa_reference) ... ok
+test_05_january_liu_nian_keeps_previous_year_stem (__main__.AuditObservations.test_05_january_liu_nian_keeps_previous_year_stem) ... ok
+test_06_thai_nguyen_matches_library_12_months (__main__.AuditObservations.test_06_thai_nguyen_matches_library_12_months) ... ok
+test_07_two_members_reported_in_tam_hop (__main__.AuditObservations.test_07_two_members_reported_in_tam_hop) ... ok
+test_08_ten_luck_cycles_smoke (__main__.AuditObservations.test_08_ten_luck_cycles_smoke) ... ok
+test_09_leapday_smoke (__main__.AuditObservations.test_09_leapday_smoke) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.028s
+
+OK
+[CẢNH BÁO] Không nhận diện timezone 'Invalid/Zone', tạm dùng UTC.

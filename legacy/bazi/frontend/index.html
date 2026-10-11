@@ -1,0 +1,171 @@
+<!DOCTYPE html> <!-- Khai báo HTML5 -->
+<html lang="vi"> <!-- Ngôn ngữ trang là tiếng Việt -->
+<head>
+  <meta charset="utf-8" /> <!-- Mã hóa unicode -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> <!-- Responsive -->
+  <title>Bazi – HTML + CSS + JS (Light)</title> <!-- Tiêu đề tab -->
+  <link rel="stylesheet" href="style.css" /> <!-- CSS giao diện -->
+  <script defer src="app.js"></script> <!-- JS xử lý form + render kết quả -->
+</head>
+<body class="light"> <!-- Class dự phòng nếu muốn theme -->
+  <div class="wrap"> <!-- Container chiều ngang cố định -->
+    <!-- ====== HEADER ====== -->
+    <header> <!-- Thanh tiêu đề trên cùng -->
+      <div class="brand"> <!-- Nhóm logo + text -->
+        <div class="logo"><span>八</span></div> <!-- Logo đơn giản -->
+        <div>
+          <h1>Lập lá số Tứ trụ</h1> <!-- Tiêu đề chính -->
+          <div class="hint">Form → gọi API → render bảng Tứ trụ, Đại vận, Lưu niên…</div> <!-- Mô tả ngắn -->
+        </div>
+      </div>
+    </header>
+
+    <!-- ====== FORM NHẬP ====== -->
+    <section class="card"> <!-- Khối card nền trắng -->
+      <h2>Nhập thông tin</h2> <!-- Tiêu đề khu nhập -->
+      <form id="bazi-form" class="form" autocomplete="off"> <!-- Form có id để JS bắt sự kiện -->
+        <label>Họ và tên <!-- Nhãn trường -->
+          <input id="name" placeholder="(tuỳ chọn)" /> <!-- Ô nhập tên; không bắt buộc -->
+        </label>
+
+        <!-- Hàng Ngày / Tháng / Năm -->
+        <div class="grid3"> <!-- Lưới 3 cột đều nhau -->
+          <label>Ngày
+            <select id="day" required></select> <!-- JS sẽ đổ 1..28/29/30/31 tùy tháng -->
+          </label>
+          <label>Tháng
+            <!-- Option tháng cố định; selected mặc định Tháng 8 (chỉ là ví dụ) -->
+            <select id="month" required>
+              <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+              <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+              <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+              <option value="7">Tháng 7</option><option value="8" selected>Tháng 8</option>
+              <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+              <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+            </select>
+          </label>
+          <label>Năm
+            <select id="year" required></select> <!-- JS sẽ đổ 1900..(năm hiện tại + 5) -->
+          </label>
+        </div>
+
+        <!-- Hàng Giờ / Phút / Giới tính -->
+        <div class="grid3">
+          <label>Giờ
+            <select id="hour"></select> <!-- JS đổ 00..23 -->
+          </label>
+          <label>Phút
+            <select id="minute"></select> <!-- JS đổ 00..55 (bước 5) -->
+          </label>
+          <label>Giới tính
+            <select id="gender"> <!-- Mặc định Nam -->
+              <option value="M" selected>Nam</option>
+              <option value="F">Nữ</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Hàng Múi giờ (để backend tính đúng) -->
+        <div class="grid2">
+          <label>Múi giờ
+            <select id="tz">
+              <option value="UTC+7" selected>(GMT+07:00) Asia/Ho_Chi_Minh</option>
+              <option value="UTC+8">(GMT+08:00) Asia/Singapore</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Nút submit + khung báo lỗi -->
+        <div class="actions">
+          <button type="submit" id="btnSubmit">Tạo lá số</button> <!-- Gửi form -->
+        </div>
+        <div id="error" class="error" role="alert" hidden></div> <!-- Hiện lỗi nếu có -->
+      </form>
+    </section>
+
+    <!-- ====== KẾT QUẢ ====== -->
+    <section id="result" class="card" hidden> <!-- Ẩn cho tới khi có dữ liệu -->
+      <h2>TỨ TRỤ MỆNH BÀN</h2> <!-- Tiêu đề khu kết quả -->
+
+      <!-- Thông tin tóm tắt người dùng -->
+      <div class="info-grid"> <!-- Lưới 2 cột -->
+        <div><b>Họ tên:</b> <span id="rName">—</span></div> <!-- Tên -->
+        <div><b>Giới tính:</b> <span id="rGender">—</span></div> <!-- Giới tính -->
+        <div><b>Dương lịch:</b> <span id="rISO">—</span></div> <!-- ISO datetime -->
+        <div><b>Múi giờ:</b> <span id="rTZ">—</span></div> <!-- Múi giờ -->
+      </div>
+
+      <!-- Bảng Tứ Trụ -->
+      <table class="pillars" aria-label="Four Pillars table"> <!-- Bảng chính -->
+        <thead>
+          <tr>
+            <th>Hạng mục</th> <!-- Cột nhãn trái -->
+            <th>Năm</th>      <!-- 4 cột trụ bằng nhau -->
+            <th>Tháng</th>
+            <th>Ngày</th>
+            <th>Giờ</th>
+          </tr>
+        </thead>
+        <tbody id="pillars-body"></tbody> <!-- JS sẽ render các hàng -->
+      </table>
+      <!-- Nút reset -->
+      <div class="mt">
+        <button id="btnReset" class="secondary">Nhập lại</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== Script đổ dữ liệu dropdown ngay khi mở trang ===== -->
+  <script>
+    const dayEl = document.getElementById('day');      // Select Ngày
+    const monthEl = document.getElementById('month');  // Select Tháng
+    const yearEl = document.getElementById('year');    // Select Năm
+    const hourEl = document.getElementById('hour');    // Select Giờ
+    const minuteEl = document.getElementById('minute');// Select Phút
+
+    // Đổ năm từ 1900 đến (năm hiện tại + 5)
+    (function fillYears(){
+      const thisYear = new Date().getFullYear(); // Lấy năm hiện tại
+      const end = thisYear + 5;                  // Tăng 5 năm
+      let html = "";
+      for (let y = 1900; y <= end; y++) html += `<option value="${y}">${y}</option>`; // Sinh option
+      yearEl.innerHTML = html;       // Gắn vào select
+      yearEl.value = thisYear;       // Chọn mặc định = năm hiện tại
+    })();
+
+    // Trả về số ngày tối đa của 1 tháng (tự xử lý năm nhuận)
+    function daysInMonth(m, y){ return new Date(Number(y), Number(m), 0).getDate(); }
+
+    // Đổ các option ngày (1..n)
+    function fillDays(n=31){
+      dayEl.innerHTML = Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+    }
+
+    // Cập nhật lại số ngày khi đổi tháng/năm
+    function refreshDays(){
+      const m = monthEl.value;             // Tháng hiện tại
+      const y = yearEl.value;              // Năm hiện tại
+      const dmax = daysInMonth(m, y);      // Số ngày tối đa
+      const cur = Number(dayEl.value || 1);// Ngày đang chọn (nếu có)
+      fillDays(dmax);                      // Đổ lại option ngày
+      dayEl.value = String(Math.min(cur, dmax)); // Không vượt quá dmax
+    }
+
+    // Sinh option giờ 00..23
+    hourEl.innerHTML = Array.from({length:24},(_,i)=>`<option value="${i}">${String(i).padStart(2,'0')}</option>`).join('');
+    hourEl.value = "5"; // Mặc định 05h
+
+    // Sinh option phút 00..55 (bước 5)
+    minuteEl.innerHTML = Array.from({length:12},(_,i)=> {
+      const v = String(i*5).padStart(2,'0'); return `<option value="${v}">${v}</option>`;
+    }).join('');
+    minuteEl.value = "30"; // Mặc định 30'
+
+    // Khởi tạo ngày theo tháng/năm hiện tại
+    fillDays();    // Đổ 1..31
+    refreshDays(); // Điều chỉnh theo tháng + năm
+    monthEl.addEventListener('change', refreshDays); // Khi đổi tháng → update ngày
+    yearEl.addEventListener('change', refreshDays);  // Khi đổi năm   → update ngày
+  </script>
+</body>
+</html>

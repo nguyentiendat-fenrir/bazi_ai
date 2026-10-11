@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "files": [
+    ".gitignore",
+    "README.md",
+    "backend/bazi.py",
+    "backend/main.py",
+    "backend/requirments.txt",
+    "backend/schemas.py",
+    "backend/uvicorn_run.sh",
+    "frontend/app.js",
+    "frontend/index.html",
+    "frontend/style.css"
+  ],
+  "source_files": 10,
+  "legacy_matches_source_manifest": true,
+  "original_inputs_unchanged": true,
+  "archive_entries_verified": 1444
+}

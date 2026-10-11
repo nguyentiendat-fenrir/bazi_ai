@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "staged_total": 78,
+  "source_checks": [
+    {
+      "path": "legacy/bazi/.gitignore",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/README.md",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/backend/bazi.py",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/backend/main.py",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/backend/requirments.txt",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/backend/schemas.py",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/backend/uvicorn_run.sh",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/frontend/app.js",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/frontend/index.html",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    },
+    {
+      "path": "legacy/bazi/frontend/style.css",
+      "worktree_matches_manifest": true,
+      "staged_blob_matches_manifest": true,
+      "staged": true
+    }
+  ],
+  "inputs_excluded": true,
+  "archive_runtime_excluded": true
+}

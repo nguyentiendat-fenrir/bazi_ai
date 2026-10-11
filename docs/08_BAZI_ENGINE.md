@@ -1,0 +1,99 @@
+# 08 · Calculation Engine và Rule Engine
+
+## A. Calculation Engine
+
+### Tái sử dụng có điều kiện
+
+Giữ tables/functions và `lunar-python` qua adapter. Tách `calendar_adapter`, `time_normalizer`, `pillars`, `ten_gods`, `hidden_stems`, `relations`, `luck_cycles`, `policy_registry`. `legacy/bazi` immutable dùng tái hiện. Không dùng payload tiếng Việt cũ làm public contract mới; mapping một lần tại adapter. Adapter phải ghi `legacy_version`, package version, tzdata version, astronomical model và policy hash.
+
+### BirthInput contract
+
+```json
+{
+  "calendar_system": "gregorian",
+  "local_datetime": "2000-06-15T05:30:00",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "fold": null,
+  "longitude": null,
+  "latitude": null,
+  "sex_for_luck": "male",
+  "time_accuracy": "minute",
+  "uncertainty_minutes": 0,
+  "policy_id": "standard-v1"
+}
+```
+
+Ngày trong ví dụ là dữ liệu tổng hợp. `local_datetime` không offset vì là wall clock; offset/UTC được server tính từ IANA timezone. API **từ chối** offset trong trường này để tránh hai nguồn sự thật. Nếu lịch âm: thay local_datetime bằng `lunar_date:{year,month,day,is_leap_month}` và `local_time`, cùng calendar_system; hai dạng input loại trừ nhau. Calendar không được hỗ trợ trả 422, không fallback.
+
+sex_for_luck=`male|female|unspecified`: là tham số thuật toán thuận/nghịch, không suy từ tên. `unspecified` vẫn lập bốn trụ nhưng các vận phụ thuộc giới tính trả unknown, hoặc user yêu cầu hai biến thể. Longitude trong [-180,180], latitude [-90,90]; apparent_solar bắt buộc longitude, latitude là metadata không bị giả dùng vào EOT. `time_accuracy=unknown` không giả giờ 12:00: trả ba trụ và hour=null, vận có thể partial. Khoảng bất định giao ranh giới giờ/ngày/tiết sinh nhiều biến thể với bounds và lý do.
+
+### Chính sách thời gian
+
+1. Parse/validate civil date, không gọi `.astimezone()` trên naive datetime. Gắn IANA + fold, round-trip UTC để phát hiện nonexistent time; DST gap từ chối và giải thích. DST fold phải chọn 0/1 nếu mơ hồ. Cùng input test dưới host TZ UTC/Asia/Ho_Chi_Minh/America/New_York phải cùng chart hash.
+2. Canonical `birth_instant_utc` là physical instant. Giờ dùng tính trụ ngày/giờ lưu riêng `pillar_clock_local`. Không cộng EOT rồi đổi nghĩa physical instant; không áp correction hai lần.
+3. Tiết khí là instant thiên văn toàn cầu. Thư viện trả thời gian dân sự theo chuẩn của nó thì adapter chuyển chuẩn đó về UTC trước so sánh, không lấy giờ UTC+8 làm giờ Việt. Năm đổi tại Lập Xuân; tháng đổi tại 12 tiết, không theo ngày mồng 1 âm lịch. So sánh instant và nêu tolerance nguồn oracle.
+4. Mặc định `day_rollover=midnight`; lựa chọn `zi_start_23` là policy khác. Thuật toán can giờ phải nhất quán theo day policy được công bố, đặc biệt 23:00–00:00. Không chỉ gọi setSect rồi mặc định tất cả phương thức thư viện cùng chuyển.
+5. `clock_basis=civil|apparent_solar`. Apparent solar áp dụng EOT có version + kinh độ + offset lịch sử; DST được xử lý một lần. Công thức tham chiếu NOAA là kiểm tra xấp xỉ, không coi nó là ephemeris độ chính xác tuyệt đối. Chọn implementation và sai số qua T027/T029, hiển thị uncertainty khi sát ranh giới.
+6. `yun_method=traditional_units|minute_units` tương ứng phương pháp được kiểm chứng, không nhập nhằng với day sect. Year polarity và sex_for_luck quyết định direction theo policy. Khoảng tới tiết tính bằng physical instants; không dùng giờ Mặt Trời đã chỉnh như timestamp UTC.
+
+### ChartFacts schema v1
+
+`chart_id, schema_version, input_snapshot, normalized_time, policy_snapshot, engine_manifest, facts_hash, computed_at, warnings, variants`.
+
+`normalized_time`: birth_instant_utc, civil_local, pillar_clock_local, utc_offset_seconds, fold, eot_minutes nullable, longitude_correction_minutes nullable, previous_jie/next_jie `{key,instant_utc,source_version}`.
+
+`pillars`: object year/month/day/hour; mỗi pillar `{stem:"jia",branch:"chen",stem_label:"Giáp",branch_label:"Thìn",stem_element:"wood",ten_god:"peer",hidden_stems:[{stem,rank,ten_god}],growth_stage,na_yin,void}`; hour nullable nếu chưa biết giờ. Enums IDs ASCII ổn định, label Việt tại presentation layer. Canonical stem IDs: jia,yi,bing,ding,wu,ji,geng,xin,ren,gui; branch IDs: zi,chou,yin,mao,chen,si,wu,wei,shen,you,xu,hai. Hai `wu` nằm trong namespace stem/branch riêng, không so string đơn lẻ ngoài type.
+
+`relations`: `{type,positions,members,completeness,conditions_evaluated}`. Hai thành viên tam hợp không tự thành full combination; tách `partial_combination`. Có positions để biết trùng chi; không mất multiplicity do convert set. Hợp/hình/xung là quan hệ tính được, không đồng nghĩa đã hóa hoặc xảy ra sự kiện đời sống.
+
+`cycles`: `{direction,start_age_components,start_instant,start_method,da_yun:[{index,start,end,stem,branch}],liu_nian:[{solar_term_year,start_instant,end_instant,stem,branch}]}`. Khoảng `[start,end)` theo Lập Xuân cho Lưu Niên. Tuổi thực/tuổi mụ label riêng; không ghi “năm dương 2024” tương đương cả năm Quý Mão. Năm đầu trước Lập Xuân là interval phần năm, không lùi toàn bộ chuỗi 100 năm.
+
+`auxiliary`: ming_gong,tai_yuan,element_counts; heuristic_weighted_scores mang method/version và `interpretation_ready=false` mặc định. Chỉ field có căn cứ/đã verify mới nằm trong allowed Rule facts. `warnings`: unsupported range, approximate_time, boundary_uncertainty, pending_auxiliary_validation. Nếu core pillars không qua gate không trả “verified”; có thể preview experimental nhưng không dùng production rule analysis.
+
+### Oracle và audit gates
+
+Tập 1900–2100, đặc biệt 12 tiết ±1s/±1m/±1h, Lập Xuân trước/sau tại UTC+7/+8, Tý 22:59/23:00/23:59/00:00/00:01, DST gap/fold, timezone lịch sử Việt Nam, leap day, leap lunar month, longitude ±180, uncertainty crossing boundary. Đối chiếu HKO solar-term tables + implementation thiên văn độc lập được ghi version, lịch/tzdata IANA và bảng mệnh lý chuyên gia duyệt. sxtwl và lunar-python có thể cùng họ thuật toán, không tính là hai oracle độc lập hoàn toàn. Oracle chưa giải quyết → test BLOCKED, không ghi pass.
+
+## B. Rule Engine độc lập LLM
+
+### DSL contract v1
+
+JSON có `$schema_version`, `rule_key`, `school_id`, `method_id`, `fact_schema_version`, `when`, `unless` (optional), `requires` (rule revision IDs), `emits`, `evidence_ids`, `explanation_template`, `limits`. DSL school_id/method_id dùng stable registry keys (như manh_phai), service resolve và kiểm khớp FK UUID school/method trên knowledge_rules; không xem key string là UUID. Lifecycle/review nằm DB, không tin `approved=true` trong JSON do client gửi.
+
+```json
+{
+  "$schema_version": "bazi-rule/1",
+  "rule_key": "synthetic.wood_day_master",
+  "school_id": "test_only",
+  "method_id": "structural_fixture",
+  "fact_schema_version": "chart-facts/1",
+  "when": {"op":"eq","left":{"fact":"pillars.day.stem_element"},"right":{"literal":"wood"}},
+  "requires": [],
+  "emits": [{"claim_key":"fixture.day_element","value":"wood","kind":"structural"}],
+  "evidence_ids": [],
+  "explanation_template": "Nhật can thuộc Mộc theo dữ kiện tính toán.",
+  "limits": {"max_nodes":256}
+}
+```
+
+Ví dụ trên là **fixture kỹ thuật, không là rule mệnh lý đã duyệt**, không được seed vào production active ruleset. Rule mệnh lý production bắt buộc evidence nguồn + reviewer; facts structural có nguồn thuật toán test fixture riêng, không giả citation sách.
+
+### AST và hàm cho phép
+
+Expr là một trong `{literal: scalar|array}`, `{fact: registered_path}`, `{op: operator, ...}` hoặc `{call: function_id,args:[Expr]}`. Không JSONPath tùy ý, attribute dunder, import, network, file IO, vòng lặp, regex tùy ý, Python/SQL. Operators cố định: `eq/ne/gt/gte/lt/lte/in/contains/all/any/not/exists`. `all/any` nhận `args` expressions, `not` nhận arg, comparisons nhận left/right; type checker chặn so stem với branch hay string với number. Null không bằng “không tồn tại”.
+
+Function allowlist typed: `has_relation(type,positions,completeness)`, `hidden_stem_contains(position,stem)`, `ten_god_of(stem,day_stem)`, `count_branch(branch)`, `cycle_at(instant,type)`, `rule_fired(rule_revision_id)`. Function registry versioned, hàm thuần và deterministic; chỉ đọc facts snapshot đã validate. Không có hàm “đoán tài vận” không định nghĩa.
+
+### Evaluation semantics
+
+Tri-valued T/F/U. Thiếu hour → phép so trên hour là U; `not U=U`, `all` có F thì F, không F mà có U thì U; `any` có T thì T, không T mà có U thì U. `when=T` và `unless=F/absent` mới fired; `unless=T` blocked_exception; `unless=U` pending; `requires` tất cả fired, nếu dependency unknown thì pending. Không biến unknown thành false rồi kích hoạt quy tắc phủ định.
+
+Validate DAG khi approve/ruleset build, reject cycles và references khác school nếu không có bridge được duyệt. Topological order + revision ID làm tie-break đảm bảo deterministic. Priority chỉ ordering, không cho rule tùy tiện đè kết luận. Limits mặc định depth≤16, nodes≤256/rule, ≤5.000 rules/run, ≤100.000 node evals/run, timeout CPU 2s cần benchmark; exceeded trả `resource_limit`, giữ partial trace nhưng không tuyên bố full analysis.
+
+Trace mỗi rule: revision_id, status (`fired/not_matched/pending/blocked_exception/dependency_blocked`), evaluated predicates với fact values, exception results, dependencies, source evidence, emitted claim keys, runtime counters. Trace là bằng chứng kiểm tra điều kiện, không yêu cầu lưu chain-of-thought riêng tư của LLM.
+
+### Conflict và hybrid interpretation
+
+Output claim_key typed cùng target+school+method+time_scope; hai values loại trừ tạo conflict và trả cả source. Không gộp Manh và Tử Bình chung trace. Các khái niệm cần phán đoán như cách cục, hiệu suất tố công, vượng nhược chỉ tạo `interpretation_candidate` nếu phần điều kiện xác định đúng, sau đó RAG+LLM diễn giải có nhãn suy luận và nguồn. LLM không ghi kết luận đó ngược thành chart fact hoặc approved rule.
+
+Rule update → ruleset revision mới; `analysis_dependencies` tìm impacted results, re-evaluation chạy facts snapshot cũ với ruleset mới và ghi diff. Revocation thay current ruleset, lịch sử vẫn hiện “quy tắc đã thu hồi” và không tái dùng kết luận đó như bằng chứng mới.

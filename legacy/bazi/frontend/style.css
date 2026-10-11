@@ -1,0 +1,215 @@
+/* =================== BIẾN & RESET =================== */
+:root{
+  --bg:#f7f8fa;            /* Nền toàn trang (xám rất nhạt) */
+  --panel:#ffffff;          /* Nền card trắng */
+  --muted:#606a76;          /* Chữ phụ */
+  --text:#0b0f14;           /* Chữ chính */
+  --ring:#d9dee5;           /* Màu viền xám nhạt */
+  --primary:#1976d2;        /* Màu nhấn lam */
+  --primary-ghost:#e8f1fb;  /* Lam rất nhạt dùng cho focus ring */
+}
+*{box-sizing:border-box}     /* Tính padding/border vào width/height */
+
+/* =================== KHUNG CHUNG =================== */
+body{
+  margin:0;
+  font:15px/1.6 system-ui,Segoe UI,Roboto,Helvetica,Arial; /* Font system, dễ đọc */
+  color:var(--text);
+  background:var(--bg);
+}
+.wrap{max-width:1100px; margin:24px auto; padding:0 16px}  /* Container max-width */
+
+/* =================== HEADER =================== */
+header{display:flex; gap:12px; align-items:center; margin-bottom:18px}
+.brand{display:flex; gap:12px; align-items:center}
+.logo{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(145deg,#4ea8de,#7c3aed); /* Gradient tím-lam */
+  display:grid;place-items:center;color:#fff;font-weight:800
+}
+.hint{color:var(--muted); font-size:13px}
+
+/* =================== CARD / FORM =================== */
+.card{
+  background:var(--panel);                 /* Nền trắng */
+  border:1px solid var(--ring);            /* Viền mảnh */
+  border-radius:14px;                      /* Bo góc */
+  padding:16px;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);   /* Bóng nhẹ */
+  margin-bottom:16px
+}
+.card h2{margin:0 0 10px 0; font-size:18px}
+
+.form{display:grid; gap:12px}              /* Khoảng cách giữa các control */
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px}
+label{display:grid; gap:6px; font-size:14px}
+
+input,select,button{font:inherit}          /* Đồng bộ font */
+input,select{
+  background:#fff;
+  border:1px solid var(--ring);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:10px;
+  outline:none;
+}
+input:focus,select:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px var(--primary-ghost) /* Vòng sáng khi focus */
+}
+.actions{display:flex; justify-content:flex-start}
+button{
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid transparent;
+  background:var(--primary); color:#fff; cursor:pointer
+}
+button.secondary{background:#fff; color:var(--text); border:1px solid var(--ring)}
+.error{
+  background:#fde8e8;          /* Hồng nhạt báo lỗi */
+  border:1px solid #f5c2c7;
+  color:#842029;
+  padding:8px 10px;
+  border-radius:8px
+}
+
+/* =================== THÔNG TIN TÓM TẮT =================== */
+.info-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 14px}
+
+/* =================== BẢNG TỨ TRỤ =================== */
+.pillars{
+  width:100%;
+  border-collapse:separate;    /* Cho phép bo viền ngoài */
+  border-spacing:0;            /* Bỏ khoảng trống cell */
+  table-layout:fixed;          /* Cố định chiều rộng cột */
+  border:1px solid var(--ring);/* Viền ngoài duy nhất */
+  border-radius:14px;
+  overflow:hidden;             /* Áp bo góc cho bảng */
+}
+/* Cột 1 (Hạng mục) hẹp hơn; 4 cột trụ chia đều */
+.pillars thead th:first-child{ width:12%; }
+.pillars thead th:not(:first-child){ width:21%; } /* (100 - 16) / 4 ≈ 21% */
+
+/* Nội dung cell + đường kẻ trong */
+.pillars th,.pillars td{ padding:10px 8px; text-align:center }
+.pillars thead th{ background:#f0f3f8; font-weight:600; border-bottom:1px solid var(--ring) }
+.pillars tbody tr:not(:last-child) td{ border-bottom:1px solid var(--ring) }
+.pillars tbody td:not(:last-child), .pillars thead th:not(:last-child){ border-right:1px solid var(--ring) }
+
+/* Stack can/chi theo cột */
+.pillars .cell{display:flex; flex-direction:column; gap:6px}
+
+/* ---- Badge: chỉ giữ text, bỏ khung bo ---- */
+.badge{display:inline-block; font-size:14px; background:none; border:none; padding:0}
+/* Badge dành cho chữ Can/Chi (to hơn) */
+.badge.pillar{font-size:24px; font-weight:700; letter-spacing:.2px; padding:0}
+
+/* Ẩn tàng: dàn đều các badge trong ô */
+.badges{display:flex; flex-wrap:wrap; gap:8px; justify-content:space-evenly}
+
+/* ---- Màu ngũ hành ---- */
+.el-water{ color:#000000; }   /* Thủy = đen */
+.el-metal{ color:#9ca3af; }   /* Kim = xám sáng */
+.el-wood{  color:#10b981; }   /* Mộc = xanh tươi */
+.el-fire{  color:#dc2626; }   /* Hỏa = đỏ rực */
+.el-earth{ color:#ca8a04; }   /* Thổ = vàng sáng */
+
+/* =================== ĐẠI VẬN =================== */
+.subhead{
+  margin:18px 0 8px;
+  font-size:16px; font-weight:700; letter-spacing:.5px;
+  color:#263238; text-transform:uppercase;
+  border-left:4px solid var(--primary); padding-left:8px
+}
+.luck{
+  display:grid;
+  grid-template-columns:repeat(10, 1fr); /* Luôn 10 ô trên 1 hàng */
+  gap:6px; margin-top:14px;
+}
+.luck .cycle{
+  border:1px solid var(--ring);
+  border-radius:8px; background:#fff;
+  padding:6px; text-align:center;
+}
+.luck .dv{display:flex; flex-direction:column; align-items:center; gap:2px}
+.luck .dv-part{font-size:16px; font-weight:500; line-height:1.1} /* Nhỏ + mảnh */
+.luck .dv-year{margin-top:2px; font-size:12px; color:var(--muted)}
+
+/* =================== LƯU NIÊN =================== */
+.luunien{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(70px, 1fr)); /* Tự co giãn */
+  gap:4px; margin-top:14px;
+}
+.luunien .year{
+  border:1px solid var(--ring); border-radius:6px;
+  padding:4px; font-size:12px; text-align:center; background:#fff;
+}
+
+/* =================== MỆNH CUNG / THAI NGUYÊN =================== */
+.panel{background:#fff; border:1px solid var(--ring); border-radius:10px; padding:10px}
+.grid2cols{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.grid4cols{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+.panel .item{border:1px dashed var(--ring); border-radius:8px; padding:8px; text-align:center; background:#fafcff}
+.panel .item .label{font-size:12px; color:#6b7280; margin-bottom:4px}
+.panel .item .value{font-size:16px; font-weight:700}
+
+.mt{margin-top:14px}
+
+/* =================== RESPONSIVE =================== */
+@media (max-width: 840px){
+  .grid2,.grid3{grid-template-columns:1fr} /* Form 1 cột trên mobile */
+  .info-grid{grid-template-columns:1fr}    /* Info 1 cột */
+  .luck{grid-template-columns:repeat(5, 1fr)} /* Ẩn bớt chiều ngang trên mobile: 2 hàng x 5 ô */
+}
+
+/* Grid Lưu niên: 20 cột x 5 hàng, ô đều nhau */
+.luunien{
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-auto-rows: 50px; /* chiều cao ô = rộng ô để vuông */
+  gap: 6px;
+}
+
+.luunien .year{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--card-border,#e5e7eb);
+  border-radius: 6px;
+  background: var(--card-bg,#fff);
+  box-shadow: 0 1px 2px rgba(0,0,0,.03);
+}
+
+.luunien .gz-vertical{
+  display: flex;
+  gap: 6px;
+  /* flex-direction: column; */
+  align-items: center;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.luunien .gz-vertical .can{
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.luunien .gz-vertical .chi{
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.luunien .dv-year{
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: .75;
+}
+.td-left{
+  width: 50px;   /* trước có thể là 120–150px, giờ thu hẹp */
+  font-weight: 600;
+  text-align: center;
+  vertical-align: top;
+}

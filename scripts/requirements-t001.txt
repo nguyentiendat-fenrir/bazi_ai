@@ -1,0 +1,2 @@
+# Audit utility only; application toolchain remains T002.
+rarfile==4.2

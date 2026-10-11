@@ -1,0 +1,13 @@
+# Original inputs and local audit tools are never application dependencies.
+/inputs/source/*
+!/inputs/source/.gitkeep
+/inputs/books/*
+!/inputs/books/.gitkeep
+/.tools/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/

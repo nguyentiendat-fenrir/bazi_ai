@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python",
+    "scripts/verify_inputs.py",
+    "--extract"
+  ],
+  "environment": {
+    "PYTHONPATH": ".tools/t001/Lib/site-packages",
+    "PATH_prepend": "C:/Program Files/WinRAR"
+  },
+  "exit_code": 0,
+  "seconds": 0.642,
+  "output_artifact": "reports/tasks/T001/real_extract_manifest.json",
+  "stderr": ""
+}

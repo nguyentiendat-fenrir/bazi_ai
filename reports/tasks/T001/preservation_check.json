@@ -1,0 +1,126 @@
+{
+  "status": "PASS",
+  "unchanged_original_files": 27,
+  "intentional_document_changes": [
+    "README.md",
+    "TASKS.md"
+  ],
+  "checks": [
+    {
+      "path": "AGENTS.md",
+      "unchanged": true
+    },
+    {
+      "path": "CODEX_START_PROMPT.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/01_MASTER_SPEC.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/02_SOURCE_CODE_AUDIT.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/03_ARCHITECTURE.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/04_DATABASE_SCHEMA.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/05_DOCUMENT_PIPELINE.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/06_KNOWLEDGE_MODEL.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/07_RAG_ENGINE.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/08_BAZI_ENGINE.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/09_AI_REASONING.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/10_API_SPEC.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/11_FRONTEND_UX.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/12_SECURITY_OPERATIONS.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/13_TEST_PLAN.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/14_IMPLEMENTATION_ROADMAP.md",
+      "unchanged": true
+    },
+    {
+      "path": "docs/15_ARCHITECTURE_DECISIONS.md",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/contract_inventory.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/delivery_manifest.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/legacy_observation_tests.txt",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/legacy_probe_results.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/package_validation.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/pdf_metrics.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/reproduce_probe.py",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/source_manifest.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/task_graph.json",
+      "unchanged": true
+    },
+    {
+      "path": "evidence/test_legacy_observations.py",
+      "unchanged": true
+    },
+    {
+      "path": "README.md",
+      "unchanged": false
+    },
+    {
+      "path": "TASKS.md",
+      "unchanged": false
+    }
+  ]
+}

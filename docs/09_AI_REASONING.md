@@ -1,0 +1,54 @@
+# 09 · AI Reasoning và hội thoại
+
+## Chế độ và orchestration
+
+| Mode | Dữ liệu bắt buộc | Luồng | Kết quả |
+|---|---|---|---|
+| research | câu hỏi + scope | resolve context → hybrid retrieve → evidence → answer validation | Giải thích, dẫn nguồn, khoảng thiếu |
+| chart_analysis | chart revision + school/method | load facts → ruleset evaluation → targeted retrieval → supported interpretation | Facts, rules triggered, diễn giải, ngoại lệ |
+| comparison | proposition + scopes | phân tách mệnh đề → retrieve từng scope → rule traces khi có chart → compare | Quan điểm ủng hộ/phản đối và phạm vi áp dụng |
+
+Một orchestration state machine kiểm soát các bước, không agent tự chạy vô hạn. Run states: queued/running/waiting_provider/completed/failed/cancelled; persisted events có seq. Request tạo user message, pending assistant message và run trong một transaction; worker reasoning xử lý, không giữ HTTP POST chờ model. Chart engine local không phụ thuộc provider.
+
+## Tool interfaces do server kiểm soát
+
+- `get_chart_facts(chart_id)` → ChartFacts+owner check; không cho tool tự tạo ngày sinh mới.
+- `calculate_chart(birth_input, policy_id)` → facts chỉ khi user yêu cầu lập/đổi lá số và input đã xác nhận ở UI; không tự đổi active chart trong hội thoại.
+- `search_knowledge(QuerySpec)` → EvidenceBundle theo user scope; tool không nhận storage paths hay arbitrary SQL.
+- `get_source_span(evidence_id, context_blocks<=2)` → đoạn nguồn thuộc run, quyền được kiểm lại.
+- `evaluate_rules(chart_id, ruleset_id, method_id)` → RuleTrace deterministic; server kiểm ruleset scope.
+- `find_cases(query, school_ids, max_results<=5)` → approved/private-owned cases và provenance.
+
+Tối đa 8 tool calls/run, tối đa 2 retrieval refinements, timeout provider mặc định 60s/call và run cap 180s (cấu hình); tokens/cost reserved trước gọi. Tool errors typed có retryable, không đưa stack trace/secret vào model. Schema malformed thử sửa một lần, sau đó fail an toàn.
+
+## Answer contract
+
+`Answer`: status (`supported|partial|insufficient_evidence|empty_corpus|provider_not_configured`), mode, summary, claims, disagreements, limitations, follow_up_questions, citations, trace_ref.
+
+`Claim`: id, text, kind (`calculation|rule_result|source_statement|interpretation|limitation`), school_id nullable, method_id nullable, time_scope nullable, fact_paths[], rule_trace_ids[], evidence_ids[], support_status (`validated|needs_review|insufficient`), inference_level (`direct|conditional|interpretive`), unresolved_exceptions[]. Mọi material source/interpretation claim phải có evidence; calculation dùng fact path + engine manifest thay vì nguồn sách. “validated” là đã qua kiểm tra hỗ trợ của hệ thống, không là chứng minh Bát Tự đúng khoa học.
+
+LLM structured output không được tự định các fact_paths/trace IDs ngoài allowlist run. Validator kiểm schema, ownership, sources, school, contradicted fact values, unsupported health/finance wording và citation. Không hiển thị xác suất “95% đúng vận mệnh”; có thể hiển thị độ đầy đủ bằng chứng định tính và lý do.
+
+## Multi-turn memory
+
+Conversation có active chart revision, mode, selected schools/methods/books. Mỗi run ghim context snapshot và message sequence, không đọc setting đang thay đổi giữa run. Summary memory là nội dung không tin cậy, có provenance message IDs; giữ last 6 turns + summary trong token budget khởi đầu. User đổi chart → ghi context_changed event; không mang facts chart cũ sang mới. Chọn school mới → lọc lại, không lấy kiến thức summary school cũ làm nguồn.
+
+Lưu/tìm/xóa conversation bằng DB. Search message text có owner filter, không gửi toàn bộ lịch sử cho provider. Delete conversation cancel runs và xóa content/claims/citations/events theo policy; audit giữ metadata tối thiểu không text. Rename/star do user; không cần AI.
+
+## Streaming không phát tán câu trả lời chưa kiểm nguồn
+
+SSE stream tiến độ (`run.started`, `tool.started`, `tool.completed`, `retrieval.ready`) ngay; model text thô được buffer. Sau khi từng claim hoàn chỉnh validate, phát `answer.claim`; khi toàn answer hoàn thành phát `answer.completed` với canonical payload. Đây là streaming các đoạn đã kiểm, có thể chậm hơn token streaming nhưng tránh citation giả xuất hiện rồi bị rút lại.
+
+Event IDs `{run_id}:{seq}`, seq unique tăng dần; client reconnect `Last-Event-ID`, server replay từ durable `run_events` cho owner. Không chạy lại model khi reconnect. Nếu event retention hết, trả 410 với URL fetch final run; client fetch final answer. Heartbeat 15s không lưu DB; proxy tắt buffering. Cancel idempotent, status cancelled; provider có thể tiếp tục tính phí sau cancel nên usage phải reconcile. Disconnect không tự cancel trừ cấu hình explicit.
+
+## Thiếu nguồn, xung đột và an toàn diễn giải
+
+Corpus trống: vẫn xem facts/tra cứu cấu trúc tính toán, research trả hướng dẫn nhập sách; không trích dẫn trí nhớ LLM như đã đọc sách. Có nguồn mà chưa rule approved: trình bày tài liệu và facts, báo chưa có quy tắc đủ điều kiện; không tạo rule dùng tạm trong lượt đó.
+
+Conflict: output chia theo school và speaker, dẫn luận cứ/ngoại lệ; không kết luận một phía “thắng” nếu không có tiêu chí người dùng. Health/finance/future: phrasing theo truyền thống và điều kiện, không khẳng định mắc bệnh/chắc chắn gặp tai nạn/khuyến nghị giao dịch từ lá số. Không biến câu chuyện bệnh trong mệnh lệ thành chẩn đoán người dùng.
+
+## Provider adapters, privacy, budget
+
+Interfaces `LLMProvider.generate_structured/stream`, `EmbeddingProvider.embed_batch`, `Reranker.rerank`; capabilities có schema support, tokenization, dimensions, pricing config version. Retry có jitter và idempotency nếu provider hỗ trợ, không giả provider nào cũng có. Mock provider phục vụ contract/E2E offline, `is_fixture=true` không được xuất hiện dưới nhãn AI thật ở production.
+
+Settings lưu secret environment **reference**, model identifier/revision, context limit, timeout, concurrency, daily currency budget. Đặt cost reservation trong DB transaction trước gọi, tránh hai job cùng vượt trần; usage tokens actual/estimate và error costs. Không log full birth input, chat hoặc API key mặc định. Xuất telemetry chỉ bật theo admin consent.

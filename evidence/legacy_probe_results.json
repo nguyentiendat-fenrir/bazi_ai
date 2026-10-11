@@ -1,0 +1,259 @@
+{
+  "naive_host_UTC": {
+    "input": {
+      "thời_điểm_nhập": "2000-06-15T12:30:00+07:00",
+      "thời_điểm_tính": "2000-06-15T12:30:00+07:00",
+      "múi_giờ": "Asia/Ho_Chi_Minh",
+      "cơ_sở_thời_gian": "Giờ chuẩn múi",
+      "kinh_độ": null,
+      "giới_tính": "Nam"
+    },
+    "pillars": {
+      "năm": "Canh Thìn",
+      "tháng": "Nhâm Ngọ",
+      "ngày": "Giáp Thìn",
+      "giờ": "Canh Ngọ"
+    }
+  },
+  "naive_host_Asia/Ho_Chi_Minh": {
+    "input": {
+      "thời_điểm_nhập": "2000-06-15T05:30:00+07:00",
+      "thời_điểm_tính": "2000-06-15T05:30:00+07:00",
+      "múi_giờ": "Asia/Ho_Chi_Minh",
+      "cơ_sở_thời_gian": "Giờ chuẩn múi",
+      "kinh_độ": null,
+      "giới_tính": "Nam"
+    },
+    "pillars": {
+      "năm": "Canh Thìn",
+      "tháng": "Nhâm Ngọ",
+      "ngày": "Giáp Thìn",
+      "giờ": "Đinh Mão"
+    }
+  },
+  "aware": {
+    "input": {
+      "thời_điểm_nhập": "2000-06-15T05:30:00+07:00",
+      "thời_điểm_tính": "2000-06-15T05:30:00+07:00",
+      "múi_giờ": "Asia/Ho_Chi_Minh",
+      "cơ_sở_thời_gian": "Giờ chuẩn múi",
+      "kinh_độ": null,
+      "giới_tính": "Nam"
+    },
+    "pillars": {
+      "năm": "Canh Thìn",
+      "tháng": "Nhâm Ngọ",
+      "ngày": "Giáp Thìn",
+      "giờ": "Đinh Mão"
+    },
+    "luck_count": 10
+  },
+  "liu_nian_jan2024": [
+    {
+      "năm_dương": 2024,
+      "tuổi": 0,
+      "can_chi": "Quý Mão",
+      "nạp_âm": "Kim bạch Kim"
+    },
+    {
+      "năm_dương": 2025,
+      "tuổi": 1,
+      "can_chi": "Giáp Thìn",
+      "nạp_âm": "Phúc đăng Hỏa"
+    }
+  ],
+  "thai_nguyen": [
+    {
+      "month": "ẤtSửu",
+      "legacy": [
+        "Bính",
+        "Thìn"
+      ],
+      "library": [
+        "Bính",
+        "Thìn"
+      ]
+    },
+    {
+      "month": "BínhDần",
+      "legacy": [
+        "Đinh",
+        "Tỵ"
+      ],
+      "library": [
+        "Đinh",
+        "Tỵ"
+      ]
+    },
+    {
+      "month": "ĐinhMão",
+      "legacy": [
+        "Mậu",
+        "Ngọ"
+      ],
+      "library": [
+        "Mậu",
+        "Ngọ"
+      ]
+    },
+    {
+      "month": "MậuThìn",
+      "legacy": [
+        "Kỷ",
+        "Mùi"
+      ],
+      "library": [
+        "Kỷ",
+        "Mùi"
+      ]
+    },
+    {
+      "month": "KỷTỵ",
+      "legacy": [
+        "Canh",
+        "Thân"
+      ],
+      "library": [
+        "Canh",
+        "Thân"
+      ]
+    },
+    {
+      "month": "CanhNgọ",
+      "legacy": [
+        "Tân",
+        "Dậu"
+      ],
+      "library": [
+        "Tân",
+        "Dậu"
+      ]
+    },
+    {
+      "month": "TânMùi",
+      "legacy": [
+        "Nhâm",
+        "Tuất"
+      ],
+      "library": [
+        "Nhâm",
+        "Tuất"
+      ]
+    },
+    {
+      "month": "NhâmThân",
+      "legacy": [
+        "Quý",
+        "Hợi"
+      ],
+      "library": [
+        "Quý",
+        "Hợi"
+      ]
+    },
+    {
+      "month": "QuýDậu",
+      "legacy": [
+        "Giáp",
+        "Tý"
+      ],
+      "library": [
+        "Giáp",
+        "Tý"
+      ]
+    },
+    {
+      "month": "GiápTuất",
+      "legacy": [
+        "Ất",
+        "Sửu"
+      ],
+      "library": [
+        "Ất",
+        "Sửu"
+      ]
+    },
+    {
+      "month": "ẤtHợi",
+      "legacy": [
+        "Bính",
+        "Dần"
+      ],
+      "library": [
+        "Bính",
+        "Dần"
+      ]
+    },
+    {
+      "month": "BínhTý",
+      "legacy": [
+        "Đinh",
+        "Mão"
+      ],
+      "library": [
+        "Đinh",
+        "Mão"
+      ]
+    }
+  ],
+  "invalid_timezone": "UTC",
+  "eot": {
+    "2024-02-11": 13.31715257529273,
+    "2024-11-03": -4.553152206095541
+  },
+  "relation_two_members": [
+    {
+      "nhóm": "Thân-Tý-Thìn",
+      "ngũ_hành": "Thủy",
+      "đang_có": "Thân-Tý"
+    }
+  ],
+  "smoke": [
+    {
+      "dt": "2024-02-29T12:00:00+07:00",
+      "pillars": {
+        "năm": "Giáp Thìn",
+        "tháng": "Bính Dần",
+        "ngày": "Quý Hợi",
+        "giờ": "Mậu Ngọ"
+      }
+    },
+    {
+      "dt": "2024-02-04T15:30:00+07:00",
+      "pillars": {
+        "năm": "Quý Mão",
+        "tháng": "Ất Sửu",
+        "ngày": "Mậu Tuất",
+        "giờ": "Canh Thân"
+      }
+    },
+    {
+      "dt": "2024-02-04T16:30:00+07:00",
+      "pillars": {
+        "năm": "Giáp Thìn",
+        "tháng": "Bính Dần",
+        "ngày": "Mậu Tuất",
+        "giờ": "Canh Thân"
+      }
+    },
+    {
+      "dt": "2024-06-01T23:30:00+07:00",
+      "pillars": {
+        "năm": "Giáp Thìn",
+        "tháng": "Kỷ Tỵ",
+        "ngày": "Bính Thân",
+        "giờ": "Canh Tý"
+      }
+    },
+    {
+      "dt": "2024-06-02T00:30:00+07:00",
+      "pillars": {
+        "năm": "Giáp Thìn",
+        "tháng": "Kỷ Tỵ",
+        "ngày": "Đinh Dậu",
+        "giờ": "Canh Tý"
+      }
+    }
+  ],
+  "lichun_library_civil": "2024-02-04 16:26:53"
+}

@@ -1,0 +1,43 @@
+{
+  "observation_date": "2026-10-11",
+  "timezone": "Asia/Saigon",
+  "os": "Microsoft Windows 11 Home",
+  "os_version": "10.0.26200",
+  "shell": "Windows PowerShell",
+  "python": "3.13.5",
+  "application_baseline_python": "3.12 (T002; not installed by T001)",
+  "git": "2.51.0.windows.1",
+  "git_repository": false,
+  "wsl": {
+    "commands": ["wsl --status", "wsl --list --verbose"],
+    "initial_sandbox_result": "Wsl/EnumerateDistros/Service/E_ACCESSDENIED",
+    "retry": "Read-only commands rerun with approved escalation",
+    "default_version": 2,
+    "installed_distributions": 0,
+    "wsl1_supported_in_current_configuration": false
+  },
+  "docker": {
+    "command": "docker --version",
+    "result": "CommandNotFoundException",
+    "standard_desktop_executable_found": false
+  },
+  "resources": {
+    "commands": ["Get-CimInstance Win32_OperatingSystem", "Get-PSDrive C"],
+    "total_visible_memory_kib": 33271672,
+    "free_physical_memory_kib": 6242744,
+    "disk_used_bytes": 331529760768,
+    "disk_free_bytes": 71268122624,
+    "note": "Point-in-time values from approved read-only environment inspection"
+  },
+  "audit_tools": {
+    "venv": ".tools/t001 (new local environment, excluded from source)",
+    "rarfile": "4.2",
+    "unrar": "7.11 x64, preinstalled WinRAR CLI",
+    "bsdtar": "3.8.8 (not used for extraction)",
+    "pytest": "not installed; unittest used",
+    "install_command": "./.tools/t001/Scripts/python.exe -m pip install --disable-pip-version-check --no-cache-dir rarfile==4.2",
+    "install_exit_code": 0,
+    "initial_install_failure": "Sandbox WinError 10013; pip exit 1. Approved network retry succeeded."
+  },
+  "privacy": "No usernames, hostnames, credentials, environment variable values or book contents recorded"
+}

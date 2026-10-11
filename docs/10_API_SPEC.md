@@ -1,0 +1,164 @@
+# 10 · REST API và SSE contract v1
+
+## Quy ước
+
+Base `/api/v1`. JSON UTF-8, snake_case, UUID cho entity IDs, UTC ISO8601 cho timestamps; BirthInput local datetime ngoại lệ được mô tả ở 08. OpenAPI 3.1 generated từ Pydantic là artifact triển khai; so diff với contract này trong CI. Không expose database ORM object tùy ý. Success entity `{data:...,meta:{request_id}}`; list `{data:[],page:{next_cursor:null,has_more:false},meta:{request_id}}`; pagination cursor theo `(created_at,id)`, limit=20 mặc định/max100. Các collection list hỗ trợ q/status/sort được allowlist, không raw SQL.
+
+Lỗi `application/problem+json`: `{type,title,status,code,detail,request_id,field_errors:[{path,message}]}`. Codes: 401 AUTH_REQUIRED; 403 FORBIDDEN; 404 NOT_FOUND (che existence private); 409 CONFLICT/IDEMPOTENCY_MISMATCH; 412 REVISION_MISMATCH; 413 FILE_TOO_LARGE; 415 UNSUPPORTED_TYPE; 422 VALIDATION_ERROR/AMBIGUOUS_LOCAL_TIME/NONEXISTENT_LOCAL_TIME/UNSUPPORTED_CALENDAR; 429 RATE_LIMITED/BUDGET_EXCEEDED; 503 PROVIDER_UNAVAILABLE; 410 SOURCE_WITHDRAWN/EVENTS_EXPIRED. Không trả 200 ok:false cho exception.
+
+Mutations tạo job/run/version yêu cầu `Idempotency-Key` tối đa 128 ký tự. Key scope owner+route, request hash, lưu 24h; cùng key/payload trả cùng result, khác payload 409. PATCH mutable yêu cầu If-Match revision; create response có ETag. Tất cả unsafe cookie requests yêu cầu CSRF token, Origin validation; không dùng CORS `*` với credentials. Upload multipart cũng kiểm CSRF.
+
+Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu. `R/O` nghĩa phải là owner hoặc explicit grant có kiểm, không phải reader nào cũng xem. Reviewer kế thừa reader; admin kế thừa reviewer cho kho tri thức. Không suy luận quyền đọc private profiles từ quyền quản trị server.
+
+## Routes xác thực và cấu hình
+
+| Method/path | Quyền | Request | Response / behavior |
+|---|---|---|---|
+| GET /health/live | public | — | 200 process up, không lộ version/secrets |
+| GET /health/ready | A hoặc internal | — | DB/storage/broker status; model unavailable là degraded không chặn chart |
+| POST /auth/login | public+rate limit | email,password | 200 user+CSRF, HttpOnly session cookie |
+| POST /auth/logout | R | — | 204 revoke current session |
+| GET /auth/me | R | — | UserDTO, role, capabilities |
+| GET/POST /users | A | create email,password,role | list/201 UserDTO, không password_hash |
+| PATCH /users/{id} | A | role,enabled | 200 ETag; không disable last active admin |
+| GET/PATCH /settings | R (own) / A (system) | scope, values allowlist | redacted config; key values không secret |
+| GET/POST /model-profiles | R list redacted / A create | ModelProfileInput | 200 list/201 immutable profile |
+| POST /model-profiles/{id}/test | A | max_tokens cap | 200 capabilities/latency, usage tracked |
+| POST /model-profiles/{id}/activate | A | target kind | 202 operation cho embedding reindex; llm/rerank settings revision mới |
+| GET /usage | R own / A aggregate | from,to,profile_id | tokens,cost estimate/actual,budget |
+
+Bootstrap admin chỉ qua local CLI với one-time secret, không public registration endpoint.
+
+## Sách, upload, jobs và nguồn
+
+| Method/path | Quyền | Request | Response / behavior |
+|---|---|---|---|
+| GET/POST /books | R / V | BookInput(title,language,authors[],description) | list/201 BookDTO |
+| GET/PATCH /books/{id} | R / V | metadata fields, If-Match | 200; changing school creates review/reclassification impact |
+| GET/PATCH /books/{id}/access | V/A | user/role grants, permission | 200; audit và visibility_epoch invalidation |
+| POST /ingestion-batches | V | name, pipeline_profile_id, auto_publish bool | 201 batch_id |
+| POST /uploads | V | multipart file,batch_id,book_id?,edition_label,rights_status,external_processing_allowed | 201 version_id/object hash/job_id hoặc 200 duplicate_of; server stream/hash |
+| GET /books/{id}/versions | R | cursor | VersionDTO[] coverage/status/edition |
+| GET /book-versions/{id} | R | — | VersionDTO |
+| POST /book-versions/{id}/process | V | pipeline_profile_id, scope full/page_ids | 202 ingestion job |
+| POST /book-versions/{id}/withdraw | V | reason | 202 operation; visibility revoke ngay |
+| DELETE /books/{id} | A | deletion_mode metadata/content, reason | 202 deletion job, dependent impact report |
+| GET /ingestion-batches/{id} | V | — | per-file accepted/rejected/counters, không fail all |
+| GET /jobs | V | state,batch_id,book_version_id,cursor | JobDTO[] |
+| GET /jobs/{id} | V | — | JobDTO + stage checkpoints + typed error |
+| GET /jobs/{id}/events | V | after_seq,limit | ordered durable logs |
+| POST /jobs/{id}/retry | V | failed_units_only=true | 202 new job parent_id, reusable outputs |
+| POST /jobs/{id}/cancel | V | — | 202 cancel_requested hoặc 200 terminal |
+| GET /book-versions/{id}/pages | R | cursor | page metadata, quality, printed labels |
+| GET /page-revisions/{id} | R | — | PageDTO text/layout/quality, authorized source refs |
+| GET /book-versions/{id}/source | R | Range | authorized PDF/DOCX stream, 206 hỗ trợ Range |
+| GET /page-revisions/{id}/render | R | scale bounded | image/bản dựng protected, cache private |
+| POST /pages/{id}/corrections | V | base_revision_id,changes[],reason; If-Match | 201 new revision + 202 job reference, unchanged source immutable |
+| GET /review-items | V | reason,state,book_version_id | review queue |
+| POST /review-items/{id}/resolve | V | action accept/exclude/retry, reason,base_revision | 200 review+job nếu cần |
+| GET /generations/{id}/impact | V | — | affected chunks/rules/cases/analyses counters+IDs paginated |
+| POST /generations/{id}/publish | V | allow_partial,ack_excluded_ranges | 202 operation→new corpus release, không rule autoapprove |
+| GET /corpus-releases | V | cursor | releases + active pointer |
+| POST /corpus-releases/{id}/activate | A | expected_active_id | 200 atomic switch; 409 if concurrent |
+
+Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
+
+## Tri thức và mệnh lệ
+
+Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. API IDs luôn UUID, key như manh_phai được resolve trong ontology/DSL service. Generic resource collection below có schema riêng, không endpoint cho arbitrary table name.
+
+| Method/path | Quyền | Payload / result |
+|---|---|---|
+| GET/POST /authors | R/V | AuthorInput(name,notes), AuthorDTO |
+| GET/POST /schools | R/V | key,label,parent_id,description; SchoolDTO |
+| GET/POST /methods | R/V | school_id,key,description; MethodRevisionDTO |
+| GET/POST /topics | R/V | key,label,parent_id; TopicDTO |
+| GET/POST /concepts | R/V | school_id,canonical_key,label,description; draft revision |
+| GET/POST /terms | R/V | concept_id,form_nfc,language,alias_kind,evidence_id; draft |
+| POST /concepts/{id}/revisions | V | base_revision, changes, reason | 
+| POST /terms/{id}/revisions | V | base_concept_revision, changed form/scope,reason; tạo concept revision + alias set mới |
+| GET/POST /assertions | R/V | AssertionInput theo 06 + evidence_ids |
+| GET /assertions/{id} | R | revision + sources + relations |
+| POST /assertions/{id}/revisions | V | base_revision,statement,applicability,exceptions,evidence_ids |
+| POST /assertion-relations | V | from_id,to_id,relation → draft relation |
+| GET/POST /rules | R/V | RuleInput DSL+school/method/sources → draft |
+| GET /rules/{id} | R | DSL, sources, tests, lifecycle |
+| POST /rules/{id}/revisions | V | base_revision,DSL,evidence_ids,reason |
+| POST /rules/{id}/validate | V | fixtures[] | schema/type/DAG/positive-negative-unknown results |
+| POST /reviews | V | entity_kind,entity_id,base_revision,decision,reason | guarded approve/reject/revoke, trace audit |
+| GET/POST /rulesets | R/V | school_id,method_id,rule_revision_ids | snapshot validate + ready, không lấy draft |
+| POST /rulesets/{id}/activate | V | expected_current_id | active method setting update atomic |
+| GET /knowledge/impact | V | entity_kind,entity_id | downstream analysis/case/rule revisions |
+| POST /knowledge/reevaluate | V | dependency_kind,id,analysis_ids? | 202 operation, chỉ analyses được phép |
+| GET/POST /cases | R/V hoặc O user case | CaseInput origin,visibility,school_id,chart_payload,narrative,events,evidence_ids |
+| GET /cases/{id} | R theo visibility | current revision + evidence |
+| POST /cases/{id}/revisions | V/O | base_revision,changes,reason |
+| DELETE /cases/{id} | V/O | reason | 202 tombstone và impact, rights check |
+
+Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa school/topic metadata dùng PATCH cùng If-Match; thay method/concept nghĩa tạo revision, không PATCH approved content. Candidate jobs dùng review endpoints, không hidden auto-approval route. Rule test fixtures lưu `evaluation_items kind=rule_fixture`, liên kết rule revision trong input/source_manifest.
+
+## Lá số, retrieval, chat
+
+| Method/path | Quyền | Request | Response |
+|---|---|---|---|
+| GET /calculation-policies | R | — | supported policy + calendar/range capabilities |
+| GET/POST /birth-profiles | R/O | label,BirthInput | list/201 redacted ProfileDTO |
+| GET/PATCH /birth-profiles/{id} | O | BirthInput,label,If-Match | revision mới, chart cũ unchanged |
+| DELETE /birth-profiles/{id} | O | delete_linked_charts bool | 202 operation, impact preview |
+| POST /charts | R | birth_input hoặc profile_id+revision; policy_id | 201 ChartFacts, 422 unsupported/ambiguous |
+| GET /charts | R/O | q,cursor | owned charts |
+| GET /charts/{id} | O | — | ChartFacts pinned |
+| DELETE /charts/{id} | O | reason? | 202 operation, related chat redaction/retention policy |
+| POST /charts/{id}/analyses | O | school_id,method_id,ruleset_id?,source_scope | 202 run_id,analysis_id |
+| GET /analyses/{id} | O | — | Answer+facts refs+trace+stale state |
+| GET /analyses/{id}/trace | O | cursor | RuleTrace[] |
+| POST /search | R | QuerySpec theo 07 | status,hits EvidenceBundle,release_id,degraded flags |
+| GET /evidence/{id} | R rights | context_blocks<=2 | source locator + excerpt + viewer URL |
+| GET/POST /conversations | R/O | title,mode,context | list/201 ConversationDTO |
+| GET/PATCH /conversations/{id} | O | title,starred,mode,context,If-Match | 200 revision + context snapshot |
+| DELETE /conversations/{id} | O | — | 202 deletion operation |
+| GET /conversations/{id}/messages | O | cursor | MessageDTO[] incl claims/citations |
+| POST /conversations/{id}/messages | O | content,expected_context_revision,client_message_id | 202 run_id,user_message_id,assistant_message_id,events_url |
+| GET /runs/{id} | O | — | state,final_answer?,error,usage |
+| GET /runs/{id}/events | O | Last-Event-ID | text/event-stream, events theo 09 |
+| POST /runs/{id}/cancel | O | — | 202 or 200 terminal |
+| POST /feedback | O target | message_id hoặc analysis_id,rating,categories,comment | 201 feedback_id |
+
+POST charts analyses tạo conversation nội bộ gắn analysis để dùng cùng run model; DB giữ conversation_id và privacy, UI không cần hiện thread tự động trong chat list (`context.origin=analysis`). Hoặc triển khai service tạo explicit analysis thread và trả conversation_id; contract response luôn có ID này. Research không chart vẫn có source statements; chart mode không source trả facts và limitations.
+
+## Evaluation và operations
+
+| Method/path | Quyền | Request / response |
+|---|---|---|
+| GET/POST /evaluation-datasets | V | version/split/rights + items qua upload JSON schema; list/201 |
+| GET /evaluation-datasets/{id}/items | V | paginated expected/verified sources |
+| POST /evaluation-runs | V | dataset_id,config,mode offline/live,budget_limit →202 |
+| GET /evaluation-runs/{id} | V | status,metrics,per-item results/report |
+| GET /dashboard | R | allowed counters, no private user aggregates |
+| GET /operations/metrics | A | queue health, disk, errors, latency, cost |
+| POST /operations/backups | A | target configured destination →202 operation_id |
+| GET /operations/backups | A | manifest metadata,verified_at |
+| POST /operations/restore-preflight | A | backup_id → checklist checksum/schema/keys/disk; không restore ngay |
+| POST /operations/restores | A | backup_id,preflight_token,confirmation →202; maintenance mode |
+| GET /operations/{id} | authorized requester/A | state,progress,error |
+| GET /audit-logs | A | actor/action/target/time,cursor; redacted |
+
+Restore destructive cần confirmation cụ thể trên UI và fresh preflight, không từ tool LLM. Không API đọc `.env` hay tải arbitrary URL. All request bodies `extra=forbid`; payload size caps. Endpoint details/DTOs phải có example success/failure trong OpenAPI ở T008 và contract tests sinh client ở T042.
+
+## DTO dùng chung
+
+BookDTO `{id,title,language,authors:[{id,name,role}],versions_count,active_coverage,revision}`. VersionDTO `{id,book_id,edition_label,sha256,size_bytes,status,rights_status,coverage:{total,accepted,excluded,failed},current_generation_id}`. PageDTO `{id,page_id,physical_page_number,page_kind,printed_page_label,text,blocks,quality,render_url}`. JobDTO `{id,state,stage,counters,attempt,retry_at,error:{code,message,retryable}?,generation_id}`. EntityRevisionDTO thêm `{id,key,revision,state,school_id,method_id,evidence_ids,review_history}` theo type. ModelProfileInput chỉ nhận `secret_ref` allowlist đã cấu hình trên server, không env name tùy ý.
+
+SSE example:
+
+```text
+id: <run_uuid>:7
+event: answer.claim
+data: {"claim_id":"c1","text":"...","citations":[{"evidence_id":"<uuid>","physical_page_number":16}],"validated":true}
+
+id: <run_uuid>:8
+event: answer.completed
+data: {"run_id":"<uuid>","message_id":"<uuid>","status":"supported"}
+```
+
+Placeholders minh họa wire format, không là dữ liệu nguồn thật. Final canonical Answer lấy GET runs khi reconnect sau retention.

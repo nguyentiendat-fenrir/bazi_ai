@@ -1,0 +1,63 @@
+{
+  "spec_version": "1.0",
+  "completed_date": "2026-10-11",
+  "required_markdown_files": 19,
+  "implementation_tasks": 56,
+  "logical_tables": 77,
+  "source_pdf_pages": 613,
+  "automated_checks": {
+    "required_files": "PASS",
+    "task_dependency_dag": "PASS",
+    "all_tasks_have_8_required_fields": "PASS",
+    "task_id_references": "PASS",
+    "markdown_fences": "PASS",
+    "json_examples_parse": "PASS",
+    "python_audit_scripts_parse": "PASS",
+    "dictionary_fk_targets": "PASS",
+    "evidence_counts": "PASS",
+    "basic_secret_and_contact_scan": "PASS"
+  },
+  "manual_cross_review": [
+    {
+      "check": "Database supports API modules",
+      "result": "Reviewed; 77 logical tables with owners/FKs/version/indexes; added operation leases and book revision"
+    },
+    {
+      "check": "API supports 13 UI areas",
+      "result": "Reviewed against route mapping in docs/11"
+    },
+    {
+      "check": "Source citations survive OCR/rechunk",
+      "result": "Immutable page revisions/spans, corpus snapshots, display snapshot; withdrawal overrides historical content access"
+    },
+    {
+      "check": "Rule facts + calculation compatibility",
+      "result": "chart-facts/1 and allowlisted typed paths; explicit DSL registry keys to UUID resolution"
+    },
+    {
+      "check": "Empty corpus/no model startup",
+      "result": "No fake release required; missing active pointer returns empty_corpus; chart independent"
+    },
+    {
+      "check": "Every core module has implementation task",
+      "result": "R01–R11 traceability plus 56 tasks, 8 final scenarios"
+    },
+    {
+      "check": "Backup when database lost",
+      "result": "External manifest and host CLI path added; clean-volume restore"
+    },
+    {
+      "check": "Claims about testing",
+      "result": "Only legacy observations and package checks marked executed; full app/oracle/scale/WSL gates not claimed pass"
+    }
+  ],
+  "not_executed": [
+    "Full application implementation tests",
+    "Independent full BaZi oracle suite",
+    "Windows/WSL deployment acceptance",
+    "Model benchmark",
+    "100/1000-book ingestion benchmark",
+    "Production backup restore"
+  ],
+  "packaging_policy": "No books/RAR/.venv/secrets/private birth profiles included; synthetic dates in audit only."
+}

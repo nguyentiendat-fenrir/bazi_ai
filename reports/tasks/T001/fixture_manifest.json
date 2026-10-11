@@ -1,0 +1,16 @@
+[
+  {
+    "name": "stored_rar3",
+    "classification": "synthetic_test",
+    "bytes": 189,
+    "sha256": "866086998eae7574f9aa69f97776424704d4c15005ea91f67ccb320382571313",
+    "generator": "tests/fixtures/rar_factory.py"
+  },
+  {
+    "name": "malicious_path_rar3",
+    "classification": "synthetic_test",
+    "bytes": 245,
+    "sha256": "b2379b31915160f2facd6a6cb589c1322c0baee1146621424a8cc2c3ef66da72",
+    "generator": "tests/fixtures/rar_factory.py"
+  }
+]

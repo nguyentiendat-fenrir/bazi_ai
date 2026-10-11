@@ -1,0 +1,2 @@
+# Keep the audited legacy bytes identical in the Git object database.
+legacy/bazi/** -text

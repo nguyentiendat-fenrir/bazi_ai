@@ -1,0 +1,73 @@
+{
+  "status": "PASS",
+  "archive": {
+    "path": "inputs/source/bazi.rar",
+    "size_bytes": 35305832,
+    "sha256": "9409da54f27b9eb11ee38ff7ebb09903d99c7d835a2bef8eff0d99d6c3cdd9c3",
+    "entries": 1444,
+    "expanded_bytes": 43471231
+  },
+  "source_files": [
+    {
+      "path": ".gitignore",
+      "size_bytes": 83,
+      "sha256": "437b1ec92ec145287c902e9aeca39df0d030277df3488b5f991f960f1a560805",
+      "matches_manifest": true
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 6,
+      "sha256": "53fa047896f941f4e59699d461d89cd32f94dbbeb0a3286c8060ee2fc9e07c1d",
+      "matches_manifest": true
+    },
+    {
+      "path": "backend/bazi.py",
+      "size_bytes": 32802,
+      "sha256": "5f10cdf682d916ef15bb1be3b1e15e4561a93399ccc531c0d8e70ca65853d00b",
+      "matches_manifest": true
+    },
+    {
+      "path": "backend/main.py",
+      "size_bytes": 1250,
+      "sha256": "52084ab9cce8c2f4b42754fe76f5cfd3d6b6321aa82febbfab379986c563ca9e",
+      "matches_manifest": true
+    },
+    {
+      "path": "backend/requirments.txt",
+      "size_bytes": 74,
+      "sha256": "78541d7aadc13bdb7b8ddafa77d2bad348d59213bad9bab34f8732f04a5711d5",
+      "matches_manifest": true
+    },
+    {
+      "path": "backend/schemas.py",
+      "size_bytes": 669,
+      "sha256": "578e2289ce4d5447860cf7440839cc1701842159b7b98ef660f238b088d103f8",
+      "matches_manifest": true
+    },
+    {
+      "path": "backend/uvicorn_run.sh",
+      "size_bytes": 95,
+      "sha256": "4a6a8799c09a0c4291540c38f7f85a0b9d4563768f0903d8885f879be52cd332",
+      "matches_manifest": true
+    },
+    {
+      "path": "frontend/app.js",
+      "size_bytes": 13924,
+      "sha256": "e579a058e277a4a684ad92465fe777bc1f1fdd393f774770b5107399f54386d9",
+      "matches_manifest": true
+    },
+    {
+      "path": "frontend/index.html",
+      "size_bytes": 8039,
+      "sha256": "2d91521f521fbe73cee538223de6a8b9718bdc792baab167287994002f049f29",
+      "matches_manifest": true
+    },
+    {
+      "path": "frontend/style.css",
+      "size_bytes": 7785,
+      "sha256": "d608bf83415248460e185eea80c0b9e7b8c78547d440fd73500106824e1633d7",
+      "matches_manifest": true
+    }
+  ],
+  "excluded_count": 1149
+}

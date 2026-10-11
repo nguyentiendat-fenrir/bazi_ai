@@ -1,0 +1,64 @@
+# 05 · Document Processing Engine
+
+## Đơn vị dữ liệu và trạng thái chuẩn
+
+`book` là tác phẩm; `book_version` là một ấn bản/tệp cụ thể; `object` là bytes; `page_revision` là text/layout bất biến; `generation` là lần xử lý với parser/chunker/model config; `corpus_release` là tập generation chatbot nhìn thấy. Đổi parser không tự tạo ấn bản sách mới. Đổi nội dung file tạo version mới. SHA256 giống hệt chỉ tái dùng object; không tự gộp hai record có metadata/rights khác nhau.
+
+Job state: `queued → running → succeeded | partial | failed | cancelled`; `running → retry_wait → queued`; `running → waiting_review → queued`; `queued/running/retry_wait/waiting_review → cancel_requested → cancelled`. Terminal `failed/partial/cancelled` có thể retry bằng job mới liên kết `parent_job_id`, tái dùng stage outputs hợp lệ. `succeeded` là pipeline xong, không đồng nghĩa mọi tri thức đã được duyệt.
+
+Stage state: `pending/running/succeeded/failed/skipped`; page quality: `accepted/review_required/excluded`; generation: `building/ready/published/superseded/withdrawn`. Review flags không làm job mắc kẹt ở 99%: API trả counters riêng `pages_total, processed, accepted, review_required, excluded, failed`, kèm stage hiện tại. Stage embed có counters chunks, không gọi chúng là pages.
+
+## Các bước thực hiện
+
+| Stage | Input → Output lưu bền | Khi lỗi / test trọng tâm |
+|---|---|---|
+| validate | stream → sha256, MIME detected, bytes, object | MIME giả, password PDF, zip bomb DOCX, oversize → quarantine |
+| dedupe/version | object + metadata → book_version | unique sha256 giải race; cùng bytes trả duplicate_of, không tạo index trùng |
+| inspect | PDF pages/DOCX structures → page plan | đo text coverage + glyph/Unicode + image areas từng trang |
+| extract | native parser → page_revision raw blocks | giữ reading order, bbox, fonts/colors, tables/captions |
+| OCR | only deficient pages/regions → OCR blocks | timeout/memory quota theo page; không mất layer chữ tốt |
+| normalize | raw → NFC normalized + offset map | giữ raw; đ→d chỉ cho search field, không ghi đè tiếng Việt |
+| structure | headings/TOC/layout → section hierarchy | split by heading, author-layer, table/case; unknown có nhãn |
+| quality | blocks + metrics → review items | risk gates theo loại; mẫu vàng kiểm calibration |
+| chunk | accepted spans → immutable chunks + source links | cross-page sources đầy đủ, không cắt hàng trụ dở dang |
+| embed/index | chunks + model profile → vectors/lexical entries | batching, retry và dedupe cache; model mismatch bị chặn |
+| extract candidates | chunks → candidate terms/rules/cases | JSON validate; chỉ draft, không thực thi |
+| publish | validated generation → new active corpus release | atomic swap; giữ release cũ, chat tiếp tục |
+
+Format/size mặc định cấu hình: PDF/DOCX, 250 MiB/file, 3.000 trang/file, 100 file/batch, tổng quota theo disk. Không upload RAR/ZIP vào ingestion sách; batch dùng nhiều tệp. DOCX giải nén trong sandbox, tổng uncompressed ≤1 GiB, không external relationships/macros/embedded executable. PDF mã hóa trả `PASSWORD_REQUIRED` (release này yêu cầu người dùng cung cấp bản đã mở khóa), không retry parser vô hạn. Partial sách cho phép publish phần accepted nhưng UI/citation luôn nêu coverage và excluded ranges; không trả lời phủ định toàn sách nếu coverage thiếu.
+
+## OCR và kiểm tra chất lượng
+
+Phân loại theo trang, không một nhãn scan/text cho toàn sách. Trang ít chữ nhưng hợp lệ (bìa, trắng, hình) không tự kết luận OCR lỗi. Các tín hiệu: text_area/image_area, replacement char rate, encoding anomalies, dictionary hit rate trong ngữ cảnh, reading order jumps, table alignment, confidence OCR engine nếu có. Không gộp các tín hiệu thành xác suất đúng giả.
+
+Default review triggers: U+FFFD >0, glyph không ánh xạ >1%, trang có ảnh lớn không có caption/text, cột Can/Chi không khớp số hàng, heading bị tách, case thiếu ngày/giờ hoặc trụ không hợp lệ. Các ngưỡng là cấu hình chưa được benchmark; T014 phải hiệu chỉnh trên bộ 30–60 trang gán nhãn bằng mắt gồm text, bảng, scan, mixed. Page empty thật ghi loại `blank`, không OCR lặp vô hạn.
+
+Đối với ba sách mẫu: native extraction trước; Manh sơ cấp có đoạn tiếp nối và các hàng Can/Chi căn bằng khoảng trắng; cao cấp trang 30 cần ảnh gốc và OCR vùng hình nếu muốn searchable; Tử Bình có màu chữ phân biệt lớp bình chú, bảng và ảnh trang 77. Caption do AI suy luận giữ `origin=ai_inferred`, không thay text tác giả.
+
+## Locator chuẩn
+
+PDF `physical_page_number` 1-based; `printed_page_label` string nullable kèm confidence/verified. Không lấy số trang in làm array index. `bbox=[x0,y0,x1,y1]` chuẩn hóa 0..1 theo trang sau rotation, origin top-left; lưu page width/height/rotation. Text offsets là Unicode codepoint offsets `[start,end)` trong `normalized_text`, có map về raw blocks. JS phải đổi UTF-16 offsets trước khi highlight. `source_hash` phát hiện drift.
+
+DOCX không có số trang vật lý ổn định. Giữ paragraph/table path vào XML và tạo **canonical rendered PDF** bằng LibreOffice headless đã pin font/render version trong worker. PDF này có object id/hash và page map. Citation ghi rõ “trang bản dựng”, không gọi đó là trang in gốc. Nếu render không thành công, citation theo mục/đoạn và `page_kind=docx_anchor`; chưa được giả số trang. T014 kiểm mapping text anchors sang bản dựng; thay renderer tạo generation mới.
+
+## Retry, resume và idempotency
+
+Idempotency key stage: hash(book_version_id, source_sha, stage_name, parser_config_hash, input_revision_hash, chunker_version, embedding_profile khi cần). Unique constraint stage key; worker cạnh tranh dùng DB lease, heartbeat 30s, lease timeout khởi đầu 180s; job dài gia hạn, không dùng timeout này làm OCR runtime limit. Kết quả worker mất lease không được publish (fencing token). Mỗi page commit riêng, tiến độ giảm thiểu write amplification bằng heartbeat gộp.
+
+Retry network/429/5xx tối đa 5 lần exponential jitter 2–120s và `Retry-After`. Corrupt/password/invalid format không retry tự động. OCR timeout một lần thử cấu hình giảm DPI rồi đưa review; không làm fail cả batch. Dispatcher/watchdog reconciliation mỗi phút, outbox được ack sau queue send nhưng dedupe vẫn bắt buộc khi send thành công mà ack thất bại.
+
+Celery acks_late/prefetch=1 giúp long jobs nhưng **không thay** DB idempotency/lease. Redis visibility timeout lớn hơn stage runtime cap; job over cap split; không giữ worker vài giờ trên một task sách. Cancel cooperative giữa pages/batches; dừng process con OCR theo timeout; chỉ xóa staging chưa tham chiếu, không xóa object gốc.
+
+## Incremental correction/reindex/publish
+
+Sửa OCR tạo page_revision mới với `base_revision_id` và ETag. Xác định chunk chứa page/block, các chunk overlap và section/case liền kề tới ranh giới ổn định; chỉ re-embed nội dung/hash đổi. Nếu heading thay đổi, mở rộng tới toàn section bị ảnh hưởng, có thể cả sách; API preview impact trước khi admin áp dụng. Generation mới tái sử dụng chunks không đổi qua membership. Evidence trên revision cũ giữ nguyên; candidate/approved rule phụ thuộc vùng sửa bị flag `source_changed`, không tự cập nhật nghĩa đã duyệt.
+
+Bổ sung sách không đổi embedding profile: tạo release mới từ release active + generation sách mới. Đổi profile/dimension: xây toàn bộ cohort vector mới, validate coverage, rồi atomic active swap; rollback pointer nếu recall regression. Không xóa vector cũ khi còn run ghim nó.
+
+Thu hồi do quyền sử dụng: đặt version withdrawn và tăng `visibility_epoch` ngay; retrieval/run/citation check epoch trước hiển thị. Đây là quyền override snapshot lịch sử. History còn metadata “nguồn đã thu hồi”, không trả nội dung bị thu hồi. Garbage collect khi không còn FK/reference và hết thời gian retention.
+
+## Benchmark 1.000 sách
+
+Dataset manifest ghi count/bytes/pages/native/scan/mixed/DOCX/languages; SHA và quyền sử dụng. Ba mẫu 613 trang không đại diện scan. Mở rộng bằng tài liệu được phép và fixture tổng hợp có nhãn, không giả 100 bản clone là 100 đầu sách thật.
+
+Đo riêng throughput pages/min theo stage, p50/p95 page latency, cold/warm OCR/model, max RSS/VRAM, IO/disk growth, embeddings/min, cost/1.000 pages, failed/review %, recovery time sau kill. Run 10 → 100 → 1.000 tài liệu; 100k và 500k trang là quy mô thử nghiệm mục tiêu, có dry-run capacity estimator. Công thức dự trù vectors ≈ pages × chunks/page × dimensions × bytes/component; cộng text, indexes, images, staging và ít nhất một backup. Không biến công thức thành đảm bảo dung lượng index thực tế.
