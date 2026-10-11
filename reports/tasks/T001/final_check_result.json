@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "scripts/verify_inputs.py",
+    "--check"
+  ],
+  "exit_code": 0,
+  "seconds": 0.541,
+  "status": "PASS",
+  "issue_count": 0,
+  "findings": 0,
+  "stderr": ""
+}

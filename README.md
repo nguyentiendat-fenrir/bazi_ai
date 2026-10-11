@@ -84,6 +84,7 @@ $env:PATH = 'C:\Program Files\WinRAR;' + $env:PATH
 python scripts/scan_secrets.py
 ```
 
-Trạng thái và giới hạn thực tế nằm ở [báo cáo T001](reports/tasks/T001.md), các
-blocker ở [issues T001](reports/tasks/T001/issues.md). T001 chưa được nghiệm thu;
-chưa triển khai T002. Lệnh `scripts/dev` phía trên vẫn là contract cho các task sau.
+Trạng thái và bằng chứng thực tế nằm ở [báo cáo T001](reports/tasks/T001.md),
+diễn biến các issue ở [issues T001](reports/tasks/T001/issues.md). T001 đã qua
+nghiệm thu đầu vào, source và test; T002 chưa triển khai. Lệnh `scripts/dev`
+phía trên vẫn là contract cho các task sau.

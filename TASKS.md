@@ -8,7 +8,7 @@ Các task T016/T021 có thể dùng local embedding và fixture provider theo in
 
 ## Checklist
 
-- [ ] T001 — Bảo toàn đầu vào và kiểm tra repository — **BLOCKED**, xem [báo cáo](reports/tasks/T001.md) và [issues](reports/tasks/T001/issues.md)
+- [x] T001 — Bảo toàn đầu vào và kiểm tra repository — pass 34 tests, hash RAR/PDF và 10 source files; commit `f046ee6d34c359b2aef2595bf47ec12eddefd9b7`; xem [báo cáo](reports/tasks/T001.md)
 - [ ] T002 — Khóa toolchain, giấy phép và hạ tầng Compose
 - [ ] T003 — Backend foundation và logging
 - [ ] T004 — Migrations storage và document schema

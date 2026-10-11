@@ -32,12 +32,15 @@ malicious archive và mismatch tiếp tục giữ nguyên.
 rollback dữ liệu. Nếu cần hoàn nguyên văn bản, diff docs/02 chỉ một con số;
 source và archive không bị tác động. Bằng chứng: `real_archive_inventory.json`.
 
-## T001-I03 — Git metadata/commit: ĐANG CHỐT
+## T001-I03 — Git metadata/commit: RESOLVED
 
 Trước thao tác, `git status`, `git log` và `git rev-parse` đều xác nhận không có
 repository/lịch sử Git. Đã `git init -b main` tại workspace. Git dùng danh tính
-đã cấu hình sẵn tại user config, không đặt danh tính giả. Commit ID và kiểm tra
-staging sẽ được ghi trong `T001.md` khi hoàn tất.
+đã cấu hình sẵn tại user config, không đặt danh tính giả. Commit triển khai
+`f046ee6d34c359b2aef2595bf47ec12eddefd9b7` chứa công cụ, docs, evidence và
+10 source gốc nguyên byte. `git_commit_check.json` xác nhận không có RAR/PDF gốc,
+`.git`, `.venv` hoặc cache trong commit. ACL của cây legacy đã được cấp quyền đọc
+cho tài khoản Git Windows để stage; hash file và Git blobs đều khớp manifest.
 
 ## T001-I04 — Môi trường ứng dụng chưa sẵn sàng (ghi nhận, ngoài phần cài đặt T001)
 
