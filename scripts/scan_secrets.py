@@ -8,10 +8,12 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP = {'.git', '.tools', '.venv', '__pycache__', '.pytest_cache', 'inputs'}
+SKIP = {'.git', '.tools', '.venv', '__pycache__', '.pytest_cache',
+        '.cache', '.artifacts', '.next', 'node_modules', 'inputs'}
 TEXT_SUFFIXES = {'.py', '.md', '.json', '.txt', '.toml', '.yaml', '.yml',
                  '.js', '.ts', '.tsx', '.html', '.css', '.sh', '.ps1'}
 RULES = {
@@ -28,8 +30,22 @@ def findings(text):
             for name, pattern in RULES.items() for match in pattern.finditer(text)]
 
 
+def ignored_local_env(root):
+    safe = '-c'
+    directory = 'safe.directory=' + str(root.resolve()).replace('\\', '/')
+    base = ['git', safe, directory]
+    try:
+        ignored = subprocess.run(base + ['check-ignore', '-q', '--', '.env'],
+                                 cwd=root, capture_output=True, check=False)
+        tracked = subprocess.run(base + ['ls-files', '--error-unmatch', '--', '.env'],
+                                 cwd=root, capture_output=True, check=False)
+    except OSError:
+        return False
+    return ignored.returncode == 0 and tracked.returncode == 1
+
+
 def scan(root):
-    matches, errors, count = [], [], 0
+    matches, errors, count, local_secret_files = [], [], 0, []
     for parent, dirs, files in os.walk(root, followlinks=False):
         dirs[:] = sorted(d for d in dirs if d not in SKIP and not (Path(parent) / d).is_symlink())
         for name in sorted(files):
@@ -39,8 +55,12 @@ def scan(root):
                 continue
             relative = path.relative_to(root).as_posix()
             if name == '.env' or name.startswith('.env.') and name != '.env.example':
-                # Do not open secret files; their presence must be reviewed.
-                matches.append({'path': relative, 'rule': 'secret_file_present', 'line': 0})
+                # Never read local secrets. Accept only the root .env when Git
+                # confirms it is ignored and not tracked.
+                if relative == '.env' and ignored_local_env(root):
+                    local_secret_files.append(relative)
+                else:
+                    matches.append({'path': relative, 'rule': 'secret_file_present', 'line': 0})
                 continue
             if path.suffix not in TEXT_SUFFIXES and name != '.gitignore':
                 continue
@@ -54,7 +74,8 @@ def scan(root):
     return {'status': 'PASS' if not matches and not errors else 'FAIL',
             'kind': 'static_pattern_scan', 'files_scanned': count,
             'excluded_directories': sorted(SKIP), 'rules': sorted(RULES),
-            'findings': matches, 'errors': errors}
+            'findings': matches, 'errors': errors,
+            'ignored_local_secret_files': local_secret_files}
 
 
 if __name__ == '__main__':

@@ -33,6 +33,33 @@ def command_ok(*args: str) -> bool:
     return result.returncode == 0
 
 
+def wsl_distribution_available() -> bool:
+    try:
+        result = subprocess.run(('wsl.exe', '--list', '--quiet'), capture_output=True,
+                                timeout=8, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if result.returncode != 0:
+        return False
+    output = result.stdout
+    names = (output.decode('utf-16-le', errors='replace') if b'\x00' in output
+             else output.decode('utf-8-sig', errors='replace'))
+    return any(name.strip('\ufeff\x00 \t\r\n') and
+               not name.strip('\ufeff\x00 \t\r\n').lower().startswith('docker-desktop')
+               for name in names.splitlines())
+
+
+def docker_executable() -> str | None:
+    executable = shutil.which('docker')
+    if executable:
+        return executable
+    if platform.system() == 'Windows':
+        candidate = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Docker/Docker/resources/bin/docker.exe'
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
 def memory_bytes() -> int | None:
     if os.name == 'nt':
         class MemoryStatus(ctypes.Structure):
@@ -95,7 +122,7 @@ def doctor(root: Path = ROOT) -> dict:
         checks[name] = {'ok': ok, 'essential': essential, 'detail': detail}
 
     is_windows = platform.system() == 'Windows'
-    wsl = command_ok('wsl.exe', '--list', '--quiet') if is_windows else True
+    wsl = wsl_distribution_available() if is_windows else True
     add('linux_environment', wsl, 'WSL distro available' if is_windows else 'native Linux')
     on_mounted_windows_drive = (not is_windows and
                                 len(root.resolve().parts) >= 3 and
@@ -104,7 +131,7 @@ def doctor(root: Path = ROOT) -> dict:
     add('linux_filesystem', not is_windows and not on_mounted_windows_drive,
         'repository must be on a Linux filesystem (not /mnt/c or another Windows drive)')
 
-    docker = shutil.which('docker')
+    docker = docker_executable()
     add('docker_cli', bool(docker), 'Docker executable found' if docker else 'Docker executable missing')
     add('docker_compose', bool(docker and command_ok(docker, 'compose', 'version')),
         'Docker Compose plugin required')
@@ -142,7 +169,7 @@ def doctor(root: Path = ROOT) -> dict:
     add('local_write', volume_write, 'ignored .tools directory writable (host only)')
     for host in DEPENDENCY_HOSTS:
         add('network_' + host.replace('.', '_').replace('-', '_'), dependency_reachable(host),
-            'TLS port reachable for dependency download: ' + host)
+            'TLS port reachable for dependency download: ' + host, essential=False)
 
     essential_failures = sorted(name for name, item in checks.items()
                                 if item['essential'] and not item['ok'])

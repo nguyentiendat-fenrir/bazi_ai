@@ -171,6 +171,10 @@ class ContractTests(unittest.TestCase):
 
 
 class SecretScanTests(unittest.TestCase):
+    def test_local_env_must_be_ignored_and_untracked(self):
+        from scripts.scan_secrets import ignored_local_env
+        self.assertTrue(ignored_local_env(Path(__file__).resolve().parents[2]))
+
     def test_synthetic_secret_is_detected_without_echoing_value(self):
         from scripts.scan_secrets import findings
         synthetic = 'sk-' + 'SYNTHETIC0' * 4

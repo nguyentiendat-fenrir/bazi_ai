@@ -14,6 +14,14 @@ dev = SourceFileLoader('bazi_dev', str(ROOT / 'scripts/dev')).load_module()
 
 
 class DoctorTests(unittest.TestCase):
+    def test_docker_desktop_internal_distro_is_not_a_user_wsl_distro(self):
+        output = 'docker-desktop\n'.encode('utf-16-le')
+        with patch.object(dev.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output, b'')):
+            self.assertFalse(dev.wsl_distribution_available())
+        output = 'docker-desktop\nUbuntu\n'.encode('utf-16-le')
+        with patch.object(dev.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output, b'')):
+            self.assertTrue(dev.wsl_distribution_available())
+
     def test_missing_prerequisites_block_without_leaking_env_values(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -22,10 +30,11 @@ class DoctorTests(unittest.TestCase):
             with patch.object(dev, 'dependency_reachable', return_value=False), \
                  patch.object(dev, 'port_available', return_value=True), \
                  patch.object(dev, 'memory_bytes', return_value=32 * 1024**3), \
-                 patch.object(dev.shutil, 'which', return_value=None):
+                 patch.object(dev, 'docker_executable', return_value=None):
                 result = dev.doctor(root)
             self.assertEqual(result['status'], 'BLOCKED')
             self.assertIn('docker_cli', result['essential_failures'])
+            self.assertIn('network_pypi_org', result['degraded'])
             self.assertTrue(result['checks']['env_postgres_password']['ok'])
             self.assertNotIn('DO_NOT_PRINT_THIS_SECRET', json.dumps(result))
 

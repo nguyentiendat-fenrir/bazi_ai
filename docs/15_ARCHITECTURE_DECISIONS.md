@@ -42,3 +42,5 @@ Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi c�
 ## Decision log cần điền khi triển khai
 
 T002 ghi resolved package/image versions/license matrix; T025/T035 ghi dataset/gold; T027–T030 ghi policy/oracle/sai số; T036–T037 ghi model/chunk/rerank ablations; T051 ghi tài nguyên/throughput/latency; T053 ghi measured restore. Mỗi entry có date, author, evidence, chosen setting, rejected variants và rollback. Thay model không đổi business schema; thêm collection/profile/release có thể chạy từ admin qua registry được kiểm soát.
+
+- **11/10/2026, Codex, T002 (BLOCKED):** phiên bản resolved, image digests, license matrix, lệnh build/smoke và giới hạn nghiệm thu ở [báo cáo T002](../reports/tasks/T002.md). Chọn Python 3.12/uv lock, Node 22/npm lock và image upstream ghim digest; loại `latest`, MinIO bắt buộc và PyMuPDF mặc định. Rollback code bằng commit trước phần T002 mới, không xóa volume; không có migration DB. Cần WSL distro/repo Linux trước khi chốt nghiệm thu.
