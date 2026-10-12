@@ -682,3 +682,67 @@ Các task T016/T021 có thể dùng local embedding và fixture provider theo in
 - **Test cần chạy:** `scripts/dev test acceptance; verify_release_manifest`.
 - **Tiêu chí nghiệm thu:** 8 scenarios pass, no core tasks deferred; nếu gate blocked ghi release candidate, không tuyên bố hoàn thành.
 - **Điều kiện hoàn thành:** Tiêu chí trên đạt; tests pass có log, cập nhật contract nếu có thay đổi đã được duyệt; báo cáo `reports/tasks/T056.md`, commit và checkbox. Test chưa chạy hoặc oracle chưa có → BLOCKED, không `[x]`.
+
+## AUTONOMOUS TASK EXECUTION POLICY
+
+### Objective
+Complete all tasks in TASKS.md in dependency order,
+toward a fully functional BAZI-AI application.
+
+### Automatic Progression
+- Automatically start the next eligible task after the
+  current task passes all acceptance criteria.
+- Do not wait for user confirmation between tasks.
+- Respect task dependencies and existing specifications.
+- Never skip blocked dependencies or mark incomplete
+  tasks as completed.
+- Do not redesign the approved architecture.
+
+### Execution Loop
+For each task:
+
+1. Read the relevant specifications.
+2. Inspect existing implementations.
+3. Implement missing functionality.
+4. Run tests, lint, type checking, and builds as applicable.
+5. Review the Git diff for correctness, security,
+   regressions, and maintainability.
+6. Fix identified problems.
+7. Rerun affected tests.
+8. Update the existing task report.
+9. Commit valid changes.
+10. Mark the task completed only after acceptance.
+11. Automatically proceed to the next eligible task.
+
+### Failure Recovery
+- Diagnose and fix technical errors autonomously.
+- Retry recoverable failures with reasonable limits.
+- Do not repeatedly execute the same failing action
+  without changing the approach.
+- Never fabricate test results.
+- Preserve incomplete work and record blockers.
+
+### Human Intervention
+Request user input only when necessary for:
+- Required permissions or credentials.
+- Destructive or irreversible operations.
+- Unresolved specification conflicts.
+- Major architectural changes.
+- External blockers that cannot be resolved safely.
+
+### Reporting
+- Maintain one concise report per task.
+- Avoid redundant JSON, logs, and evidence files.
+- Preserve evidence explicitly required by the specification.
+- Prefer working application code over unnecessary artifacts.
+
+### Completion Goal
+Continue through all remaining tasks until:
+- All tasks are completed and validated, or
+- A genuine blocking condition is reached, or
+- The current execution environment reaches its limits.
+
+After an interruption, inspect Git, task status,
+and existing reports before resuming.
+
+Never restart completed tasks unnecessarily.
