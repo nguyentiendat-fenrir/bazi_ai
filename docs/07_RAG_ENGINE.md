@@ -6,6 +6,10 @@ Tài liệu này đặc tả truy xuất trên corpus đã publish. Corpus thự
 llama.cpp ([12](12_SECURITY_OPERATIONS.md#kết-nối-gemma-llamacpp)), chỉ sau khi
 search và citation đã có kiểm thử.
 
+## Index đã triển khai (T016)
+
+`backend/app/retrieval`: `model_profiles` embedding bất biến, định danh bằng hash của provider/model/revision/dimension/config/secret_ref; config không được chứa khóa dạng secret, `secret_ref` chỉ nhận `EMBEDDING_API_KEY`/`LLM_API_KEY`. Collection vật lý `embeddings_<model>_<dim>_<hash8>` (`vector(D)` cố định nên vector sai số chiều bị DB từ chối) do lệnh owner `python -m backend.app.cli embedding-profile … --provision [--ann-index]` tạo và cấp quyền cho `bazi_runtime`; HNSW chỉ tạo khi được yêu cầu. Provider: `openai_compatible` (`POST {base_url}/embeddings`, timeout/429/5xx → retry unit, 4xx/sai số chiều → lỗi vĩnh viễn) và `fixture-hashing` (offline, không ngữ nghĩa, bị cấm ở production). Stage `embed` theo lô 64 chunk: `search_entries` (`fts-simple-1`: `to_tsvector('simple')` trên NFC và bản bỏ dấu, trgm bản bỏ dấu) cho mọi chunk; vector chỉ khi profile của pipeline có collection `ready`, bỏ qua chunk đã có vector và tái dùng vector của chunk cùng content hash (không gọi provider). Không có collection → chỉ lexical, job vẫn thành công. Model thật (e5/bge-m3) chọn ở T036 sau benchmark.
+
 ## Request và bộ lọc
 
 `QuerySpec`: query (1–4.000 ký tự), mode, school_ids, method_ids, book_version_ids, author_ids, topic_ids, concept_ids, rule_revision_ids, case_ids, section_ids, physical_page_range, top_k (1–30, mặc định 8). Caller principal và active corpus release do server gán; không tin release/quyền do LLM gửi. API cho `book_ids` và resolve thành versions published trong release. Filter được intersect, không union tùy tiện khi user chọn một nguồn cụ thể. Khi filter không có dữ liệu, báo empty_filters, không mở rộng sang sách khác mà không thông báo.

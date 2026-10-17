@@ -3,6 +3,8 @@
     python -m backend.app.cli create-runtime-login   # LOGIN role in bazi_runtime
     python -m backend.app.cli bootstrap-admin --email admin@example.test
     python -m backend.app.cli export-openapi          # contracts/openapi.json snapshot
+    python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
+        --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --provision
 
 Passwords come from an environment variable or an interactive prompt, never
 from argv (shell history, process lists).
@@ -101,6 +103,29 @@ def export_openapi() -> int:
     return 0
 
 
+def embedding_profile(args) -> int:
+    from .retrieval.models import create_ann_index, provision_collection, register_profile
+    settings = load_settings()
+    config = {k: v for k, v in (('base_url', args.base_url),
+                                ('passage_prefix', args.passage_prefix),
+                                ('query_prefix', args.query_prefix)) if v}
+    engine = create_engine(settings.database_url, poolclass=pool.NullPool)
+    with engine.begin() as conn:
+        profile = register_profile(conn, args.provider, args.model, args.revision, args.dimension,
+                                   config, args.secret_ref)
+    print(f'Embedding profile {profile.id} ({profile.profile_hash[:12]})')
+    if args.provision or args.ann_index:
+        owner = settings.database_url
+        with psycopg.connect(host=owner.host, port=owner.port, dbname=owner.database,
+                             user=owner.username, password=owner.password, autocommit=True) as conn:
+            if args.provision:
+                print(f'Collection table {provision_collection(conn, profile, args.distance)}')
+            if args.ann_index:
+                create_ann_index(conn, profile)
+                print('HNSW index ready')
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python -m backend.app.cli')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -108,12 +133,26 @@ def main(argv: list[str] | None = None) -> int:
     admin.add_argument('--email', required=True)
     commands.add_parser('create-runtime-login', help='create/update the API database login')
     commands.add_parser('export-openapi', help='write contracts/openapi.json')
+    embed = commands.add_parser('embedding-profile', help='register/provision an embedding profile')
+    embed.add_argument('--provider', required=True, choices=['openai_compatible', 'fixture-hashing'])
+    embed.add_argument('--model', required=True)
+    embed.add_argument('--revision', required=True)
+    embed.add_argument('--dimension', required=True, type=int)
+    embed.add_argument('--base-url')
+    embed.add_argument('--secret-ref')
+    embed.add_argument('--passage-prefix')
+    embed.add_argument('--query-prefix')
+    embed.add_argument('--distance', default='cosine', choices=['cosine', 'l2', 'inner_product'])
+    embed.add_argument('--provision', action='store_true', help='create the vector table')
+    embed.add_argument('--ann-index', action='store_true', help='create the HNSW index')
     args = parser.parse_args(argv)
     try:
         if args.command == 'bootstrap-admin':
             return bootstrap_admin(args.email)
         if args.command == 'export-openapi':
             return export_openapi()
+        if args.command == 'embedding-profile':
+            return embedding_profile(args)
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

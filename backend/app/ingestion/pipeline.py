@@ -1,7 +1,8 @@
-"""Ordered stage handlers of the default pipeline (extended by T016)."""
+"""Ordered stage handlers of the default pipeline."""
 from __future__ import annotations
 
 from ..core.config import Settings
+from ..retrieval.indexer import EmbedStage
 from .chunker import ChunkStage
 from .docx_stage import DocxExtractStage
 from .ocr_stage import OcrStage
@@ -11,7 +12,8 @@ from .structure import StructureStage
 from .worker import StageHandler
 
 
-def handlers_for(settings: Settings) -> list[StageHandler]:
+def handlers_for(settings: Settings | None) -> list[StageHandler]:
     # Each stage returns no units for sources it does not handle (PDF vs DOCX).
+    app_env = settings.app_env if settings else 'dev'
     return [ValidatePdfStage(), ExtractPdfStage(), DocxExtractStage(), OcrStage(),
-            StructureStage(), QualityStage(), ChunkStage()]
+            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env)]

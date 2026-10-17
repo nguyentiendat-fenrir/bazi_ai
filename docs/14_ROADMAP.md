@@ -47,7 +47,9 @@ khác tra tại bảng cuối file này.
   bằng trang gán nhãn của chuyên gia (gộp vào T025.1).
 - T015 ✅ chunking theo section/speaker, bảng/mệnh lệ nguyên khối, overlap, provenance từng ký tự,
   định danh chunk ổn định, chủ đề đề xuất.
-- Việc kế tiếp: T016 embedding/index; smoke T002 trên Ubuntu khi có máy.
+- T016 ✅ registry embedding profile/collection, provider openai_compatible + fixture offline,
+  stage embed (lexical FTS + vector theo lô, không nhân bản, tái dùng theo hash).
+- Việc kế tiếp: T017 sửa OCR gia tăng; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -158,7 +160,7 @@ trước khi trình duyệt.
 | T013 | DOCX extraction và canonical rendering | K2 | ✅ |
 | T014 | Unicode, cấu trúc và quality review | K2 | ✅ (hiệu chỉnh ngưỡng → T025.1) |
 | T015 | Semantic chunking và provenance | K2 | ✅ |
-| T016 | Embedding/index staging và model registry | K2 | |
+| T016 | Embedding/index staging và model registry | K2 | ✅ |
 | T017 | Sửa OCR incremental và impact | K2 | |
 | T018 | Publication và active corpus release | K2 | |
 | T019 | Reprocess, withdrawal, GC và jobs API | K2 | |
