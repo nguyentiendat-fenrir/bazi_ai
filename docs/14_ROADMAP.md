@@ -33,7 +33,10 @@ khác tra tại bảng cuối file này.
 - T009 ✅ catalog sách/tác giả/phiên bản/quyền, batch + upload từng tệp (magic bytes, DOCX an
   toàn, giới hạn kích thước, dedupe kể cả đồng thời, idempotency), job + outbox khi có profile;
   thêm bảng `ingestion_batch_items` (M009).
-- Việc kế tiếp: T010 queue/lease/watchdog; smoke T002 trên Ubuntu khi có máy.
+- T010 ✅ queue bền trong PostgreSQL: lease + fencing token, compute/persist tách, retry jitter,
+  cancel, outbox + dedupe, watchdog/reconciler, Celery chỉ là tín hiệu; smoke thật
+  outbox → Redis → Celery worker → DB.
+- Việc kế tiếp: T011 native PDF extraction; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -137,7 +140,7 @@ trước khi trình duyệt.
 | T007 | ObjectStore local và S3 adapters | K1 | ✅ |
 | T008 | API contracts nền và client skeleton | K1 | ✅ (TS client → T043.1) |
 | T009 | Catalog, upload batch và dedupe | K2 | ✅ |
-| T010 | Durable queue, outbox, lease và retry | K2 | |
+| T010 | Durable queue, outbox, lease và retry | K2 | ✅ |
 | T011 | Inspector và native PDF extraction | K2 | |
 | T012 | OCR sandbox theo trang/vùng | K2 | |
 | T013 | DOCX extraction và canonical rendering | K2 | |
