@@ -31,7 +31,7 @@ class RulesetInput(BaseModel):
         description='default: the latest approved revision of every rule of the method')
 
 
-class ActivateInput(BaseModel):
+class RulesetActivateInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     expected_current_id: uuid.UUID | None = Field(
         description='the ruleset the caller saw active (null when none)')
@@ -174,7 +174,7 @@ def get_ruleset(ruleset_id: uuid.UUID, _: Principal = Depends(current_principal)
 @router.post('/rulesets/{ruleset_id}/activate', response_model=Envelope[ActivateResult],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
              openapi_extra=permission('V'))
-def activate_ruleset(ruleset_id: uuid.UUID, body: ActivateInput,
+def activate_ruleset(ruleset_id: uuid.UUID, body: RulesetActivateInput,
                      _: Principal = Depends(require_role('reviewer')),
                      conn: Connection = Depends(db)) -> dict:
     """Compare-and-swap; the replaced ruleset retires and its analyses become stale."""

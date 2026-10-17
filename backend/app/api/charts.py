@@ -190,7 +190,7 @@ class ChartInput(BaseModel):
 
 # ---- profiles ------------------------------------------------------------------------------
 
-class ProfileInput(BaseModel):
+class BirthProfileInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     label: str = Field(min_length=1, max_length=200)
     birth_input: BirthInput
@@ -217,7 +217,7 @@ class ProfileSummary(BaseModel):
     updated_at: datetime
 
 
-class ProfileDTO(ProfileSummary):
+class BirthProfileDTO(ProfileSummary):
     birth_input: BirthInput
 
 
@@ -265,10 +265,10 @@ def list_profiles(limit: int = Query(default=50, ge=1, le=200), cursor: str | No
                                         'has_more': next_cursor is not None}}
 
 
-@router.post('/birth-profiles', status_code=201, response_model=Envelope[ProfileDTO],
+@router.post('/birth-profiles', status_code=201, response_model=Envelope[BirthProfileDTO],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(503)},
              openapi_extra=permission('R/O'))
-def create_profile(body: ProfileInput, request: Request, response: Response,
+def create_profile(body: BirthProfileInput, request: Request, response: Response,
                    principal: Principal = Depends(current_principal),
                    conn: Connection = Depends(db)) -> dict:
     profile = service.create_profile(conn, principal, _cipher(request), body.label,
@@ -277,7 +277,7 @@ def create_profile(body: ProfileInput, request: Request, response: Response,
     return envelope(profile)
 
 
-@router.get('/birth-profiles/{profile_id}', response_model=Envelope[ProfileDTO],
+@router.get('/birth-profiles/{profile_id}', response_model=Envelope[BirthProfileDTO],
             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409, 503)},
             openapi_extra=permission('O'))
 def get_profile(profile_id: uuid.UUID, request: Request, response: Response,
@@ -288,9 +288,9 @@ def get_profile(profile_id: uuid.UUID, request: Request, response: Response,
     return envelope(profile)
 
 
-@router.patch('/birth-profiles/{profile_id}', response_model=Envelope[ProfileDTO],
+@router.patch('/birth-profiles/{profile_id}', response_model=Envelope[BirthProfileDTO],
               responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(412, 428, 503)},
-              openapi_extra=permission('O'))
+              openapi_extra=permission('O', if_match=True))
 def update_profile(profile_id: uuid.UUID, body: ProfilePatch, request: Request,
                    response: Response, principal: Principal = Depends(current_principal),
                    conn: Connection = Depends(db)) -> dict:

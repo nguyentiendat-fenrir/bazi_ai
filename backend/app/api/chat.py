@@ -86,7 +86,7 @@ class MessageInput(BaseModel):
     mode: Literal['research', 'chart_analysis', 'comparison'] | None = None
 
 
-class RunDTO(BaseModel):
+class ChatRunDTO(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
     mode: str
@@ -99,7 +99,7 @@ class RunDTO(BaseModel):
 
 
 class PostedMessage(BaseModel):
-    run: RunDTO
+    run: ChatRunDTO
     user_message_id: uuid.UUID
     assistant_message_id: uuid.UUID
 
@@ -109,7 +109,7 @@ class ConversationDeleted(BaseModel):
     runs_cancelled: int
 
 
-def _revision(request: Request) -> int:
+def _if_match(request: Request) -> int:
     value = request.headers.get('If-Match')
     if value is None:
         raise AppError(428, 'PRECONDITION_REQUIRED', 'If-Match header with the revision is required')
@@ -154,13 +154,13 @@ def get_conversation(conversation_id: uuid.UUID, response: Response,
 
 @router.patch('/conversations/{conversation_id}', response_model=Envelope[ConversationDTO],
               responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(412, 428)},
-              openapi_extra=permission('O'))
+              openapi_extra=permission('O', if_match=True))
 def update_conversation(conversation_id: uuid.UUID, body: ConversationPatch, request: Request,
                         response: Response, _: Principal = Depends(current_principal),
                         conn: Connection = Depends(db)) -> dict:
     """Rename, star or change context; a new chart or school set starts a new memory window."""
     updated = chat.update_conversation(
-        conn, conversation_id, _revision(request), body.title, body.starred,
+        conn, conversation_id, _if_match(request), body.title, body.starred,
         body.context.model_dump(mode='json') if body.context else None)
     response.headers['ETag'] = etag(updated['revision'])
     return envelope(updated)
@@ -185,7 +185,7 @@ def list_messages(conversation_id: uuid.UUID, after_seq: int = Query(default=0, 
 @router.post('/conversations/{conversation_id}/messages', status_code=202,
              response_model=Envelope[PostedMessage],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
-             openapi_extra=permission('O'))
+             openapi_extra=permission('O', idempotent=True))
 def post_message(conversation_id: uuid.UUID, body: MessageInput, request: Request,
                  response: Response, principal: Principal = Depends(current_principal),
                  conn: Connection = Depends(db)) -> dict:
@@ -201,14 +201,14 @@ def post_message(conversation_id: uuid.UUID, body: MessageInput, request: Reques
     return body_out
 
 
-@router.get('/runs/{run_id}', response_model=Envelope[RunDTO],
+@router.get('/runs/{run_id}', response_model=Envelope[ChatRunDTO],
             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('O'))
 def get_run(run_id: uuid.UUID, _: Principal = Depends(current_principal),
             conn: Connection = Depends(db)) -> dict:
     return envelope(chat.get_run(conn, run_id))
 
 
-@router.post('/runs/{run_id}/cancel', response_model=Envelope[RunDTO],
+@router.post('/runs/{run_id}/cancel', response_model=Envelope[ChatRunDTO],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('O'))
 def cancel_run(run_id: uuid.UUID, _: Principal = Depends(current_principal),
                conn: Connection = Depends(db)) -> dict:

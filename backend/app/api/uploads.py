@@ -94,7 +94,7 @@ def _file_digest(upload: UploadFile) -> str:
 @router.post('/uploads', status_code=201, response_model=Envelope[UploadResult],
              responses={200: {'model': Envelope[UploadResult], 'description': 'duplicate_of'},
                         **AUTHENTICATED_ERRORS, **problem_responses(404, 409, 413, 415)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def upload(request: Request, response: Response,
            file: UploadFile = File(...), batch_id: uuid.UUID = Form(...),
            rights_status: Rights = Form(...), edition_label: str = Form('v1', max_length=200),

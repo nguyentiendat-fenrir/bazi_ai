@@ -157,7 +157,7 @@ def get_book(book_id: uuid.UUID, response: Response,
 
 @router.patch('/books/{book_id}', response_model=Envelope[BookDTO],
               responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(412, 428)},
-              openapi_extra=permission('V'))
+              openapi_extra=permission('V', if_match=True))
 def patch_book(book_id: uuid.UUID, body: BookPatch, request: Request, response: Response,
                principal: Principal = Depends(require_role('reviewer')),
                conn: Connection = Depends(db)) -> dict:
@@ -181,7 +181,7 @@ def get_access(book_id: uuid.UUID, principal: Principal = Depends(require_role('
 
 @router.patch('/books/{book_id}/access', response_model=Envelope[list[Grant]],
               responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(412, 428)},
-              openapi_extra=permission('A'))
+              openapi_extra=permission('A', if_match=True))
 def put_access(book_id: uuid.UUID, body: AccessInput, request: Request,
                principal: Principal = Depends(require_role('admin')),
                conn: Connection = Depends(db)) -> dict:

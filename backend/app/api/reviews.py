@@ -39,20 +39,20 @@ class ReviewItemDTO(BaseModel):
     updated_at: datetime
 
 
-class ResolveInput(BaseModel):
+class ReviewResolveInput(BaseModel):
     action: Literal['accept', 'exclude', 'retry', 'dismiss']
     reason: str = Field(min_length=3, max_length=500)
     base_revision_id: uuid.UUID | None = Field(
         default=None, description="the page revision reviewed (required except for dismiss)")
 
     @model_validator(mode='after')
-    def revision_for_page_actions(self) -> 'ResolveInput':
+    def revision_for_page_actions(self) -> 'ReviewResolveInput':
         if self.action != 'dismiss' and self.base_revision_id is None:
             raise ValueError('base_revision_id is required for accept, exclude and retry')
         return self
 
 
-class ResolveResult(BaseModel):
+class ReviewResolveResult(BaseModel):
     item: ReviewItemDTO
     job_id: uuid.UUID | None
     generation_id: uuid.UUID | None
@@ -84,10 +84,10 @@ def get_item(item_id: uuid.UUID, principal: Principal = Depends(require_role('re
     return envelope(reviews.get_item(conn, item_id))
 
 
-@router.post('/review-items/{item_id}/resolve', response_model=Envelope[ResolveResult],
+@router.post('/review-items/{item_id}/resolve', response_model=Envelope[ReviewResolveResult],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(404, 409, 412)},
-             openapi_extra=permission('V'))
-def resolve(item_id: uuid.UUID, body: ResolveInput, request: Request, response: Response,
+             openapi_extra=permission('V', idempotent=True))
+def resolve(item_id: uuid.UUID, body: ReviewResolveInput, request: Request, response: Response,
             principal: Principal = Depends(require_role('reviewer')),
             conn: Connection = Depends(db)) -> dict:
     slot = claim_idempotency(conn, request, principal.user_id, 'POST /review-items/{id}/resolve',

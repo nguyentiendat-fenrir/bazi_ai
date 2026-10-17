@@ -65,7 +65,7 @@ def get_settings(request: Request, conn: Connection = Depends(db)) -> dict:
 
 @router.patch('', response_model=Envelope[SettingDTO],
               responses={**AUTHENTICATED_ERRORS, **problem_responses(412, 428)},
-              openapi_extra=permission('R (own user scope) / A (system)'))
+              openapi_extra=permission('R (own user scope) / A (system)', if_match=True))
 def patch_setting(body: SettingPatch, request: Request, response: Response,
                   principal: Principal = Depends(current_principal),
                   conn: Connection = Depends(db)) -> dict:

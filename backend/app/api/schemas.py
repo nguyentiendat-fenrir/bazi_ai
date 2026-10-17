@@ -56,9 +56,24 @@ COMMON_ERRORS = problem_responses(422, 500)
 AUTHENTICATED_ERRORS = problem_responses(401, 403, 422, 500)
 
 
-def permission(level: str) -> dict:
-    """OpenAPI extension documenting docs/10 permission letters (R/V/A/O/public)."""
-    return {'x-permission': level}
+IDEMPOTENCY_PARAMETER = {
+    'name': 'Idempotency-Key', 'in': 'header', 'required': True,
+    'description': 'one logical mutation; reuse it when retrying (docs/10)',
+    'schema': {'type': 'string', 'minLength': 1, 'maxLength': 128, 'pattern': '^[\x21-\x7E]+$'}}
+IF_MATCH_PARAMETER = {
+    'name': 'If-Match', 'in': 'header', 'required': True,
+    'description': 'the ETag (revision) the change is based on; missing 428, stale 412',
+    'schema': {'type': 'string', 'minLength': 1, 'maxLength': 200}}
+
+
+def permission(level: str, *, idempotent: bool = False, if_match: bool = False) -> dict:
+    """OpenAPI extension documenting docs/10 permission letters (R/V/A/O/public), plus the
+    headers a route reads itself so generated clients type them."""
+    extra: dict = {'x-permission': level}
+    parameters = ([IDEMPOTENCY_PARAMETER] if idempotent else []) + ([IF_MATCH_PARAMETER] if if_match else [])
+    if parameters:
+        extra['parameters'] = parameters
+    return extra
 
 
 Role = Literal['admin', 'reviewer', 'reader']

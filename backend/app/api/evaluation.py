@@ -93,7 +93,7 @@ class RunResult(BaseModel):
     duration_ms: int
 
 
-class RunDTO(BaseModel):
+class EvaluationRunDTO(BaseModel):
     id: uuid.UUID
     dataset_id: uuid.UUID
     config: dict
@@ -144,7 +144,7 @@ def approve_dataset(dataset_id: uuid.UUID, principal: Principal = Depends(requir
     return envelope(evaluate.approve_dataset(conn, principal, dataset_id))
 
 
-@router.post('/evaluation-runs', status_code=201, response_model=Envelope[RunDTO],
+@router.post('/evaluation-runs', status_code=201, response_model=Envelope[EvaluationRunDTO],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(404)},
              openapi_extra=permission('V'))
 def create_run(body: RunInput, request: Request,
@@ -157,7 +157,7 @@ def create_run(body: RunInput, request: Request,
                                   getattr(state, 'rerank_transport', None))))
 
 
-@router.get('/evaluation-runs/{run_id}', response_model=Envelope[RunDTO],
+@router.get('/evaluation-runs/{run_id}', response_model=Envelope[EvaluationRunDTO],
             responses={**AUTHENTICATED_ERRORS, **problem_responses(404)},
             openapi_extra=permission('V'))
 def get_run(run_id: uuid.UUID, principal: Principal = Depends(require_role('reviewer')),

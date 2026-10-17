@@ -155,7 +155,7 @@ class ClaimInput(BaseModel):
     quote: str | None = Field(default=None, max_length=1000)
 
 
-class ResolveInput(BaseModel):
+class CitationResolveInput(BaseModel):
     bundle_id: uuid.UUID
     claims: list[ClaimInput] = Field(min_length=1, max_length=100)
 
@@ -185,7 +185,7 @@ class Citation(BaseModel):
     viewer: list[ViewerSpan]
 
 
-class Problem(BaseModel):
+class CitationProblem(BaseModel):
     evidence_id: str
     code: Literal['UNKNOWN_EVIDENCE', 'SOURCE_WITHDRAWN', 'SPAN_INVALID', 'SOURCE_CHANGED',
                   'QUOTE_MISMATCH']
@@ -194,22 +194,22 @@ class Problem(BaseModel):
 class ClaimResult(BaseModel):
     index: int
     status: Literal['supported', 'weak', 'insufficient_evidence', 'invalid']
-    problems: list[Problem]
+    problems: list[CitationProblem]
     support: float
     citations: list[Citation]
 
 
-class ResolveResult(BaseModel):
+class CitationResolveResult(BaseModel):
     bundle_id: uuid.UUID
     release_id: uuid.UUID
     epoch_changed: bool
     claims: list[ClaimResult]
 
 
-@router.post('/citations/resolve', response_model=Envelope[ResolveResult],
+@router.post('/citations/resolve', response_model=Envelope[CitationResolveResult],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(404, 410)},
              openapi_extra=permission('R'))
-def resolve_citations(body: ResolveInput, principal: Principal = Depends(current_principal),
+def resolve_citations(body: CitationResolveInput, principal: Principal = Depends(current_principal),
                       conn: Connection = Depends(db)) -> dict:
     """Invalid citations must never reach a reader, not even in a streaming draft."""
     return envelope(resolve(conn, principal, body.bundle_id,

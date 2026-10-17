@@ -14,7 +14,7 @@ import { usePagedList, useQuery } from '@/lib/query'
 import { useSession } from '@/lib/session'
 import { read, write } from '@/lib/storage'
 
-type Run = Schemas['backend__app__api__evaluation__RunDTO']
+type Run = Schemas['EvaluationRunDTO']
 type Dataset = Schemas['DatasetDTO']
 
 const METRICS = ['recall@5', 'recall@10', 'hit@10', 'ndcg@10', 'mrr@10', 'no_answer_correct'] as const

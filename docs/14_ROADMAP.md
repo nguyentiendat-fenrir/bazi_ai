@@ -121,7 +121,12 @@ khác tra tại bảng cuối file này.
 - T048 ✅ UI đánh giá (`/evaluation`: bộ dữ liệu, câu hỏi, duyệt bộ, chạy, câu trượt, so sánh
   lần chạy; nhãn fixture), cài đặt (`/settings`: cá nhân, mô hình thử/dùng, hệ thống + ngân
   sách, người dùng, bản kho/ontology) và panel quản trị trên tổng quan.
-- Việc kế tiếp: T042 hoàn tất client/contract; K7 (T049–T056).
+- T042 ✅ contract/client hoàn chỉnh: tên schema duy nhất (không còn `backend__…` trong
+  client TS), header `Idempotency-Key`/`If-Match` khai báo trên đúng route đọc chúng (test đối
+  chiếu mã nguồn endpoint), ví dụ success/failure sinh từ schema cho mọi body/response và được
+  kiểm khớp schema; frontend gửi header qua `params.header` có kiểu; unit test mọi URL
+  `/api/v1` trong frontend (kể cả SSE, upload, ảnh trang) có trong contract.
+- Việc kế tiếp: K7 (T049–T056).
 
 ## Các giai đoạn
 
@@ -258,7 +263,7 @@ trước khi trình duyệt.
 | T039 | Reasoning orchestration cho ba modes | K6 | ✅ |
 | T040 | Multi-turn conversations và search/delete | K6 | ✅ |
 | T041 | SSE validated claims và cancellation | K6 | ✅ |
-| T042 | API integration và generated client hoàn chỉnh | K6 | |
+| T042 | API integration và generated client hoàn chỉnh | K6 | ✅ |
 | T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
 | T044 | Giao diện lập/xem/lưu lá số | K6 | ✅ |
 | T045 | Chat UI, nguồn và so sánh | K6 | ✅ |

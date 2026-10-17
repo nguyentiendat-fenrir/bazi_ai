@@ -116,7 +116,7 @@ class ConceptDTO(BaseModel):
     created_at: datetime
 
 
-class RevisionRef(BaseModel):
+class KnowledgeRevisionRef(BaseModel):
     id: uuid.UUID
     revision: int
     state: State
@@ -132,7 +132,7 @@ class ReviewRecord(BaseModel):
 
 class ConceptDetail(ConceptDTO):
     terms: list[TermDTO]
-    revisions: list[RevisionRef]
+    revisions: list[KnowledgeRevisionRef]
     reviews: list[ReviewRecord]
 
 
@@ -373,7 +373,7 @@ def create_scope(version_id: uuid.UUID, body: ScopeInput,
 
 @router.post('/reviews', response_model=Envelope[ReviewResult],
              responses={**AUTHENTICATED_ERRORS, **CONFLICT, **problem_responses(412)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def review(body: ReviewInput, request: Request, response: Response,
            principal: Principal = Depends(require_role('reviewer')),
            conn: Connection = Depends(db)) -> dict:

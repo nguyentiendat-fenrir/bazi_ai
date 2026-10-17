@@ -45,7 +45,7 @@ export default function ReleasesPage() {
   const publishOntology = async () => {
     setError(null)
     try {
-      const done = await call(api.POST('/api/v1/ontology-releases', { body: {}, headers: { 'Idempotency-Key': idempotencyKey() } }))
+      const done = await call(api.POST('/api/v1/ontology-releases', { params: { header: { 'Idempotency-Key': idempotencyKey() } }, body: {} }))
       setOutcome(`Đã phát hành ontology ${(done.data as { version?: string }).version ?? ''}.`)
       ontology.reload()
       preview.reload()

@@ -28,8 +28,8 @@ export default function SettingsPage() {
     setError(null)
     setSaved(null)
     try {
-      await call(api.PATCH('/api/v1/settings', {
-        body: { scope: 'user', key, value }, headers: { 'If-Match': ifMatch(current?.revision ?? 0) } }))
+      await call(api.PATCH('/api/v1/settings', { params: { header: { 'If-Match': ifMatch(current?.revision ?? 0) } },
+        body: { scope: 'user', key, value } }))
       setSaved(key)
       view.reload()
     } catch (caught) {

@@ -4,7 +4,7 @@
 // revoke shows what depends on the record first. History is never deleted.
 import { useState } from 'react'
 
-import { api, call, idempotencyKey } from '@/api/client'
+import { api, call, idempotencyKey, type Schemas } from '@/api/client'
 import { Dialog } from '@/components/Dialog'
 import { FormError, Notice } from '@/components/ui'
 import { formatNumber } from '@/lib/format'
@@ -24,7 +24,7 @@ const ALLOWED: Record<string, Decision[]> = {
   draft: ['submit', 'approve', 'reject'], in_review: ['return', 'approve', 'reject'], approved: ['revoke'],
 }
 
-interface Impact { counts: Record<string, number>, dependents?: Record<string, number> }
+type Impact = Pick<Schemas['KnowledgeImpactDTO'], 'counts'> & { dependents?: Schemas['Dependents'] }
 export interface ReviewOutcome { state: string, analyses_stale?: number | null, terms_approved?: number | null }
 
 export function ReviewPanel({ kind, id, revision, state, checklist, onDone, compact, subject }: {
@@ -54,7 +54,7 @@ export function ReviewPanel({ kind, id, revision, state, checklist, onDone, comp
     if (next === 'revoke') {
       try {
         const found = await call(api.GET('/api/v1/knowledge/impact', { params: { query: { entity_kind: kind, entity_id: id } } }))
-        setImpact(found.data as unknown as Impact)
+        setImpact(found.data)
       } catch {
         setImpact({ counts: {} })
       }
@@ -66,9 +66,8 @@ export function ReviewPanel({ kind, id, revision, state, checklist, onDone, comp
     setBusy(true)
     setError(null)
     try {
-      const result = await call(api.POST('/api/v1/reviews', {
-        body: { entity_kind: kind, entity_id: id, decision, base_revision: revision, reason: reason.trim() },
-        headers: { 'Idempotency-Key': key } }))
+      const result = await call(api.POST('/api/v1/reviews', { params: { header: { 'Idempotency-Key': key } },
+        body: { entity_kind: kind, entity_id: id, decision, base_revision: revision, reason: reason.trim() } }))
       setDecision(null)
       onDone(result.data)
     } catch (caught) {

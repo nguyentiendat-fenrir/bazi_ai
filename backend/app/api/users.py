@@ -88,7 +88,7 @@ def create(body: UserCreate, conn: Connection = Depends(db)) -> dict:
 
 @router.patch('/{user_id}', response_model=Envelope[UserDTO],
               responses={**AUTHENTICATED_ERRORS, **problem_responses(404, 409, 412, 428)},
-              openapi_extra=permission('A'))
+              openapi_extra=permission('A', if_match=True))
 def patch(user_id: uuid.UUID, body: UserPatch, request: Request, response: Response,
           conn: Connection = Depends(db)) -> dict:
     current = conn.execute(text('SELECT updated_at FROM users WHERE id = :id FOR UPDATE'),

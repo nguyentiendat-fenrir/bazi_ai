@@ -116,7 +116,7 @@ class WithdrawResult(BaseModel):
     visibility_epoch: int | None
 
 
-class ActivateInput(BaseModel):
+class ReleaseActivateInput(BaseModel):
     expected_active_id: uuid.UUID | None = Field(
         description='the release the caller saw active (null for an empty corpus)')
 
@@ -132,7 +132,7 @@ def get_generation(generation_id: uuid.UUID,
 @router.post('/generations/{generation_id}/publish', status_code=201,
              response_model=Envelope[PublishResult],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def publish(generation_id: uuid.UUID, body: PublishInput, request: Request, response: Response,
             principal: Principal = Depends(require_role('reviewer')),
             conn: Connection = Depends(db)) -> dict:
@@ -178,7 +178,7 @@ def withdraw(version_id: uuid.UUID, body: WithdrawInput,
 @router.post('/corpus-releases/{release_id}/activate', response_model=Envelope[ReleaseDTO],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
              openapi_extra=permission('A'))
-def activate(release_id: uuid.UUID, body: ActivateInput,
+def activate(release_id: uuid.UUID, body: ReleaseActivateInput,
              principal: Principal = Depends(require_role('admin')),
              conn: Connection = Depends(db)) -> dict:
     return envelope(releases.activate_release(conn, principal.user_id, release_id,

@@ -90,14 +90,18 @@ def create_runtime_login() -> int:
 OPENAPI_PATH = Path(__file__).resolve().parents[2] / 'contracts' / 'openapi.json'
 
 
-def openapi_document() -> dict:
-    """The contract from default settings only, so the snapshot never depends on .env."""
+def contract_app():
+    """The app built from default settings only, so the contract never depends on .env."""
     from unittest.mock import patch
 
     from .main import create_app
     with patch.dict(os.environ, {}, clear=True):
         settings = load_settings(_env_file=None)
-    return create_app(settings).openapi()
+    return create_app(settings)
+
+
+def openapi_document() -> dict:
+    return contract_app().openapi()
 
 
 def export_openapi() -> int:

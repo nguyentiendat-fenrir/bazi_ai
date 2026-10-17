@@ -51,10 +51,9 @@ function ContextBar({ conversation, onSaved }: { conversation: Conversation, onS
     setError(null)
     try {
       const saved = await call(api.PATCH('/api/v1/conversations/{conversation_id}', {
-        params: { path: { conversation_id: conversation.id } },
+        params: { path: { conversation_id: conversation.id }, header: { 'If-Match': ifMatch(conversation.revision) } },
         body: { context: { mode, chart_id: chartId || null, school_ids: schools, method_ids: methodId ? [methodId] : [],
           book_ids: (ctx.book_ids as string[]) ?? [] } },
-        headers: { 'If-Match': ifMatch(conversation.revision) },
       }))
       onSaved(saved.data)
     } catch (caught) {
@@ -161,8 +160,7 @@ function Thread({ conversationId, onTitle }: { conversationId: string, onTitle()
     setError(null)
     try {
       const posted = await call(api.POST('/api/v1/conversations/{conversation_id}/messages', {
-        params: { path: { conversation_id: conversationId } }, body: { content: draft.trim() },
-        headers: { 'Idempotency-Key': idempotencyKey() } }))
+        params: { path: { conversation_id: conversationId }, header: { 'Idempotency-Key': idempotencyKey() } }, body: { content: draft.trim() } }))
       setDraft('')
       messages.reload()
       follow(posted.data.run.id)

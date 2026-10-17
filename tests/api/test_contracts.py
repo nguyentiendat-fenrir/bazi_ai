@@ -3,10 +3,12 @@
 The snapshot part runs without a database; behaviour tests need
 BAZI_TEST_DATABASE_URL (tests/integration/db.py).
 """
+import inspect
 import io
 import json
 import os
 from pathlib import Path
+import re
 import unittest
 from unittest.mock import patch
 import uuid
@@ -21,7 +23,7 @@ with warnings.catch_warnings():
 
 from backend.app.auth.deps import current_principal, db
 from backend.app.auth.service import Principal, create_user
-from backend.app.cli import OPENAPI_PATH, openapi_document
+from backend.app.cli import OPENAPI_PATH, contract_app, openapi_document
 from backend.app.core.concurrency import claim_idempotency
 from backend.app.core.config import load_settings
 from backend.app.core.logging import configure_logging
@@ -30,6 +32,43 @@ from tests.integration.db import (ADMIN_URL, create_runtime_login, database_url,
                                   drop_role, engine_for, migrated_database)
 
 PASSWORD = 'correct horse battery staple'
+
+
+def conforms(value, schema: dict, components: dict, path: str = '$') -> list[str]:
+    """Problems of ``value`` against the subset of JSON Schema FastAPI emits."""
+    if '$ref' in schema:
+        return conforms(value, components[schema['$ref'].rsplit('/', 1)[-1]], components, path)
+    for key in ('anyOf', 'oneOf'):
+        if key in schema:
+            options = [conforms(value, s, components, path) for s in schema[key]]
+            return [] if any(not o for o in options) else [f'{path}: matches no {key} option']
+    if 'allOf' in schema:
+        return [p for s in schema['allOf'] for p in conforms(value, s, components, path)]
+    if 'enum' in schema and value not in schema['enum']:
+        return [f'{path}: {value!r} not in enum']
+    if 'const' in schema and value != schema['const']:
+        return [f'{path}: {value!r} is not the constant']
+    kind = schema.get('type')
+    checks = {'object': dict, 'array': list, 'string': str, 'boolean': bool, 'null': type(None)}
+    if kind in checks and not isinstance(value, checks[kind]):
+        return [f'{path}: expected {kind}, got {type(value).__name__}']
+    if kind == 'integer' and (not isinstance(value, int) or isinstance(value, bool)):
+        return [f'{path}: expected integer']
+    if kind == 'number' and (not isinstance(value, (int, float)) or isinstance(value, bool)):
+        return [f'{path}: expected number']
+    if isinstance(value, str) and schema.get('pattern') and not re.search(schema['pattern'], value):
+        return [f'{path}: {value!r} does not match {schema["pattern"]}']
+    if isinstance(value, dict):
+        problems = [f'{path}.{name}: required' for name in schema.get('required', [])
+                    if name not in value]
+        for name, sub in schema.get('properties', {}).items():
+            if name in value:
+                problems += conforms(value[name], sub, components, f'{path}.{name}')
+        return problems
+    if isinstance(value, list):
+        return [p for i, item in enumerate(value)
+                for p in conforms(item, schema.get('items', {}), components, f'{path}[{i}]')]
+    return []
 
 
 class OpenApiSnapshotTests(unittest.TestCase):
@@ -50,6 +89,51 @@ class OpenApiSnapshotTests(unittest.TestCase):
                             self.assertIn('application/problem+json', response['content'])
                     if operation['x-permission'] not in ('public', 'A or internal'):
                         self.assertIn('401', operation['responses'])
+
+    def test_schema_names_are_unique_for_generated_clients(self):
+        # Two DTOs with one class name become backend__app__... names in TypeScript.
+        names = openapi_document()['components']['schemas']
+        clashes = [n for n in names if n.startswith('backend__') or re.search(r'___\d+$', n)]
+        self.assertEqual(clashes, [])
+
+    def test_every_body_and_response_has_a_conforming_example(self):
+        document = openapi_document()
+        components = document['components']['schemas']
+        for path, operations in document['paths'].items():
+            for method, operation in operations.items():
+                op = f'{method.upper()} {path}'
+                contents = [('request', operation.get('requestBody', {}).get('content', {}))]
+                contents += [(status, r.get('content', {}))
+                             for status, r in operation['responses'].items()]
+                for where, content in contents:
+                    body = content.get('application/json')
+                    if body is None:
+                        continue
+                    with self.subTest(op=op, where=where):
+                        self.assertIn('example', body)
+                        self.assertEqual(conforms(body['example'], body.get('schema', {}),
+                                                  components), [])
+                        if body.get('schema', {}).get('$ref', '').endswith('/Problem'):
+                            self.assertEqual(body['example']['status'], int(where))
+
+    def test_headers_read_by_a_route_are_declared(self):
+        # A route that reads Idempotency-Key or If-Match itself must declare it, or the
+        # generated client lets callers forget it (docs/10).
+        document = openapi_document()
+        for route in contract_app().routes:
+            endpoint = getattr(route, 'endpoint', None)
+            if endpoint is None or route.path not in document['paths']:
+                continue
+            source = inspect.getsource(endpoint)
+            reads = {'Idempotency-Key': 'claim_idempotency(' in source,
+                     'If-Match': bool(re.search(r'require_if_match\(|_if_match\(request',
+                                                source))}
+            for method in route.methods - {'HEAD'}:
+                declared = {p['name'] for p in document['paths'][route.path][method.lower()]
+                            .get('parameters', []) if p['in'] == 'header' and p['required']}
+                for header, read in reads.items():
+                    with self.subTest(op=f'{method} {route.path}', header=header):
+                        self.assertEqual(header in declared, read)
 
     def test_no_public_registration_route(self):
         posts = {p for p, ops in openapi_document()['paths'].items() if 'post' in ops}

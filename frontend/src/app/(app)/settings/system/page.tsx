@@ -36,8 +36,8 @@ function SettingRow({ spec, current, onSaved }: { spec: typeof SYSTEM[number], c
     const parsed = spec.kind === 'number' ? Number(value) : spec.kind === 'integer' ? Number.parseInt(value, 10)
       : spec.kind === 'bool' ? value === 'true' : value
     try {
-      await call(api.PATCH('/api/v1/settings', {
-        body: { scope: 'system', key: spec.key, value: parsed }, headers: { 'If-Match': ifMatch(current?.revision ?? 0) } }))
+      await call(api.PATCH('/api/v1/settings', { params: { header: { 'If-Match': ifMatch(current?.revision ?? 0) } },
+        body: { scope: 'system', key: spec.key, value: parsed } }))
       setSaved(true)
       onSaved()
     } catch (caught) {

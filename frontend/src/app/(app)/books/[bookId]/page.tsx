@@ -29,9 +29,8 @@ function EditBook({ book, onSaved, onCancel }: { book: Book, onSaved(book: Book)
     setError(null)
     try {
       const saved = await call(api.PATCH('/api/v1/books/{book_id}', {
-        params: { path: { book_id: book.id } },
+        params: { path: { book_id: book.id }, header: { 'If-Match': ifMatch(base.revision) } },
         body: { title: draft.title.trim(), language: draft.language, description: draft.description.trim() },
-        headers: { 'If-Match': ifMatch(base.revision) },
       }))
       onSaved(saved.data)
     } catch (caught) {

@@ -63,7 +63,7 @@ function ResolvePanel({ itemId, rev, dirty, onResolved }: {
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
-  const [done, setDone] = useState<Schemas['backend__app__api__reviews__ResolveResult'] | null>(null)
+  const [done, setDone] = useState<Schemas['ReviewResolveResult'] | null>(null)
   const [key, setKey] = useState(idempotencyKey)
 
   if (item.error) return <ErrorState error={item.error} retry={item.reload} />
@@ -77,9 +77,8 @@ function ResolvePanel({ itemId, rev, dirty, onResolved }: {
     setError(null)
     try {
       const result = await call(api.POST('/api/v1/review-items/{item_id}/resolve', {
-        params: { path: { item_id: itemId } },
+        params: { path: { item_id: itemId }, header: { 'Idempotency-Key': key } },
         body: { action, reason: reason.trim(), base_revision_id: action === 'dismiss' ? null : rev.latest_revision_id },
-        headers: { 'Idempotency-Key': key },
       }))
       setDone(result.data)
       setAction(null)
@@ -216,12 +215,11 @@ export default function PageWorkspace() {
     setSaveError(null)
     try {
       const result = await call(api.POST('/api/v1/pages/{page_id}/corrections', {
-        params: { path: { page_id: rev.page_id } },
+        params: { path: { page_id: rev.page_id }, header: { 'If-Match': ifMatch(rev.id), 'Idempotency-Key': saveKey } },
         body: { base_revision_id: rev.id, reason: reason.trim(),
                 // speaker_layer values come from the SPEAKERS select, i.e. the API's own enum
                 changes: Object.entries(edits).map(([ordinal, edit]) =>
                   ({ ordinal: Number(ordinal), ...edit }) as Schemas['BlockChange']) },
-        headers: { 'If-Match': ifMatch(rev.id), 'Idempotency-Key': saveKey },
       }))
       setPreview(false)
       const query = new URLSearchParams({ saved: result.data.job_id })

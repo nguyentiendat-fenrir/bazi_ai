@@ -109,7 +109,7 @@ class CorrectionInput(BaseModel):
     reason: str = Field(min_length=3, max_length=500)
 
 
-class RevisionRef(BaseModel):
+class PageRevisionRef(BaseModel):
     id: uuid.UUID
     page_id: uuid.UUID
     revision_no: int
@@ -124,7 +124,7 @@ class SourceChanged(BaseModel):
 
 
 class CorrectionResult(BaseModel):
-    revision: RevisionRef
+    revision: PageRevisionRef
     changed_blocks: list[int]
     generation_id: uuid.UUID
     job_id: uuid.UUID
@@ -156,7 +156,7 @@ ImpactKind = Literal['page', 'chunk_added', 'chunk_removed', 'evidence', 'rule',
 assert set(ImpactKind.__args__) == set(corrections.IMPACT_KINDS)
 
 
-class ImpactDTO(BaseModel):
+class PageImpactDTO(BaseModel):
     generation_id: uuid.UUID
     base_generation_id: uuid.UUID | None
     state: str
@@ -221,7 +221,7 @@ def render_page(revision_id: uuid.UUID, request: Request,
              response_model=Envelope[CorrectionResult],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND,
                         **problem_responses(409, 412, 428)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True, if_match=True))
 def correct_page(page_id: uuid.UUID, body: CorrectionInput, request: Request, response: Response,
                  principal: Principal = Depends(require_role('reviewer')),
                  conn: Connection = Depends(db)) -> dict:
@@ -244,7 +244,7 @@ def correct_page(page_id: uuid.UUID, body: CorrectionInput, request: Request, re
     return body_out
 
 
-@router.get('/generations/{generation_id}/impact', response_model=Envelope[ImpactDTO],
+@router.get('/generations/{generation_id}/impact', response_model=Envelope[PageImpactDTO],
             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('V'))
 def generation_impact(generation_id: uuid.UUID, kind: ImpactKind | None = None,
                       limit: int = Query(default=100, ge=1, le=500), cursor: str | None = None,

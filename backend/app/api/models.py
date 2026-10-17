@@ -31,7 +31,7 @@ PROVIDERS = {'llm': ('openai_compatible', 'fixture-scripted'),
              'reranker': ('openai_compatible', 'fixture-overlap')}
 
 
-class ProfileInput(BaseModel):
+class ModelProfileInput(BaseModel):
     kind: Kind
     provider: str = Field(min_length=1, max_length=40)
     model_name: str = Field(min_length=1, max_length=200)
@@ -42,7 +42,7 @@ class ProfileInput(BaseModel):
     secret_ref: str | None = Field(default=None, description='name of an allowlisted env var')
 
 
-class ProfileDTO(BaseModel):
+class ModelProfileDTO(BaseModel):
     id: uuid.UUID
     kind: Kind
     provider: str
@@ -117,7 +117,7 @@ SELECT = ('SELECT p.*, coalesce(p.id = (SELECT x.id FROM model_profiles x WHERE 
           ' FROM model_profiles p')
 
 
-@router.get('/model-profiles', response_model=ListEnvelope[ProfileDTO],
+@router.get('/model-profiles', response_model=ListEnvelope[ModelProfileDTO],
             responses=AUTHENTICATED_ERRORS, openapi_extra=permission('R'))
 def list_profiles(kind: Kind | None = None, principal: Principal = Depends(current_principal),
                   conn: Connection = Depends(db)) -> dict:
@@ -126,10 +126,10 @@ def list_profiles(kind: Kind | None = None, principal: Principal = Depends(curre
     return {**envelope([_dto(r) for r in rows]), 'page': {}}
 
 
-@router.post('/model-profiles', status_code=201, response_model=Envelope[ProfileDTO],
+@router.post('/model-profiles', status_code=201, response_model=Envelope[ModelProfileDTO],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(409)},
              openapi_extra=permission('A'))
-def create_profile(body: ProfileInput, principal: Principal = Depends(require_role('admin')),
+def create_profile(body: ModelProfileInput, principal: Principal = Depends(require_role('admin')),
                    conn: Connection = Depends(db)) -> dict:
     if body.provider not in PROVIDERS[body.kind]:
         raise AppError(422, 'VALIDATION_ERROR', f'provider must be one of {PROVIDERS[body.kind]}')
@@ -170,7 +170,7 @@ def create_profile(body: ProfileInput, principal: Principal = Depends(require_ro
     return envelope(_dto(conn.execute(text(f'{SELECT} WHERE p.id = :i'), {'i': row}).mappings().one()))
 
 
-@router.post('/model-profiles/{profile_id}/activate', response_model=Envelope[ProfileDTO],
+@router.post('/model-profiles/{profile_id}/activate', response_model=Envelope[ModelProfileDTO],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(404)},
              openapi_extra=permission('A'))
 def activate(profile_id: uuid.UUID, principal: Principal = Depends(require_role('admin')),

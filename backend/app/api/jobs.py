@@ -117,7 +117,7 @@ def job_events(job_id: uuid.UUID, after_seq: int = Query(default=0, ge=0),
 
 @router.post('/jobs/{job_id}/retry', status_code=202, response_model=Envelope[JobDetail],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def retry_job(job_id: uuid.UUID, body: RetryInput, request: Request, response: Response,
               principal: Principal = Depends(require_role('reviewer')),
               conn: Connection = Depends(db)) -> dict:
@@ -149,7 +149,7 @@ def cancel_job(job_id: uuid.UUID, response: Response,
 @router.post('/book-versions/{version_id}/process', status_code=202,
              response_model=Envelope[JobDetail],
              responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def process_version(version_id: uuid.UUID, body: ProcessInput, request: Request,
                     response: Response, principal: Principal = Depends(require_role('reviewer')),
                     conn: Connection = Depends(db)) -> dict:

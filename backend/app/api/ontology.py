@@ -63,7 +63,7 @@ class Dependents(BaseModel):
     runs: int
 
 
-class ImpactDTO(BaseModel):
+class KnowledgeImpactDTO(BaseModel):
     entity_kind: str
     entity_id: uuid.UUID
     counts: dict[str, int]
@@ -95,7 +95,7 @@ def get_release(release_id: uuid.UUID, principal: Principal = Depends(current_pr
 
 @router.post('/ontology-releases', status_code=201, response_model=Envelope[PublishOntologyResult],
              responses={**AUTHENTICATED_ERRORS, **problem_responses(409)},
-             openapi_extra=permission('V'))
+             openapi_extra=permission('V', idempotent=True))
 def publish(body: PublishOntologyInput, request: Request, response: Response,
             principal: Principal = Depends(require_role('reviewer')),
             conn: Connection = Depends(db)) -> dict:
@@ -110,7 +110,7 @@ def publish(body: PublishOntologyInput, request: Request, response: Response,
     return result
 
 
-@router.get('/knowledge/impact', response_model=Envelope[ImpactDTO],
+@router.get('/knowledge/impact', response_model=Envelope[KnowledgeImpactDTO],
             responses={**AUTHENTICATED_ERRORS, **problem_responses(404)},
             openapi_extra=permission('V'))
 def knowledge_impact(entity_kind: str, entity_id: uuid.UUID,

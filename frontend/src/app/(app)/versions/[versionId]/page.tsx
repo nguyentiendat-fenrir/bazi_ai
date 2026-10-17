@@ -31,9 +31,8 @@ function PublishDialog({ generation, open, onClose, onDone }: {
     setError(null)
     try {
       const result = await call(api.POST('/api/v1/generations/{generation_id}/publish', {
-        params: { path: { generation_id: generation.id } },
+        params: { path: { generation_id: generation.id }, header: { 'Idempotency-Key': key } },
         body: { allow_partial: partial, ack_excluded_ranges: partial ? c.excluded_ranges : [], activate: true },
-        headers: { 'Idempotency-Key': key },
       }))
       onDone(result.data.activated
         ? `Đã publish: release ${shortId(result.data.release.id)} đang được dùng để tra cứu.`
@@ -192,8 +191,7 @@ export default function VersionPage() {
     setActionError(null)
     try {
       const job = await call(api.POST('/api/v1/book-versions/{version_id}/process', {
-        params: { path: { version_id: versionId } }, body: { scope: 'full' },
-        headers: { 'Idempotency-Key': processKey } }))
+        params: { path: { version_id: versionId }, header: { 'Idempotency-Key': processKey } }, body: { scope: 'full' } }))
       router.push(`/jobs/${job.data.id}`)
     } catch (caught) {
       setActionError(caught)

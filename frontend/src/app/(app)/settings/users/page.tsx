@@ -77,7 +77,7 @@ export default function UsersPage() {
         throw new Error('Người dùng vừa được người khác sửa; danh sách đã tải lại, hãy thử lại.')
       }
       await call(api.PATCH('/api/v1/users/{user_id}', {
-        params: { path: { user_id: u.id } }, body, headers: { 'If-Match': current.response.headers.get('ETag') ?? '' } }))
+        params: { path: { user_id: u.id }, header: { 'If-Match': current.response.headers.get('ETag') ?? '' } }, body }))
       users.reload()
     } catch (caught) {
       setError(caught)

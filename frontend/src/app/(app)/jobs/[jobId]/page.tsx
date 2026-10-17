@@ -90,8 +90,7 @@ function JobDetail({ jobId }: { jobId: string }) {
         job.replace(done)
       } else {
         const child = await call(api.POST('/api/v1/jobs/{job_id}/retry', {
-          params: { path: { job_id: jobId } }, body: { failed_units_only: true },
-          headers: { 'Idempotency-Key': retryKey } }))
+          params: { path: { job_id: jobId }, header: { 'Idempotency-Key': retryKey } }, body: { failed_units_only: true } }))
         router.push(`/jobs/${child.data.id}`)
       }
       setConfirm(null)
