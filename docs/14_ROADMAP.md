@@ -30,7 +30,10 @@ khác tra tại bảng cuối file này.
 - T008 ✅ API contracts nền: DTO/envelope/problem có kiểu, `x-permission`, snapshot
   `contracts/openapi.json` có test, If-Match/ETag (users, settings), Idempotency-Key, `/settings`.
   TS client chuyển sang T043.1 (ADR-21: chưa dựng frontend khi chưa có màn hình thật).
-- Việc kế tiếp: T009 catalog/upload/dedupe; smoke T002 trên Ubuntu khi có máy.
+- T009 ✅ catalog sách/tác giả/phiên bản/quyền, batch + upload từng tệp (magic bytes, DOCX an
+  toàn, giới hạn kích thước, dedupe kể cả đồng thời, idempotency), job + outbox khi có profile;
+  thêm bảng `ingestion_batch_items` (M009).
+- Việc kế tiếp: T010 queue/lease/watchdog; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -133,7 +136,7 @@ trước khi trình duyệt.
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | ✅ |
 | T007 | ObjectStore local và S3 adapters | K1 | ✅ |
 | T008 | API contracts nền và client skeleton | K1 | ✅ (TS client → T043.1) |
-| T009 | Catalog, upload batch và dedupe | K2 | |
+| T009 | Catalog, upload batch và dedupe | K2 | ✅ |
 | T010 | Durable queue, outbox, lease và retry | K2 | |
 | T011 | Inspector và native PDF extraction | K2 | |
 | T012 | OCR sandbox theo trang/vùng | K2 | |

@@ -390,6 +390,12 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 |---|---|
 | created_by uuid FK users; name text; state text; config jsonb | index(created_by,created_at) |
 
+### `ingestion_batch_items`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| batch_id uuid FK ingestion_batches; display_name text; outcome text; error_code text?; sha256 char(64)?; size_bytes bigint?; object_id uuid? FK objects; book_version_id uuid? FK book_versions; duplicate_of_version_id uuid? FK book_versions; job_id uuid? FK ingestion_jobs | Bổ sung T009 (M009): kết quả từng tệp kể cả tệp bị từ chối; outcome accepted/duplicate/rejected; rejected ⇔ error_code; display_name là tên gốc đã làm sạch, không dùng làm đường dẫn; immutable |
+
 ### `ingestion_jobs`
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
