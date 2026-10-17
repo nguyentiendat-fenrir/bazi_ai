@@ -1,11 +1,41 @@
-FROM python:3.12.12-slim-bookworm@sha256:593bd06efe90efa80dc4eee3948be7c0fde4134606dd40d8dd8dbcade98e669c AS corpus
+FROM python:3.12.12-slim-bookworm@sha256:593bd06efe90efa80dc4eee3948be7c0fde4134606dd40d8dd8dbcade98e669c AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy
 WORKDIR /app
-RUN python -m pip install --no-cache-dir uv==0.13.0
+RUN python -m pip install --no-cache-dir uv==0.13.0 \
+    && useradd --uid 10001 --create-home app
+
+FROM base AS corpus
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --only-group corpus --no-install-project
 ENV PATH="/app/.venv/bin:$PATH"
-RUN useradd --uid 10001 --create-home app
 COPY scripts/inspect_corpus.py scripts/inspect_corpus.py
 USER app
 CMD ["python", "scripts/inspect_corpus.py", "/inputs/books"]
+
+# API and workers share one image; the worker command differs (docs/03).
+# Tesseract 5 from Debian bookworm with Vietnamese, English and Chinese data (T012).
+FROM base AS app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-vie \
+       tesseract-ocr-eng tesseract-ocr-chi-sim tesseract-ocr-chi-tra \
+    && rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+ENV PATH="/app/.venv/bin:$PATH" OMP_THREAD_LIMIT=1 STORAGE_ROOT=/data/objects
+COPY backend backend
+# Named volumes inherit this ownership on first mount, so the non-root user can write.
+RUN mkdir -p /data/objects && chown app:app /data/objects
+USER app
+CMD ["celery", "-A", "backend.app.ingestion.celery_worker:celery", "worker", "-Q", "ingestion", "-c", "1"]
+
+# Test image: app + dev/corpus groups + tests, for suites that need Tesseract.
+FROM app AS test
+USER root
+# Fonts only for synthetic Vietnamese text fixtures.
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core     && rm -rf /var/lib/apt/lists/*
+RUN uv sync --frozen --group dev --group corpus --no-install-project
+COPY tests tests
+COPY contracts contracts
+COPY docs docs
+USER app
+CMD ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"]

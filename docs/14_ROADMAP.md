@@ -38,7 +38,9 @@ khác tra tại bảng cuối file này.
   outbox → Redis → Celery worker → DB.
 - T011 ✅ extraction native bằng PDFium (ADR-22): block theo font/màu, bbox sau rotation,
   phân loại trang, nhãn trang, ba sách audit đủ 613 trang, 0 U+FFFD; stage validate/extract.
-- Việc kế tiếp: T012 OCR theo trang/vùng; smoke T002 trên Ubuntu khi có máy.
+- T012 ✅ OCR Tesseract theo trang scan/vùng ảnh, giới hạn pixel/timeout/tài nguyên, không
+  ghi đè native, timeout → review; image `app`/`test` có Tesseract, service worker/watchdog.
+- Việc kế tiếp: T013 DOCX; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -144,7 +146,7 @@ trước khi trình duyệt.
 | T009 | Catalog, upload batch và dedupe | K2 | ✅ |
 | T010 | Durable queue, outbox, lease và retry | K2 | ✅ |
 | T011 | Inspector và native PDF extraction | K2 | ✅ |
-| T012 | OCR sandbox theo trang/vùng | K2 | |
+| T012 | OCR sandbox theo trang/vùng | K2 | ✅ |
 | T013 | DOCX extraction và canonical rendering | K2 | |
 | T014 | Unicode, cấu trúc và quality review | K2 | |
 | T015 | Semantic chunking và provenance | K2 | |

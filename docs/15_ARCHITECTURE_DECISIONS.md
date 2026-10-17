@@ -86,6 +86,7 @@ thêm collection/profile/release chạy từ admin qua registry được kiểm 
   lunar-python MIT. Loại: image không digest, `latest`, MinIO bắt buộc, PyMuPDF mặc
   định. Rollback: checkout trước `c9e709a`, giữ volumes; không có migration. Phần
   Next 16/Caddy trong T002 đã bỏ ở T057. Còn thiếu: smoke trên Ubuntu 22.04 thật.
+- **17/10/2026 · T012:** OCR = Tesseract 5.3.0 từ Debian bookworm (`tesseract-ocr-vie/eng/chi-sim/chi-tra`) trong image `app` (base Python ghim digest; gói apt theo bookworm, phiên bản ghi trong `ocr_engine.version` của mỗi revision). Chọn vì Apache-2.0, chạy CPU, không tranh VRAM với Gemma; VLM OCR (PaddleOCR-VL…) chỉ là ứng viên benchmark trên trang gán nhãn. Loại: OCR mọi trang, ghi đè text native. Rollback: bỏ `OcrStage` khỏi pipeline, revision native vẫn còn.
 - **17/10/2026 · T057:** Compose chỉ còn PostgreSQL, Redis, `corpus-inspect`
   (non-root, read-only, network none); bỏ scaffold frontend/Caddy; doctor tách
   `dev`/`deploy`; pypdf ở dependency group `corpus` chỉ cho preflight. Inspector cho

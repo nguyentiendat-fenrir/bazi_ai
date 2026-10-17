@@ -54,6 +54,12 @@ uv run --locked python -B -m unittest discover -s tests -v
 ```
 
 Không đặt `BAZI_TEST_DATABASE_URL` thì schema tests được skip, không tính là đã kiểm.
+Test cần Tesseract (OCR) chạy trong image Linux, dùng Postgres qua mạng Compose:
+
+```bash
+docker build -f infra/backend.Dockerfile --target test -t bazi-ai-test:local .
+docker run --rm --network bazi-ai_internal   -e BAZI_TEST_DATABASE_URL="host=postgres port=5432 dbname=postgres user=bazi password=<POSTGRES_PASSWORD>"   -v "$PWD/inputs/books:/app/inputs/books:ro" bazi-ai-test:local   python -B -m unittest tests.integration.test_ocr -v
+```
 
 Tài khoản: không có đăng ký công khai. Sau migrate, tạo login DB cho API (thành viên
 `bazi_runtime`, chịu RLS) rồi tạo admin đầu tiên; mật khẩu lấy từ prompt hoặc biến

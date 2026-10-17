@@ -1,6 +1,6 @@
 name: bazi-ai
 
-# Add application/OCR services with their implementation and smoke tests.
+# Application services are added with their implementation and tests.
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17-bookworm@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d
@@ -51,6 +51,52 @@ services:
         bind:
           create_host_path: false
     command: ["python", "scripts/inspect_corpus.py", "/inputs/books"]
+
+  # Ingestion worker (all stages incl. OCR) and watchdog/dispatcher. Internal network
+  # only: parsers and OCR never reach the Internet (docs/12). Needs POSTGRES_APP_USER.
+  worker:
+    profiles: [app]
+    image: bazi-ai-app:local
+    build: &app_build
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+      target: app
+    env_file: &app_env_file [../.env]
+    environment: &app_env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_ROOT: /data/objects
+    depends_on: &app_deps
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 4g
+    cpus: 2
+    volumes:
+      - objects:/data/objects
+    networks: [internal]
+
+  watchdog:
+    profiles: [app]
+    image: bazi-ai-app:local
+    build: *app_build
+    env_file: *app_env_file
+    environment: *app_env
+    depends_on: *app_deps
+    command: ["python", "-m", "backend.app.ingestion.watchdog"]
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 512m
+    networks: [internal]
 
 networks:
   internal: {internal: true}

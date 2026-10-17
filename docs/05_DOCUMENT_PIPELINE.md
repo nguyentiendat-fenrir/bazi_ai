@@ -60,6 +60,8 @@ Phân loại theo trang, không một nhãn scan/text cho toàn sách. Trang ít
 
 Default review triggers: U+FFFD >0, glyph không ánh xạ >1%, trang có ảnh lớn không có caption/text, cột Can/Chi không khớp số hàng, heading bị tách, case thiếu ngày/giờ hoặc trụ không hợp lệ. Các ngưỡng là cấu hình chưa được benchmark; T014 phải hiệu chỉnh trên bộ 30–60 trang gán nhãn bằng mắt gồm text, bảng, scan, mixed. Page empty thật ghi loại `blank`, không OCR lặp vô hạn.
 
+Đã triển khai (T012, `ingestion/ocr.py`, `ocr_stage.py`): stage `ocr` chỉ nhận trang `scan` (OCR cả trang) và trang có ảnh ≥2% diện tích (OCR vùng ảnh). Render bằng PDFium với trần 40 triệu pixel (DPI tự giảm; vượt trần ở 120 dpi → coi như timeout); Tesseract `vie+eng` (đổi qua `pipeline_profiles.config.ocr.languages`, có `chi_sim/chi_tra`) chạy subprocess có timeout 120 s, `OMP_THREAD_LIMIT=1`, giới hạn RAM/CPU, trong container không mạng. Timeout thử lại một lần ở 200 dpi rồi mới thành review. Block OCR chồng ≥50% lên block native bị bỏ; phần còn lại nối **sau** các block native trong revision mới (base = revision native), nên text và offset native không đổi; block OCR có `attributes.origin='ocr'`, `conf`, bbox chuẩn hóa. Confidence trung bình <60 → `review_required` + review item `OCR_LOW_CONFIDENCE`; timeout/thiếu engine/không nhận được chữ → giữ revision native, review item `OCR_TIMEOUT`/`OCR_UNAVAILABLE`/`OCR_EMPTY`; một trang không làm fail job.
+
 Đối với ba sách mẫu: native extraction trước; Manh sơ cấp có đoạn tiếp nối và các hàng Can/Chi căn bằng khoảng trắng; cao cấp trang 30 cần ảnh gốc và OCR vùng hình nếu muốn searchable; Tử Bình có màu chữ phân biệt lớp bình chú, bảng và ảnh trang 77. Caption do AI suy luận giữ `origin=ai_inferred`, không thay text tác giả.
 
 ## Locator chuẩn

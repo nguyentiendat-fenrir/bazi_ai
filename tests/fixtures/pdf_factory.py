@@ -67,3 +67,42 @@ class PdfBuilder:
     def save(self, path) -> Path:
         self.pdf.save(str(path))
         return Path(path)
+
+
+def scanned_copy(source: Path, target: Path, dpi: int = 200) -> Path:
+    """Rasterise every page into an image-only PDF: a 'scan' with no text layer."""
+    src = pdfium.PdfDocument(str(source))
+    out = pdfium.PdfDocument.new()
+    try:
+        for index in range(len(src)):
+            page = src[index]
+            width, height = page.get_size()
+            bitmap = page.render(scale=dpi / 72, fill_color=(255, 255, 255, 255))
+            new_page = out.new_page(width, height)
+            image = pdfium.PdfImage.new(out)
+            image.set_bitmap(bitmap)
+            image.set_matrix(pdfium.PdfMatrix().scale(width, height))
+            new_page.insert_obj(image)
+            new_page.gen_content()
+            page.close()
+        out.save(str(target))
+    finally:
+        src.close()
+        out.close()
+    return target
+
+
+def oversized_page(target: Path) -> Path:
+    """A page at the PDF size maximum (200 in), a pixel bomb if rendered at 300 dpi."""
+    out = pdfium.PdfDocument.new()
+    page = out.new_page(14400, 14400)
+    image = pdfium.PdfImage.new(out)
+    bitmap = pdfium.PdfBitmap.new_native(8, 8, c.FPDFBitmap_BGRA)
+    bitmap.fill_rect((0, 0, 0, 255), 0, 0, 8, 8)
+    image.set_bitmap(bitmap)
+    image.set_matrix(pdfium.PdfMatrix().scale(14400, 14400))
+    page.insert_obj(image)
+    page.gen_content()
+    out.save(str(target))
+    out.close()
+    return target

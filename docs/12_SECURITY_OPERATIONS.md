@@ -9,7 +9,7 @@ Gemma. Runbook từng bước ở [README](../README.md). Sách, `.env`, models,
 DB và checkpoints nằm ngoài Git; chuyển sách riêng và đối chiếu SHA256. Giữ tên
 project/volume; không `down -v` khi update.
 
-Compose hiện chỉ có `postgres` (pgvector), `redis` và `corpus-inspect` chạy một lần.
+Compose có `postgres` (pgvector), `redis`, `corpus-inspect` chạy một lần, và profile `app` gồm `worker` (mọi stage kể cả OCR, image `app` có Tesseract 5.3) và `watchdog` (dispatcher + reconciler): chỉ mạng internal (không Internet), root read-only, `/tmp` tmpfs, non-root 10001, drop capabilities, no-new-privileges, giới hạn PIDs/RAM/CPU; dùng login `POSTGRES_APP_USER`.
 Đích dài hạn: gateway, frontend (khi có UI thật), api, worker-ingest, worker-ocr,
 worker-ai, dispatcher/watchdog; mọi worker dùng cùng backend image với command khác.
 Service chỉ được thêm cùng implementation và tests. Profiles cho OCR/model local/S3

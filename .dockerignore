@@ -4,3 +4,9 @@
 !scripts/
 scripts/*
 !scripts/inspect_corpus.py
+!backend/
+backend/**/__pycache__
+!tests/
+tests/**/__pycache__
+!contracts/
+!docs/
