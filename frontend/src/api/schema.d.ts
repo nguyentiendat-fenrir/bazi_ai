@@ -1,5 +1,59 @@
 // Generated from contracts/openapi.json by `npm run api:gen`. Do not edit.
 export interface paths {
+    "/api/v1/analyses/{analysis_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Analysis */
+        get: operations["get_analysis_api_v1_analyses__analysis_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analyses/{analysis_id}/reevaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reevaluate
+         * @description Same chart facts, the active ruleset now; the old analysis stays as history.
+         */
+        post: operations["reevaluate_api_v1_analyses__analysis_id__reevaluate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analyses/{analysis_id}/trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analysis Trace */
+        get: operations["analysis_trace_api_v1_analyses__analysis_id__trace_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assertion-relations": {
         parameters: {
             query?: never;
@@ -424,6 +478,27 @@ export interface paths {
         post?: never;
         /** Delete Chart */
         delete: operations["delete_chart_api_v1_charts__chart_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/charts/{chart_id}/analyses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chart Analyses */
+        get: operations["chart_analyses_api_v1_charts__chart_id__analyses_get"];
+        put?: never;
+        /**
+         * Analyse Chart
+         * @description Rule evaluation is done when this returns; the model narrative arrives with T039.
+         */
+        post: operations["analyse_chart_api_v1_charts__chart_id__analyses_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1263,6 +1338,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rulesets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rulesets */
+        get: operations["list_rulesets_api_v1_rulesets_get"];
+        put?: never;
+        /**
+         * Build Ruleset
+         * @description A frozen snapshot (state building) of approved revisions; activate separately.
+         */
+        post: operations["build_ruleset_api_v1_rulesets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rulesets/{ruleset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ruleset */
+        get: operations["get_ruleset_api_v1_rulesets__ruleset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rulesets/{ruleset_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate Ruleset
+         * @description Compare-and-swap; the replaced ruleset retires and its analyses become stale.
+         */
+        post: operations["activate_ruleset_api_v1_rulesets__ruleset_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schools": {
         parameters: {
             query?: never;
@@ -1465,13 +1598,47 @@ export interface components {
             /** Grants */
             grants: components["schemas"]["Grant"][];
         };
-        /** ActivateInput */
-        ActivateInput: {
+        /** ActivateResult */
+        ActivateResult: {
+            /** Analyses Stale */
+            analyses_stale: number;
             /**
-             * Expected Active Id
-             * @description the release the caller saw active (null for an empty corpus)
+             * Created At
+             * Format: date-time
              */
-            expected_active_id: string | null;
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Manifest Hash */
+            manifest_hash: string | null;
+            /** Members */
+            members: components["schemas"]["RulesetMember"][];
+            /** Members Count */
+            members_count: number;
+            /**
+             * Method Id
+             * Format: uuid
+             */
+            method_id: string;
+            /** Method Key */
+            method_key: string;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Key */
+            school_key: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "building" | "published" | "retired";
+            /** Version */
+            version: string;
         };
         /** ActiveCoverage */
         ActiveCoverage: {
@@ -1495,6 +1662,87 @@ export interface components {
             release_id: string;
             /** Visibility Epoch */
             visibility_epoch: number;
+        };
+        /** AnalysisAnswer */
+        AnalysisAnswer: {
+            /** As Of */
+            as_of: string | null;
+            /** Claims */
+            claims: components["schemas"]["Claim"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["Conflict"][];
+            /** Counters */
+            counters: {
+                [key: string]: number;
+            };
+            /** Facts Hash */
+            facts_hash: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "rules";
+            /** Narrative */
+            narrative: string | null;
+            /** Ruleset */
+            ruleset: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "resource_limit";
+        };
+        /** AnalysisDTO */
+        AnalysisDTO: {
+            answer: components["schemas"]["AnalysisAnswer"] | null;
+            /**
+             * Chart Id
+             * Format: uuid
+             */
+            chart_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ruleset Id */
+            ruleset_id: string | null;
+            /** Stale Reason */
+            stale_reason: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "failed" | "stale" | "withdrawn";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AnalysisInput */
+        AnalysisInput: {
+            /**
+             * As Of
+             * @description YYYY-MM-DD the question is about
+             */
+            as_of?: string | null;
+            /** Method Id */
+            method_id?: string | null;
+            /**
+             * Ruleset Id
+             * @description default: the active one
+             */
+            ruleset_id?: string | null;
+            /** School Id */
+            school_id?: string | null;
         };
         /** AssertionDTO */
         AssertionDTO: {
@@ -2394,6 +2642,33 @@ export interface components {
             /** Viewer */
             viewer: components["schemas"]["ViewerSpan"][];
         };
+        /** Claim */
+        Claim: {
+            /** Claim Key */
+            claim_key: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Explanation */
+            explanation: string;
+            /** Kind */
+            kind: string;
+            /** Rule Key */
+            rule_key: string;
+            /**
+             * Rule Revision Id
+             * Format: uuid
+             */
+            rule_revision_id: string;
+            /** Value */
+            value: string | number | boolean;
+        };
+        /** ClaimChange */
+        ClaimChange: {
+            /** Claim Key */
+            claim_key: string;
+            /** Value */
+            value: string | number | boolean;
+        };
         /** ClaimInput */
         ClaimInput: {
             /**
@@ -2547,6 +2822,22 @@ export interface components {
             label?: string | null;
             /** Reason */
             reason: string;
+        };
+        /** Conflict */
+        Conflict: {
+            /** Claim Key */
+            claim_key: string;
+            /** Values */
+            values: components["schemas"]["ConflictValue"][];
+        };
+        /** ConflictValue */
+        ConflictValue: {
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Rule Revision Ids */
+            rule_revision_ids: string[];
+            /** Value */
+            value: string | number | boolean;
         };
         /** CorrectionInput */
         CorrectionInput: {
@@ -2730,6 +3021,16 @@ export interface components {
              */
             ready: boolean;
         };
+        /** Envelope[ActivateResult] */
+        Envelope_ActivateResult_: {
+            data: components["schemas"]["ActivateResult"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[AnalysisDTO] */
+        Envelope_AnalysisDTO_: {
+            data: components["schemas"]["AnalysisDTO"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[AssertionDetail] */
         Envelope_AssertionDetail_: {
             data: components["schemas"]["AssertionDetail"];
@@ -2845,6 +3146,11 @@ export interface components {
             data: components["schemas"]["ReadyStatus"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[Reevaluation] */
+        Envelope_Reevaluation_: {
+            data: components["schemas"]["Reevaluation"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[RelationDTO] */
         Envelope_RelationDTO_: {
             data: components["schemas"]["RelationDTO"];
@@ -2873,6 +3179,11 @@ export interface components {
         /** Envelope[RuleDetail] */
         Envelope_RuleDetail_: {
             data: components["schemas"]["RuleDetail"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[RulesetDetail] */
+        Envelope_RulesetDetail_: {
+            data: components["schemas"]["RulesetDetail"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[RunDTO] */
@@ -2950,10 +3261,22 @@ export interface components {
             data: components["schemas"]["WithdrawResult"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[list[AnalysisDTO]] */
+        Envelope_list_AnalysisDTO__: {
+            /** Data */
+            data: components["schemas"]["AnalysisDTO"][];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[list[Grant]] */
         Envelope_list_Grant__: {
             /** Data */
             data: components["schemas"]["Grant"][];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[list[RulesetDTO]] */
+        Envelope_list_RulesetDTO__: {
+            /** Data */
+            data: components["schemas"]["RulesetDTO"][];
             meta: components["schemas"]["Meta"];
         };
         /** EvidenceDTO */
@@ -3663,6 +3986,13 @@ export interface components {
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
+        /** ListEnvelope[RuleTraceDTO] */
+        ListEnvelope_RuleTraceDTO_: {
+            /** Data */
+            data: components["schemas"]["RuleTraceDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
         /** ListEnvelope[SchoolDTO] */
         ListEnvelope_SchoolDTO_: {
             /** Data */
@@ -4237,6 +4567,19 @@ export interface components {
              */
             status: "ok" | "degraded" | "fail";
         };
+        /** Reevaluation */
+        Reevaluation: {
+            analysis: components["schemas"]["AnalysisDTO"];
+            /** Diff */
+            diff: {
+                [key: string]: components["schemas"]["ClaimChange"][] | number;
+            };
+            /**
+             * Previous Id
+             * Format: uuid
+             */
+            previous_id: string;
+        };
         /** Relation */
         Relation: {
             /**
@@ -4725,6 +5068,147 @@ export interface components {
             physical_page_number: number;
             /** Quote */
             quote: string;
+        };
+        /** RuleTraceDTO */
+        RuleTraceDTO: {
+            /** Conflicts */
+            conflicts: {
+                [key: string]: unknown;
+            }[];
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /** Emissions */
+            emissions: {
+                [key: string]: unknown;
+            }[];
+            /** Revision */
+            revision: number;
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
+            /** Rule Key */
+            rule_key: string;
+            /** Rule State */
+            rule_state: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "true" | "false" | "unknown" | "conflict" | "skipped";
+        };
+        /** RulesetDTO */
+        RulesetDTO: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Manifest Hash */
+            manifest_hash: string | null;
+            /** Members Count */
+            members_count: number;
+            /**
+             * Method Id
+             * Format: uuid
+             */
+            method_id: string;
+            /** Method Key */
+            method_key: string;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Key */
+            school_key: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "building" | "published" | "retired";
+            /** Version */
+            version: string;
+        };
+        /** RulesetDetail */
+        RulesetDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Manifest Hash */
+            manifest_hash: string | null;
+            /** Members */
+            members: components["schemas"]["RulesetMember"][];
+            /** Members Count */
+            members_count: number;
+            /**
+             * Method Id
+             * Format: uuid
+             */
+            method_id: string;
+            /** Method Key */
+            method_key: string;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Key */
+            school_key: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "building" | "published" | "retired";
+            /** Version */
+            version: string;
+        };
+        /** RulesetInput */
+        RulesetInput: {
+            /**
+             * Method Id
+             * Format: uuid
+             */
+            method_id: string;
+            /**
+             * Rule Revision Ids
+             * @description default: the latest approved revision of every rule of the method
+             */
+            rule_revision_ids?: string[] | null;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** Version */
+            version: string;
+        };
+        /** RulesetMember */
+        RulesetMember: {
+            /** Ordinal */
+            ordinal: number;
+            /**
+             * Revision Id
+             * Format: uuid
+             */
+            revision_id: string;
+            /** Rule Key */
+            rule_key: string;
         };
         /** RunDTO */
         RunDTO: {
@@ -5681,6 +6165,14 @@ export interface components {
             /** Revision No */
             revision_no: number;
         };
+        /** ActivateInput */
+        backend__app__api__releases__ActivateInput: {
+            /**
+             * Expected Active Id
+             * @description the release the caller saw active (null for an empty corpus)
+             */
+            expected_active_id: string | null;
+        };
         /** ResolveInput */
         backend__app__api__reviews__ResolveInput: {
             /**
@@ -5705,6 +6197,14 @@ export interface components {
             item: components["schemas"]["ReviewItemDTO"];
             /** Job Id */
             job_id: string | null;
+        };
+        /** ActivateInput */
+        backend__app__api__rulesets__ActivateInput: {
+            /**
+             * Expected Current Id
+             * @description the ruleset the caller saw active (null when none)
+             */
+            expected_current_id: string | null;
         };
         /** Envelope[ImpactDTO] */
         backend__app__api__schemas__Envelope_ImpactDTO___1: {
@@ -5805,6 +6305,245 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_analysis_api_v1_analyses__analysis_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_AnalysisDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    reevaluate_api_v1_analyses__analysis_id__reevaluate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_Reevaluation_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    analysis_trace_api_v1_analyses__analysis_id__trace_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEnvelope_RuleTraceDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     create_relation_api_v1_assertion_relations_post: {
         parameters: {
             query?: never;
@@ -8551,6 +9290,174 @@ export interface operations {
             };
         };
     };
+    chart_analyses_api_v1_charts__chart_id__analyses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chart_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_list_AnalysisDTO__"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    analyse_chart_api_v1_charts__chart_id__analyses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chart_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalysisInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_AnalysisDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     resolve_citations_api_v1_citations_resolve_post: {
         parameters: {
             query?: never;
@@ -9089,7 +9996,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ActivateInput"];
+                "application/json": components["schemas"]["backend__app__api__releases__ActivateInput"];
             };
         };
         responses: {
@@ -12485,6 +13392,302 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_ValidationResult_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_rulesets_api_v1_rulesets_get: {
+        parameters: {
+            query?: {
+                school_id?: string | null;
+                method_id?: string | null;
+                state?: ("building" | "published" | "retired") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_list_RulesetDTO__"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    build_ruleset_api_v1_rulesets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RulesetInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_RulesetDetail_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_ruleset_api_v1_rulesets__ruleset_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_RulesetDetail_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    activate_ruleset_api_v1_rulesets__ruleset_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["backend__app__api__rulesets__ActivateInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ActivateResult_"];
                 };
             };
             /** @description Unauthorized */

@@ -17,9 +17,11 @@ RELATIONS = ('stem_combination', 'stem_clash', 'six_combination', 'three_combina
              'half_combination', 'directional_combination', 'clash', 'punishment',
              'self_punishment', 'harm', 'destruction')
 COMPLETENESS = ('full', 'partial', 'any')
+CYCLE_TYPES = ('da_yun', 'liu_nian')
+GANZHI = tuple(f'{STEMS[i % 10]}-{BRANCHES[i % 12]}' for i in range(60))
 ENUMS = {'stem': STEMS, 'branch': BRANCHES, 'element': ELEMENTS, 'ten_god': TEN_GODS,
          'growth_stage': GROWTH, 'position': POSITIONS, 'relation': RELATIONS,
-         'completeness': COMPLETENESS}
+         'completeness': COMPLETENESS, 'cycle_type': CYCLE_TYPES, 'ganzhi': GANZHI}
 
 FACTS: dict[str, str] = {}
 for _p in POSITIONS:
@@ -28,6 +30,8 @@ for _p in POSITIONS:
                   f'pillars.{_p}.growth_stage': 'growth_stage', f'pillars.{_p}.na_yin': 'string',
                   f'pillars.{_p}.void': 'bool'})
 FACTS['cycles.direction'] = 'string'
+# The moment a question is about (analysis input, not chart data); absent → unknown.
+FACTS['query.as_of'] = 'instant'
 
 # name -> (argument types, result type); arguments are typed like facts.
 FUNCTIONS: dict[str, tuple[tuple[str, ...], str]] = {
@@ -36,4 +40,6 @@ FUNCTIONS: dict[str, tuple[tuple[str, ...], str]] = {
     'ten_god_of': (('stem', 'stem'), 'ten_god'),
     'count_branch': (('branch',), 'number'),
     'rule_fired': (('string',), 'bool'),
+    # The luck or annual pillar running at an instant, as "stem-branch".
+    'cycle_at': (('instant', 'cycle_type'), 'ganzhi'),
 }

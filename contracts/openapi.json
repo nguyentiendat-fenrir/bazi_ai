@@ -18,26 +18,91 @@
         "title": "AccessInput",
         "type": "object"
       },
-      "ActivateInput": {
+      "ActivateResult": {
         "properties": {
-          "expected_active_id": {
+          "analyses_stale": {
+            "title": "Analyses Stale",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_hash": {
             "anyOf": [
               {
-                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "the release the caller saw active (null for an empty corpus)",
-            "title": "Expected Active Id"
+            "title": "Manifest Hash"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/RulesetMember"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "members_count": {
+            "title": "Members Count",
+            "type": "integer"
+          },
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "method_key": {
+            "title": "Method Key",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "building",
+              "published",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
           }
         },
         "required": [
-          "expected_active_id"
+          "id",
+          "school_id",
+          "school_key",
+          "method_id",
+          "method_key",
+          "version",
+          "state",
+          "manifest_hash",
+          "members_count",
+          "created_at",
+          "members",
+          "analyses_stale"
         ],
-        "title": "ActivateInput",
+        "title": "ActivateResult",
         "type": "object"
       },
       "ActiveCoverage": {
@@ -90,6 +155,224 @@
           "visibility_epoch"
         ],
         "title": "ActivePointer",
+        "type": "object"
+      },
+      "AnalysisAnswer": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/Conflict"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "counters": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counters",
+            "type": "object"
+          },
+          "facts_hash": {
+            "title": "Facts Hash",
+            "type": "string"
+          },
+          "kind": {
+            "const": "rules",
+            "title": "Kind",
+            "type": "string"
+          },
+          "narrative": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrative"
+          },
+          "ruleset": {
+            "additionalProperties": true,
+            "title": "Ruleset",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "resource_limit"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "status",
+          "as_of",
+          "facts_hash",
+          "ruleset",
+          "claims",
+          "conflicts",
+          "counters",
+          "narrative"
+        ],
+        "title": "AnalysisAnswer",
+        "type": "object"
+      },
+      "AnalysisDTO": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisAnswer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "chart_id": {
+            "format": "uuid",
+            "title": "Chart Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ruleset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruleset Id"
+          },
+          "stale_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Reason"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "stale",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "chart_id",
+          "ruleset_id",
+          "status",
+          "stale_reason",
+          "answer",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AnalysisDTO",
+        "type": "object"
+      },
+      "AnalysisInput": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "YYYY-MM-DD the question is about",
+            "title": "As Of"
+          },
+          "method_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Id"
+          },
+          "ruleset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "default: the active one",
+            "title": "Ruleset Id"
+          },
+          "school_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Id"
+          }
+        },
+        "title": "AnalysisInput",
         "type": "object"
       },
       "AssertionDTO": {
@@ -2488,6 +2771,98 @@
         "title": "Citation",
         "type": "object"
       },
+      "Claim": {
+        "properties": {
+          "claim_key": {
+            "title": "Claim Key",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "rule_revision_id": {
+            "format": "uuid",
+            "title": "Rule Revision Id",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "claim_key",
+          "value",
+          "kind",
+          "rule_revision_id",
+          "rule_key",
+          "evidence_ids",
+          "explanation"
+        ],
+        "title": "Claim",
+        "type": "object"
+      },
+      "ClaimChange": {
+        "properties": {
+          "claim_key": {
+            "title": "Claim Key",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "claim_key",
+          "value"
+        ],
+        "title": "ClaimChange",
+        "type": "object"
+      },
       "ClaimInput": {
         "properties": {
           "evidence_ids": {
@@ -2857,6 +3232,71 @@
           "reason"
         ],
         "title": "ConceptRevisionInput",
+        "type": "object"
+      },
+      "Conflict": {
+        "properties": {
+          "claim_key": {
+            "title": "Claim Key",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictValue"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claim_key",
+          "values"
+        ],
+        "title": "Conflict",
+        "type": "object"
+      },
+      "ConflictValue": {
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "rule_revision_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Rule Revision Ids",
+            "type": "array"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value",
+          "rule_revision_ids",
+          "evidence_ids"
+        ],
+        "title": "ConflictValue",
         "type": "object"
       },
       "CorrectionInput": {
@@ -3333,6 +3773,38 @@
         "title": "EmbeddingRef",
         "type": "object"
       },
+      "Envelope_ActivateResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActivateResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ActivateResult]",
+        "type": "object"
+      },
+      "Envelope_AnalysisDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnalysisDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AnalysisDTO]",
+        "type": "object"
+      },
       "Envelope_AssertionDetail_": {
         "properties": {
           "data": {
@@ -3701,6 +4173,22 @@
         "title": "Envelope[ReadyStatus]",
         "type": "object"
       },
+      "Envelope_Reevaluation_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Reevaluation"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[Reevaluation]",
+        "type": "object"
+      },
       "Envelope_RelationDTO_": {
         "properties": {
           "data": {
@@ -3795,6 +4283,22 @@
           "meta"
         ],
         "title": "Envelope[RuleDetail]",
+        "type": "object"
+      },
+      "Envelope_RulesetDetail_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RulesetDetail"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RulesetDetail]",
         "type": "object"
       },
       "Envelope_RunDTO_": {
@@ -4037,6 +4541,26 @@
         "title": "Envelope[WithdrawResult]",
         "type": "object"
       },
+      "Envelope_list_AnalysisDTO__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[list[AnalysisDTO]]",
+        "type": "object"
+      },
       "Envelope_list_Grant__": {
         "properties": {
           "data": {
@@ -4055,6 +4579,26 @@
           "meta"
         ],
         "title": "Envelope[list[Grant]]",
+        "type": "object"
+      },
+      "Envelope_list_RulesetDTO__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RulesetDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[list[RulesetDTO]]",
         "type": "object"
       },
       "EvidenceDTO": {
@@ -5835,6 +6379,29 @@
         "title": "ListEnvelope[RuleDTO]",
         "type": "object"
       },
+      "ListEnvelope_RuleTraceDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTraceDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[RuleTraceDTO]",
+        "type": "object"
+      },
       "ListEnvelope_SchoolDTO_": {
         "properties": {
           "data": {
@@ -7360,6 +7927,42 @@
         "title": "ReadyStatus",
         "type": "object"
       },
+      "Reevaluation": {
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/AnalysisDTO"
+          },
+          "diff": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimChange"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Diff",
+            "type": "object"
+          },
+          "previous_id": {
+            "format": "uuid",
+            "title": "Previous Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis",
+          "previous_id",
+          "diff"
+        ],
+        "title": "Reevaluation",
+        "type": "object"
+      },
       "Relation": {
         "properties": {
           "completeness": {
@@ -8470,6 +9073,295 @@
           "quote"
         ],
         "title": "RuleSource",
+        "type": "object"
+      },
+      "RuleTraceDTO": {
+        "properties": {
+          "conflicts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "title": "Detail",
+            "type": "object"
+          },
+          "emissions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Emissions",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "rule_state": {
+            "title": "Rule State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "true",
+              "false",
+              "unknown",
+              "conflict",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id",
+          "rule_key",
+          "revision",
+          "rule_state",
+          "status",
+          "detail",
+          "emissions",
+          "conflicts"
+        ],
+        "title": "RuleTraceDTO",
+        "type": "object"
+      },
+      "RulesetDTO": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "members_count": {
+            "title": "Members Count",
+            "type": "integer"
+          },
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "method_key": {
+            "title": "Method Key",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "building",
+              "published",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "school_id",
+          "school_key",
+          "method_id",
+          "method_key",
+          "version",
+          "state",
+          "manifest_hash",
+          "members_count",
+          "created_at"
+        ],
+        "title": "RulesetDTO",
+        "type": "object"
+      },
+      "RulesetDetail": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/RulesetMember"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "members_count": {
+            "title": "Members Count",
+            "type": "integer"
+          },
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "method_key": {
+            "title": "Method Key",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "building",
+              "published",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "school_id",
+          "school_key",
+          "method_id",
+          "method_key",
+          "version",
+          "state",
+          "manifest_hash",
+          "members_count",
+          "created_at",
+          "members"
+        ],
+        "title": "RulesetDetail",
+        "type": "object"
+      },
+      "RulesetInput": {
+        "additionalProperties": false,
+        "properties": {
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "rule_revision_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 5000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "default: the latest approved revision of every rule of the method",
+            "title": "Rule Revision Ids"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "version": {
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "school_id",
+          "method_id",
+          "version"
+        ],
+        "title": "RulesetInput",
+        "type": "object"
+      },
+      "RulesetMember": {
+        "properties": {
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id",
+          "rule_key",
+          "ordinal"
+        ],
+        "title": "RulesetMember",
         "type": "object"
       },
       "RunDTO": {
@@ -10764,6 +11656,28 @@
         "title": "RevisionRef",
         "type": "object"
       },
+      "backend__app__api__releases__ActivateInput": {
+        "properties": {
+          "expected_active_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the release the caller saw active (null for an empty corpus)",
+            "title": "Expected Active Id"
+          }
+        },
+        "required": [
+          "expected_active_id"
+        ],
+        "title": "ActivateInput",
+        "type": "object"
+      },
       "backend__app__api__reviews__ResolveInput": {
         "properties": {
           "action": {
@@ -10844,6 +11758,29 @@
           "coalesced"
         ],
         "title": "ResolveResult",
+        "type": "object"
+      },
+      "backend__app__api__rulesets__ActivateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_current_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the ruleset the caller saw active (null when none)",
+            "title": "Expected Current Id"
+          }
+        },
+        "required": [
+          "expected_current_id"
+        ],
+        "title": "ActivateInput",
         "type": "object"
       },
       "backend__app__api__schemas__Envelope_ImpactDTO___1": {
@@ -11093,6 +12030,324 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/analyses/{analysis_id}": {
+      "get": {
+        "operationId": "get_analysis_api_v1_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AnalysisDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Analysis",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "O"
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/reevaluate": {
+      "post": {
+        "description": "Same chart facts, the active ruleset now; the old analysis stays as history.",
+        "operationId": "reevaluate_api_v1_analyses__analysis_id__reevaluate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Reevaluation_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Reevaluate",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "O"
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/trace": {
+      "get": {
+        "operationId": "analysis_trace_api_v1_analyses__analysis_id__trace_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_RuleTraceDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Analysis Trace",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "O"
+      }
+    },
     "/api/v1/assertion-relations": {
       "post": {
         "operationId": "create_relation_api_v1_assertion_relations_post",
@@ -14709,6 +15964,215 @@
         "x-permission": "O"
       }
     },
+    "/api/v1/charts/{chart_id}/analyses": {
+      "get": {
+        "operationId": "chart_analyses_api_v1_charts__chart_id__analyses_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chart_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chart Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_AnalysisDTO__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Chart Analyses",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "O"
+      },
+      "post": {
+        "description": "Rule evaluation is done when this returns; the model narrative arrives with T039.",
+        "operationId": "analyse_chart_api_v1_charts__chart_id__analyses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chart_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chart Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AnalysisDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Analyse Chart",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "O"
+      }
+    },
     "/api/v1/citations/resolve": {
       "post": {
         "description": "Invalid citations must never reach a reader, not even in a streaming draft.",
@@ -15460,7 +16924,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ActivateInput"
+                "$ref": "#/components/schemas/backend__app__api__releases__ActivateInput"
               }
             }
           },
@@ -20057,6 +21521,415 @@
         "summary": "Validate Rule",
         "tags": [
           "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/rulesets": {
+      "get": {
+        "operationId": "list_rulesets_api_v1_rulesets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "school_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "method_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Method Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "building",
+                    "published",
+                    "retired"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_RulesetDTO__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Rulesets",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "R"
+      },
+      "post": {
+        "description": "A frozen snapshot (state building) of approved revisions; activate separately.",
+        "operationId": "build_ruleset_api_v1_rulesets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RulesetInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RulesetDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Build Ruleset",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/rulesets/{ruleset_id}": {
+      "get": {
+        "operationId": "get_ruleset_api_v1_rulesets__ruleset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ruleset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ruleset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RulesetDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Ruleset",
+        "tags": [
+          "rulesets"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/rulesets/{ruleset_id}/activate": {
+      "post": {
+        "description": "Compare-and-swap; the replaced ruleset retires and its analyses become stale.",
+        "operationId": "activate_ruleset_api_v1_rulesets__ruleset_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ruleset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ruleset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/backend__app__api__rulesets__ActivateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ActivateResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Activate Ruleset",
+        "tags": [
+          "rulesets"
         ],
         "x-permission": "V"
       }

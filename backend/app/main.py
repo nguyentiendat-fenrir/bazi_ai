@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
 from .api import (assertions, auth, books, cases, charts, evaluation, health, jobs, knowledge,
-                  models, ontology, pages, pipelines, releases, reviews, rules, search,
+                  models, ontology, pages, pipelines, releases, reviews, rules, rulesets, search,
                   settings as settings_api, uploads, users)
 from .auth.ratelimit import LoginLimiter
 from .core.config import Settings, load_settings
@@ -56,6 +56,6 @@ def create_app(settings: Settings | None = None,
                    uploads.router, pages.router, releases.router, jobs.router, reviews.router,
                    knowledge.router, assertions.router, rules.router, cases.router,
                    ontology.router, search.router, evaluation.router, models.router,
-                   pipelines.router, charts.router):
+                   pipelines.router, charts.router, rulesets.router):
         app.include_router(router, prefix=API_PREFIX)
     return app

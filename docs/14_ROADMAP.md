@@ -104,7 +104,11 @@ khác tra tại bảng cuối file này.
   hồi quy 32 lá số; còn bảng HKO và chuyên gia duyệt policy/bảng.
 - T030 ✅ hồ sơ sinh + lá số: BirthInput mã hóa AES-GCM theo chủ sở hữu/bản ghi, facts bất
   biến (hash do DB kiểm), policy lưu DB khi dùng lần đầu và không được trôi, API có kiểu.
-- Việc kế tiếp: T031–T034 rule engine (ruleset, DAG, duyệt, đánh giá lại).
+- T031–T034 ✅ rule engine: chạy ruleset có thứ tự/phụ thuộc/ngân sách/trace/conflict,
+  `cycle_at` + `query.as_of`, ruleset chụp đóng băng + kích hoạt CAS, analysis lưu trace +
+  dependencies, stale khi đổi ruleset/thu hồi rule, đánh giá lại có diff. Rule mệnh lý thật
+  vẫn chờ chuyên gia.
+- Việc kế tiếp: T039 suy luận (RAG + rule facts + LLM) cho ba chế độ, rồi T040–T042 chat.
 
 ## Các giai đoạn
 
@@ -234,10 +238,10 @@ trước khi trình duyệt.
 | T028 | Tiết khí, ngày Tý và chu kỳ vận | K6 | ✅ |
 | T029 | Oracle độc lập và regression calculation | K6 | ⏳ chờ HKO + chuyên gia |
 | T030 | Profiles/charts persistence và API | K6 | ✅ |
-| T031 | DSL validator và typed interpreter | K6 | |
-| T032 | Rule DAG, exceptions và conflict trace | K6 | |
-| T033 | Rule approval gates và immutable rulesets | K6 | |
-| T034 | Re-evaluation và stale analysis tracking | K6 | |
+| T031 | DSL validator và typed interpreter | K6 | ✅ |
+| T032 | Rule DAG, exceptions và conflict trace | K6 | ✅ |
+| T033 | Rule approval gates và immutable rulesets | K6 | ✅ (rule thật chờ chuyên gia) |
+| T034 | Re-evaluation và stale analysis tracking | K6 | ✅ |
 | T039 | Reasoning orchestration cho ba modes | K6 | |
 | T040 | Multi-turn conversations và search/delete | K6 | |
 | T041 | SSE validated claims và cancellation | K6 | |

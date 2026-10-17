@@ -17,6 +17,7 @@ triggers a negative conclusion.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import re
 import uuid
 
@@ -49,6 +50,22 @@ class _Check:
         self.errors.append({'path': path, 'message': message})
 
 
+INSTANT = re.compile(r'^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$')
+
+
+class ResourceLimit(Exception):
+    """A run evaluated more nodes than its budget allows."""
+
+
+def parse_instant(value: str) -> datetime | None:
+    try:
+        if len(value) == 10:
+            return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except (TypeError, ValueError):
+        return None
+
+
 def _literal_type(value, expected: str | None) -> str | None:
     if isinstance(value, bool):
         return 'bool'
@@ -57,6 +74,8 @@ def _literal_type(value, expected: str | None) -> str | None:
     if isinstance(value, str):
         if expected in ENUMS:
             return expected if value in ENUMS[expected] else None
+        if expected == 'instant':
+            return 'instant' if INSTANT.match(value) and parse_instant(value) else None
         return 'string'
     return None
 
@@ -263,17 +282,41 @@ def _call(name: str, args: list, facts: dict, context: dict):
     if name == 'rule_fired':
         fired = context.get('fired_rules')
         return None if fired is None else args[0] in fired
+    if name == 'cycle_at':
+        return _cycle_at(facts, args[0], args[1])
     return None
+
+
+def _cycle_at(facts: dict, instant: str, kind: str) -> str | None:
+    at = parse_instant(instant)
+    entries = ((facts.get('cycles') or {}).get(kind)) if at else None
+    if not entries:
+        return None
+    start, end = ('start', 'end') if kind == 'da_yun' else ('start_instant', 'end_instant')
+    for entry in entries:
+        if entry.get(start) is None or entry.get(end) is None:
+            return None                     # start of the luck cycle is uncertain
+        if parse_instant(entry[start]) <= at < parse_instant(entry[end]):
+            return f"{entry['stem']}-{entry['branch']}"
+    return None                             # before the first or after the last cycle
 
 
 def evaluate(expr, facts: dict, context: dict | None = None):
     """True, False or None (unknown) for a validated expression."""
     context = context or {}
+    counter = context.get('counter')
+    if counter is not None:
+        counter['evals'] += 1
+        if counter['evals'] > counter['limit']:
+            raise ResourceLimit(f"more than {counter['limit']} node evaluations")
     if 'literal' in expr:
         return expr['literal']
     if 'fact' in expr:
         value = _lookup(facts, expr['fact'])
-        return None if value is MISSING else value
+        value = None if value is MISSING else value
+        if 'reads' in context:
+            context['reads'][expr['fact']] = value
+        return value
     if 'call' in expr:
         return _call(expr['call'], [evaluate(a, facts, context) for a in expr.get('args', [])],
                      facts, context)

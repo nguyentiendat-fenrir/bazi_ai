@@ -118,6 +118,8 @@ Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. A
 | POST /reviews | V | entity_kind,entity_id,base_revision,decision submit/return/approve/reject/revoke,reason; Idempotency-Key | guarded transition, review row cùng transaction, audit |
 | GET/POST /rulesets | R/V | school_id,method_id,rule_revision_ids | snapshot validate + ready, không lấy draft |
 | POST /rulesets/{id}/activate | V | expected_current_id | active method setting update atomic |
+
+Đã triển khai (T033/T034): `GET /rulesets` (R; lọc school_id/method_id/state), `POST /rulesets` (V; school_id, method_id, version, `rule_revision_ids?` → 201 state `building` + manifest; 409 `DEPENDENCY_MISSING`/`RULE_CYCLE`/`RULESET_EMPTY`/trùng version), `GET /rulesets/{id}` (members theo thứ tự chạy), `POST /rulesets/{id}/activate` (V; CAS → 409 `ACTIVE_CHANGED`, trả `analyses_stale`); `POST /charts/{id}/analyses` (O; school_id/method_id hoặc ruleset_id, `as_of` YYYY-MM-DD; 202 AnalysisDTO đã completed; 409 `NO_ACTIVE_RULESET`/`RULESET_HAS_REVOKED_RULE`/`RULESET_RETIRED`), `GET /charts/{id}/analyses`, `GET /analyses/{id}`, `GET /analyses/{id}/trace` (cursor), `POST /analyses/{id}/reevaluate` (201 analysis mới + diff). Chưa có: `run_id`/conversation và narrative LLM (T039).
 | GET /knowledge/impact | V | entity_kind,entity_id | counts + ID (≤100/kind) phía dưới; analyses/runs chỉ có số đếm |
 | GET /ontology-releases, GET /ontology-releases/{id} | R | — | releases, số concept/alias, có được corpus active ghim |
 | GET /ontology-releases/preview, POST /ontology-releases | V | version?; Idempotency-Key | diff; 201 release + corpus release ghim nó |

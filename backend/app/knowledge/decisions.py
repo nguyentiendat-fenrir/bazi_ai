@@ -141,6 +141,13 @@ def _gate(conn: Connection, kind: str, entity_id) -> str | None:
                                 {'i': entity_id}).scalars().all()
         if not _approved(conn, 'knowledge_rules', requires):
             return 'a required rule is not approved'
+        # No bridge between schools/methods exists yet, so dependencies stay inside one.
+        if requires and conn.execute(text(
+                'SELECT count(*) FROM knowledge_rules k, knowledge_rules me WHERE me.id = :i'
+                ' AND k.id = ANY(:ids) AND (k.school_id, k.method_id)'
+                ' IS DISTINCT FROM (me.school_id, me.method_id)'),
+                {'i': entity_id, 'ids': list(requires)}).scalar_one():
+            return 'a required rule belongs to another school or method'
         return coverage_problem(run_fixtures(row[0], _fixtures(conn, entity_id)))
     return None
 
