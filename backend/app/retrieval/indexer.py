@@ -4,6 +4,10 @@ Lexical (``fts-simple-1``): ``to_tsvector('simple', …)`` over the NFC text and
 over the accent-folded text (đ→d), plus trigram on the folded text — no claim
 of Vietnamese word segmentation or BM25 (docs/07).
 
+Book text leaves the machine only with consent: a provider whose profile is not
+declared ``locality: local`` is external, and needs the version's
+``external_processing_allowed`` (docs/12: unknown rights stay local-private).
+
 Vectors: chunks are embedded in batches (one job unit per batch). A chunk that
 already has a vector in the collection is skipped, and a chunk whose content
 hash matches another chunk's vector reuses it without calling the provider, so
@@ -47,6 +51,9 @@ class EmbedStage:
                     {'p': ctx.pipeline_profile_id}).scalar_one()
                 ctx.state['embedding_profile'] = load_profile(conn, profile_id)
                 ctx.state['collection'] = collection_for(conn, profile_id)
+                ctx.state['external_allowed'] = conn.execute(text(
+                    'SELECT external_processing_allowed FROM book_versions WHERE id = :v'),
+                    {'v': ctx.book_version_id}).scalar_one()
         return ctx.state['embedding_profile'], ctx.state['collection']
 
     def units(self, ctx: JobContext) -> list[Unit]:
@@ -93,6 +100,10 @@ class EmbedStage:
                     else:
                         todo.append(chunk)
         vectors = {}
+        if todo and not (profile.is_fixture or profile.config.get('locality') == 'local'
+                         or ctx.state['external_allowed']):
+            raise UnitFailed('EXTERNAL_PROCESSING_DENIED', 'this version may not be sent to an'
+                             ' external embedding provider; use a local profile or allow it')
         if todo:
             prefix = profile.config.get('passage_prefix', '')
             try:

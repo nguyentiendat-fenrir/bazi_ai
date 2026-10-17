@@ -7,6 +7,7 @@ from .chunker import ChunkStage
 from .docx_stage import DocxExtractStage
 from .ocr_stage import OcrStage
 from .pdf_stages import ExtractPdfStage, ValidatePdfStage
+from .publish import PublishStage
 from .quality import QualityStage
 from .structure import StructureStage
 from .worker import StageHandler
@@ -16,4 +17,4 @@ def handlers_for(settings: Settings | None) -> list[StageHandler]:
     # Each stage returns no units for sources it does not handle (PDF vs DOCX).
     app_env = settings.app_env if settings else 'dev'
     return [ValidatePdfStage(), ExtractPdfStage(), DocxExtractStage(), OcrStage(),
-            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env)]
+            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env), PublishStage()]

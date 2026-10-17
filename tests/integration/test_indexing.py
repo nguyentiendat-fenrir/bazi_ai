@@ -201,7 +201,8 @@ class IndexingTests(unittest.TestCase):
         with self.owner_engine.begin() as conn:
             profile = register_profile(conn, 'openai_compatible', f'emb-{uuid.uuid4().hex[:6]}',
                                        'r1', 8, {'base_url': 'http://embed.local/v1',
-                                                 'passage_prefix': 'passage: '}, 'EMBEDDING_API_KEY')
+                                                 'passage_prefix': 'passage: ',
+                                                 'locality': 'local'}, 'EMBEDDING_API_KEY')
         with psycopg.connect(database_url(self.db), autocommit=True) as conn:
             provision_collection(conn, profile)
         job, _ = self.job(self.pdf(['Gửi tới máy chủ embedding tương thích OpenAI.']), profile)
@@ -217,7 +218,8 @@ class IndexingTests(unittest.TestCase):
     def test_provider_failures(self):
         with self.owner_engine.begin() as conn:
             profile = register_profile(conn, 'openai_compatible', f'emb-{uuid.uuid4().hex[:6]}',
-                                       'r1', 8, {'base_url': 'http://embed.local/v1'})
+                                       'r1', 8, {'base_url': 'http://embed.local/v1',
+                                                 'locality': 'local'})
         with psycopg.connect(database_url(self.db), autocommit=True) as conn:
             provision_collection(conn, profile)
         cases = [(lambda r: httpx.Response(429), 'retry_wait', 'PROVIDER_UNAVAILABLE'),
@@ -233,6 +235,31 @@ class IndexingTests(unittest.TestCase):
                 self.assertEqual(result, state)
                 error = self.sql('SELECT error FROM ingestion_jobs WHERE id = %s', job)[0][0]
                 self.assertEqual(error['code'], code)
+
+    def test_external_provider_needs_consent(self):
+        seen = []
+
+        def handler(request):
+            seen.append(request)
+            return httpx.Response(200, json={'data': [
+                {'index': i, 'embedding': [0.1] * 8}
+                for i in range(len(json.loads(request.content)['input']))]})
+        with self.owner_engine.begin() as conn:
+            profile = register_profile(conn, 'openai_compatible', f'emb-{uuid.uuid4().hex[:6]}',
+                                       'r1', 8, {'base_url': 'https://api.example.test/v1'})
+        with psycopg.connect(database_url(self.db), autocommit=True) as conn:
+            provision_collection(conn, profile)
+        job, _ = self.job(self.pdf(['Văn bản sách không được gửi ra ngoài khi chưa cho phép.']),
+                          profile)
+        stages = self.stages(EmbedStage(transport=httpx.MockTransport(handler)))
+        self.assertEqual(run_job(self.engine, self.store, job, stages, 'w'), 'failed')
+        error = self.sql('SELECT error FROM ingestion_jobs WHERE id = %s', job)[0][0]
+        self.assertEqual((error['code'], seen), ('EXTERNAL_PROCESSING_DENIED', []))
+        self.sql('UPDATE book_versions SET external_processing_allowed = true WHERE id = %s',
+                 self.last[0])
+        job2, _ = self.next_job()
+        self.assertEqual(run_job(self.engine, self.store, job2, stages, 'w'), 'succeeded')
+        self.assertEqual(len(seen), 1)
 
 
 if __name__ == '__main__':

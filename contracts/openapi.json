@@ -18,6 +18,47 @@
         "title": "AccessInput",
         "type": "object"
       },
+      "ActivateInput": {
+        "properties": {
+          "expected_active_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the release the caller saw active (null for an empty corpus)",
+            "title": "Expected Active Id"
+          }
+        },
+        "required": [
+          "expected_active_id"
+        ],
+        "title": "ActivateInput",
+        "type": "object"
+      },
+      "ActivePointer": {
+        "properties": {
+          "release_id": {
+            "format": "uuid",
+            "title": "Release Id",
+            "type": "string"
+          },
+          "visibility_epoch": {
+            "title": "Visibility Epoch",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "release_id",
+          "visibility_epoch"
+        ],
+        "title": "ActivePointer",
+        "type": "object"
+      },
       "AuthorInput": {
         "properties": {
           "name": {
@@ -872,6 +913,22 @@
         "title": "Envelope[CorrectionResult]",
         "type": "object"
       },
+      "Envelope_GenerationDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GenerationDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[GenerationDTO]",
+        "type": "object"
+      },
       "Envelope_ImpactDTO_": {
         "properties": {
           "data": {
@@ -952,6 +1009,22 @@
         "title": "Envelope[PageRevisionDTO]",
         "type": "object"
       },
+      "Envelope_PublishResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PublishResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PublishResult]",
+        "type": "object"
+      },
       "Envelope_ReadyStatus_": {
         "properties": {
           "data": {
@@ -966,6 +1039,38 @@
           "meta"
         ],
         "title": "Envelope[ReadyStatus]",
+        "type": "object"
+      },
+      "Envelope_ReleaseDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReleaseDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ReleaseDTO]",
+        "type": "object"
+      },
+      "Envelope_ReleaseDetail_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReleaseDetail"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ReleaseDetail]",
         "type": "object"
       },
       "Envelope_SettingDTO_": {
@@ -1084,6 +1189,105 @@
           "message"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "GenerationDTO": {
+        "properties": {
+          "base_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Generation Id"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/PageCoverage"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "in_active_release": {
+            "title": "In Active Release",
+            "type": "boolean"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "open_review_items": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Open Review Items",
+            "type": "object"
+          },
+          "pipeline_profile_id": {
+            "format": "uuid",
+            "title": "Pipeline Profile Id",
+            "type": "string"
+          },
+          "release_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Release Ids",
+            "type": "array"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "book_version_id",
+          "pipeline_profile_id",
+          "base_generation_id",
+          "state",
+          "manifest_hash",
+          "created_at",
+          "coverage",
+          "open_review_items",
+          "job",
+          "release_ids",
+          "in_active_release"
+        ],
+        "title": "GenerationDTO",
         "type": "object"
       },
       "Grant": {
@@ -1529,6 +1733,48 @@
         "title": "Page",
         "type": "object"
       },
+      "PageCoverage": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "excluded": {
+            "title": "Excluded",
+            "type": "integer"
+          },
+          "excluded_ranges": {
+            "description": "physical pages not accepted, e.g. \"3-5\"",
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Ranges",
+            "type": "array"
+          },
+          "missing": {
+            "title": "Missing",
+            "type": "integer"
+          },
+          "review_required": {
+            "title": "Review Required",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "accepted",
+          "review_required",
+          "excluded",
+          "missing",
+          "excluded_ranges"
+        ],
+        "title": "PageCoverage",
+        "type": "object"
+      },
       "PageLayout": {
         "properties": {
           "height": {
@@ -1835,6 +2081,53 @@
         "title": "Problem",
         "type": "object"
       },
+      "PublishInput": {
+        "properties": {
+          "ack_excluded_ranges": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 2000,
+            "title": "Ack Excluded Ranges",
+            "type": "array"
+          },
+          "activate": {
+            "default": true,
+            "description": "false builds a ready release only",
+            "title": "Activate",
+            "type": "boolean"
+          },
+          "allow_partial": {
+            "default": false,
+            "title": "Allow Partial",
+            "type": "boolean"
+          }
+        },
+        "title": "PublishInput",
+        "type": "object"
+      },
+      "PublishResult": {
+        "properties": {
+          "activated": {
+            "title": "Activated",
+            "type": "boolean"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/PageCoverage"
+          },
+          "release": {
+            "$ref": "#/components/schemas/ReleaseDTO"
+          }
+        },
+        "required": [
+          "release",
+          "activated",
+          "coverage"
+        ],
+        "title": "PublishResult",
+        "type": "object"
+      },
       "ReadyStatus": {
         "properties": {
           "checks": {
@@ -1859,6 +2152,236 @@
           "checks"
         ],
         "title": "ReadyStatus",
+        "type": "object"
+      },
+      "ReleaseDTO": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "embedding_collection_id": {
+            "format": "uuid",
+            "title": "Embedding Collection Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lexical_profile_version": {
+            "title": "Lexical Profile Version",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "members_count": {
+            "title": "Members Count",
+            "type": "integer"
+          },
+          "ontology_release_id": {
+            "format": "uuid",
+            "title": "Ontology Release Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "state",
+          "manifest_hash",
+          "embedding_collection_id",
+          "ontology_release_id",
+          "lexical_profile_version",
+          "created_at",
+          "members_count",
+          "active"
+        ],
+        "title": "ReleaseDTO",
+        "type": "object"
+      },
+      "ReleaseDetail": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "embedding_collection_id": {
+            "format": "uuid",
+            "title": "Embedding Collection Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lexical_profile_version": {
+            "title": "Lexical Profile Version",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/ReleaseMember"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "members_count": {
+            "title": "Members Count",
+            "type": "integer"
+          },
+          "ontology_release_id": {
+            "format": "uuid",
+            "title": "Ontology Release Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "state",
+          "manifest_hash",
+          "embedding_collection_id",
+          "ontology_release_id",
+          "lexical_profile_version",
+          "created_at",
+          "members_count",
+          "active",
+          "members"
+        ],
+        "title": "ReleaseDetail",
+        "type": "object"
+      },
+      "ReleaseMember": {
+        "properties": {
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_version_id",
+          "generation_id"
+        ],
+        "title": "ReleaseMember",
+        "type": "object"
+      },
+      "ReleasesEnvelope": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReleasesView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "page",
+          "meta"
+        ],
+        "title": "ReleasesEnvelope",
+        "type": "object"
+      },
+      "ReleasesView": {
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivePointer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null while the corpus is empty"
+          },
+          "releases": {
+            "items": {
+              "$ref": "#/components/schemas/ReleaseDTO"
+            },
+            "title": "Releases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "active",
+          "releases"
+        ],
+        "title": "ReleasesView",
         "type": "object"
       },
       "RevisionRef": {
@@ -3443,6 +3966,390 @@
         "x-permission": "R"
       }
     },
+    "/api/v1/corpus-releases": {
+      "get": {
+        "operationId": "list_releases_api_v1_corpus_releases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleasesEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Releases",
+        "tags": [
+          "releases"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/corpus-releases/{release_id}": {
+      "get": {
+        "operationId": "get_release_api_v1_corpus_releases__release_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ReleaseDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Release",
+        "tags": [
+          "releases"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/corpus-releases/{release_id}/activate": {
+      "post": {
+        "operationId": "activate_api_v1_corpus_releases__release_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ReleaseDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Activate",
+        "tags": [
+          "releases"
+        ],
+        "x-permission": "A"
+      }
+    },
+    "/api/v1/generations/{generation_id}": {
+      "get": {
+        "operationId": "get_generation_api_v1_generations__generation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_GenerationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Generation",
+        "tags": [
+          "releases"
+        ],
+        "x-permission": "V"
+      }
+    },
     "/api/v1/generations/{generation_id}/impact": {
       "get": {
         "operationId": "generation_impact_api_v1_generations__generation_id__impact_get",
@@ -3581,6 +4488,116 @@
         "summary": "Generation Impact",
         "tags": [
           "pages"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/generations/{generation_id}/publish": {
+      "post": {
+        "operationId": "publish_api_v1_generations__generation_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PublishResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Publish",
+        "tags": [
+          "releases"
         ],
         "x-permission": "V"
       }

@@ -69,6 +69,8 @@ Document text luôn là quoted untrusted evidence. Prompt template đặt ranh g
 
 Admin ghi rights_status (`unknown/private_reference/licensed/public_domain/restricted`) và chính sách external_processing, export/distribution. Unknown mặc định local-private; không tự bật gửi provider hoặc xuất full text. Chat quote length caps configurable theo quyền, ưu tiên diễn giải với locator. Không scrape/tải thêm sách tự động. Không thể suy quyền thương mại từ việc có PDF. Trước commercialization phải review quyền sách, license parser/model và dependencies; checklist này không là tư vấn pháp lý kết luận.
 
+Đã triển khai (T018): embedding profile khai `locality: local` (CLI `--locality local`) cho máy chủ tự host; profile khác coi là bên ngoài, và stage embed từ chối gửi text của version không bật `external_processing_allowed` (`EXTERNAL_PROCESSING_DENIED`, không gọi provider). Publish chặn version `restricted` hoặc đã withdraw.
+
 ## Observability và cost
 
 Structured logs JSON có request_id, run_id, job_id, stage, duration, error_code, version hashes. Redact passwords, keys, names, full datetime sinh, full chat và book text. Metrics: queues depth/age, page success/review/error %, worker lease expiry, DB pool, disk %, retrieval p95, citation failures, rule unknown/conflicts, tokens/cost/reservations. Admin xem metrics nội bộ; optional Prometheus export restricted.

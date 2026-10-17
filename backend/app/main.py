@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
-from .api import auth, books, health, pages, settings as settings_api, uploads, users
+from .api import auth, books, health, pages, releases, settings as settings_api, uploads, users
 from .auth.ratelimit import LoginLimiter
 from .core.config import Settings, load_settings
 from .core.db import database_check, make_engine, runtime_role_check
@@ -47,6 +47,6 @@ def create_app(settings: Settings | None = None,
     app.add_middleware(OriginGuardMiddleware, allowed_origins=settings.allowed_origins)
     app.add_middleware(RequestContextMiddleware)
     for router in (health.router, auth.router, users.router, settings_api.router, books.router,
-                   uploads.router, pages.router):
+                   uploads.router, pages.router, releases.router):
         app.include_router(router, prefix=API_PREFIX)
     return app
