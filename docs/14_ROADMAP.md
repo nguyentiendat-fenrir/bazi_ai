@@ -73,8 +73,11 @@ khác tra tại bảng cuối file này.
 - T024 ✅ ontology release từ concept/alias đã duyệt, publish ghim qua corpus release mới
   (không xử lý lại tài liệu), đồ thị impact xuôi, revoke đánh dấu stale analyses phụ thuộc
   (M011, chỉ số đếm qua RLS).
-- Việc kế tiếp: T025.1 bộ câu hỏi gold (cần chuyên gia) rồi K4 — T035 hybrid retrieval;
-  smoke T002 trên Ubuntu khi có máy.
+- T035 ✅ `POST /search`: phạm vi theo quyền/release, lọc trường phái/sách/topic/trang ngay
+  trong truy vấn, lexical + vector + tiêu đề section trộn RRF, mở rộng alias có dấu; smoke 10
+  câu seed: Recall@5 9/10, Recall@10 10/10.
+- Việc kế tiếp: T036 benchmark embedding/reranker + đóng gói context (cần model thật trên
+  Ubuntu), T037 citation; T025.1 gold cần chuyên gia; smoke T002 khi có máy.
 
 ## Các giai đoạn
 
@@ -195,7 +198,7 @@ trước khi trình duyệt.
 | T023 | Kho mệnh lệ và structured chart từ sách | K3 | ✅ |
 | T024 | Ontology releases và dependency impact graph | K3 | ✅ |
 | T025 | Tập gold retrieval và chuyên môn | K3 | |
-| T035 | Hybrid candidate retrieval và filters | K4 | |
+| T035 | Hybrid candidate retrieval và filters | K4 | ✅ |
 | T036 | Embedding/reranker benchmark và context packing | K4 | |
 | T037 | Citation resolver và validator | K4 | |
 | T038 | LLM adapters, cost reservation và mocks | K4 | |

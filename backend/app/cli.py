@@ -111,7 +111,8 @@ def embedding_profile(args) -> int:
     config = {k: v for k, v in (('base_url', args.base_url),
                                 ('passage_prefix', args.passage_prefix),
                                 ('query_prefix', args.query_prefix),
-                                ('locality', args.locality)) if v}
+                                ('locality', args.locality),
+                                ('max_distance', args.max_distance)) if v}
     engine = create_engine(settings.database_url, poolclass=pool.NullPool)
     with engine.begin() as conn:
         profile = register_profile(conn, args.provider, args.model, args.revision, args.dimension,
@@ -158,6 +159,8 @@ def main(argv: list[str] | None = None) -> int:
     embed.add_argument('--secret-ref')
     embed.add_argument('--passage-prefix')
     embed.add_argument('--query-prefix')
+    embed.add_argument('--max-distance', type=float,
+                       help='cosine distance beyond which a neighbour is not evidence (T036)')
     embed.add_argument('--locality', choices=['local', 'external'],
                        help='local = self-hosted server; otherwise each version must allow'
                             ' external processing')

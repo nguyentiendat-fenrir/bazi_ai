@@ -137,7 +137,7 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 | POST /charts/{id}/analyses | O | school_id,method_id,ruleset_id?,source_scope | 202 run_id,analysis_id |
 | GET /analyses/{id} | O | — | Answer+facts refs+trace+stale state |
 | GET /analyses/{id}/trace | O | cursor | RuleTrace[] |
-| POST /search | R | QuerySpec theo 07 | status,hits EvidenceBundle,release_id,degraded flags |
+| POST /search | R | query, mode, top_k, school_ids, book_ids, book_version_ids, topic_ids, page_from/page_to | status ok/no_match/empty_corpus/empty_filters, hits (chunk, ranks, sách, section, trang, spans), expansions, release_id, visibility_epoch, degraded |
 | GET /evidence/{id} | R rights | context_blocks<=2 | source locator + excerpt + viewer URL |
 | GET/POST /conversations | R/O | title,mode,context | list/201 ConversationDTO |
 | GET/PATCH /conversations/{id} | O | title,starred,mode,context,If-Match | 200 revision + context snapshot |

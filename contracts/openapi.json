@@ -2629,6 +2629,22 @@
         "title": "Envelope[ScopeDTO]",
         "type": "object"
       },
+      "Envelope_SearchResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SearchResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[SearchResult]",
+        "type": "object"
+      },
       "Envelope_SettingDTO_": {
         "properties": {
           "data": {
@@ -2909,6 +2925,37 @@
         "title": "EvidenceInput",
         "type": "object"
       },
+      "Expansion": {
+        "properties": {
+          "concept": {
+            "title": "Concept",
+            "type": "string"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "variants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concept",
+          "school_key",
+          "matched",
+          "variants"
+        ],
+        "title": "Expansion",
+        "type": "object"
+      },
       "FieldError": {
         "properties": {
           "message": {
@@ -3161,6 +3208,178 @@
           "permission"
         ],
         "title": "Grant",
+        "type": "object"
+      },
+      "Hit": {
+        "properties": {
+          "book_id": {
+            "format": "uuid",
+            "title": "Book Id",
+            "type": "string"
+          },
+          "book_title": {
+            "title": "Book Title",
+            "type": "string"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "chunk_id": {
+            "format": "uuid",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "edition_label": {
+            "title": "Edition Label",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "pages": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "ranks": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "rank in each candidate list (lexical, vector)",
+            "title": "Ranks",
+            "type": "object"
+          },
+          "school_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Key"
+          },
+          "score": {
+            "description": "weighted reciprocal-rank fusion score",
+            "title": "Score",
+            "type": "number"
+          },
+          "section_path": {
+            "title": "Section Path",
+            "type": "string"
+          },
+          "section_title": {
+            "title": "Section Title",
+            "type": "string"
+          },
+          "spans": {
+            "items": {
+              "$ref": "#/components/schemas/HitSpan"
+            },
+            "title": "Spans",
+            "type": "array"
+          },
+          "speaker_layer": {
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "score",
+          "ranks",
+          "text",
+          "content_hash",
+          "kind",
+          "speaker_layer",
+          "book_id",
+          "book_title",
+          "book_version_id",
+          "edition_label",
+          "generation_id",
+          "section_title",
+          "section_path",
+          "school_key",
+          "pages",
+          "spans"
+        ],
+        "title": "Hit",
+        "type": "object"
+      },
+      "HitSpan": {
+        "properties": {
+          "block_id": {
+            "format": "uuid",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "chunk_end": {
+            "title": "Chunk End",
+            "type": "integer"
+          },
+          "chunk_start": {
+            "title": "Chunk Start",
+            "type": "integer"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "printed_page_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Printed Page Label"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_revision_id",
+          "block_id",
+          "start_offset",
+          "end_offset",
+          "chunk_start",
+          "chunk_end",
+          "physical_page_number",
+          "printed_page_label"
+        ],
+        "title": "HitSpan",
         "type": "object"
       },
       "ImpactCounts": {
@@ -4843,6 +5062,32 @@
         "title": "PublishResult",
         "type": "object"
       },
+      "QueryView": {
+        "properties": {
+          "expansions": {
+            "items": {
+              "$ref": "#/components/schemas/Expansion"
+            },
+            "title": "Expansions",
+            "type": "array"
+          },
+          "folded": {
+            "title": "Folded",
+            "type": "string"
+          },
+          "normalized": {
+            "title": "Normalized",
+            "type": "string"
+          }
+        },
+        "required": [
+          "normalized",
+          "folded",
+          "expansions"
+        ],
+        "title": "QueryView",
+        "type": "object"
+      },
       "ReadyStatus": {
         "properties": {
           "checks": {
@@ -6207,6 +6452,184 @@
           "reason"
         ],
         "title": "ScopeInput",
+        "type": "object"
+      },
+      "SearchInput": {
+        "properties": {
+          "book_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "book_version_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Book Version Ids",
+            "type": "array"
+          },
+          "mode": {
+            "default": "research",
+            "enum": [
+              "research",
+              "chart_analysis",
+              "comparison"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "page_from": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page From"
+          },
+          "page_to": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page To"
+          },
+          "query": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "school_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "School Ids",
+            "type": "array"
+          },
+          "top_k": {
+            "default": 8,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "topic_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Topic Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchInput",
+        "type": "object"
+      },
+      "SearchResult": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "degraded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Degraded",
+            "type": "array"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/Hit"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryView"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "no_match",
+              "empty_corpus",
+              "empty_filters"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "took_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Took Ms"
+          },
+          "visibility_epoch": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Epoch"
+          }
+        },
+        "required": [
+          "status",
+          "release_id",
+          "visibility_epoch",
+          "query",
+          "hits",
+          "degraded"
+        ],
+        "title": "SearchResult",
         "type": "object"
       },
       "SettingDTO": {
@@ -14254,6 +14677,82 @@
         "summary": "Get School",
         "tags": [
           "knowledge"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/search": {
+      "post": {
+        "operationId": "run_search_api_v1_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SearchResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Run Search",
+        "tags": [
+          "retrieval"
         ],
         "x-permission": "R"
       }
