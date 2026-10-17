@@ -13,11 +13,13 @@ USER app
 CMD ["python", "scripts/inspect_corpus.py", "/inputs/books"]
 
 # API and workers share one image; the worker command differs (docs/03).
-# Tesseract 5 from Debian bookworm with Vietnamese, English and Chinese data (T012).
+# Tesseract 5 from Debian bookworm with Vietnamese, English and Chinese data (T012);
+# LibreOffice Writer (no GUI) and pinned font packages for canonical DOCX renders (T013).
 FROM base AS app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-vie \
        tesseract-ocr-eng tesseract-ocr-chi-sim tesseract-ocr-chi-tra \
+       libreoffice-writer-nogui fonts-dejavu-core fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
@@ -28,11 +30,9 @@ RUN mkdir -p /data/objects && chown app:app /data/objects
 USER app
 CMD ["celery", "-A", "backend.app.ingestion.celery_worker:celery", "worker", "-Q", "ingestion", "-c", "1"]
 
-# Test image: app + dev/corpus groups + tests, for suites that need Tesseract.
+# Test image: app + dev/corpus groups + tests, for suites that need Tesseract/LibreOffice.
 FROM app AS test
 USER root
-# Fonts only for synthetic Vietnamese text fixtures.
-RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core     && rm -rf /var/lib/apt/lists/*
 RUN uv sync --frozen --group dev --group corpus --no-install-project
 COPY tests tests
 COPY contracts contracts
