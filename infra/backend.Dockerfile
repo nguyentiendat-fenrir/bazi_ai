@@ -21,6 +21,9 @@ RUN apt-get update \
        tesseract-ocr-eng tesseract-ocr-chi-sim tesseract-ocr-chi-tra \
        libreoffice-writer-nogui fonts-dejavu-core fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
+# PostgreSQL 17 client for backup/restore (T052.1): pg_dump must not be older than the
+# server, and Debian bookworm ships 15. The repository key is checked by fingerprint.
+RUN apt-get update     && apt-get install -y --no-install-recommends ca-certificates curl gpg     && install -d /usr/share/postgresql-common/pgdg     && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc        https://www.postgresql.org/media/keys/ACCC4CF8.asc     && gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc        | grep '^fpr' | grep -q 'B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'     && echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc]'        'https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main'        > /etc/apt/sources.list.d/pgdg.list     && apt-get update     && apt-get install -y --no-install-recommends postgresql-client-17     && apt-get purge -y curl gpg && apt-get autoremove -y     && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 ENV PATH="/app/.venv/bin:$PATH" OMP_THREAD_LIMIT=1 STORAGE_ROOT=/data/objects

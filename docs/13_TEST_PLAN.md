@@ -19,7 +19,7 @@ Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằn
 | Rule | safe AST, exception, unknown, DAG, revoke/conflict | trace và output deterministic; no code execution |
 | Security | malicious doc/prompt, IDOR, CSRF, secret logs, delete canary | zero critical/high unresolved |
 | Performance | 10/100/1.000 books, 100k/500k pages profile, cold/warm | đo và công bố resource/throughput; không fabricated SLA |
-| Operations | backup clean-volume restore, missing blob/key, migration fail | checksums+source+search+chart+chat restored |
+| Operations | backup clean-volume restore, missing blob/key, migration fail (`tests/integration/test_backup.py` chạy trong image test vì cần pg_dump 17; trên Windows bị skip, không tính là pass) | checksums+source+search+chart+chat restored |
 
 ## Calculation matrix cụ thể
 

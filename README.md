@@ -130,6 +130,17 @@ không `compose down -v`; giữ volume `bazi-ai_*` qua các lần pull.
 sau khi đã migrate, tạo runtime login và admin:
 `docker compose --env-file .env -f infra/compose.yaml --profile app up -d --build`.
 
+Backup/restore (Ubuntu; thư mục đích trên ổ mã hóa, ngoài volume, uid 10001 ghi được):
+
+```bash
+sudo install -d -m 700 -o 10001 -g 10001 /srv/bazi-backups
+python3 scripts/dev backup --dest /srv/bazi-backups
+python3 scripts/dev restore-preflight --manifest /srv/bazi-backups/<tên>/manifest.json
+python3 scripts/dev restore --manifest /srv/bazi-backups/<tên>/manifest.json --confirm <tên>
+```
+
+Restore luôn vào project `bazi-restore` với volume mới, không ghi đè hệ thống đang chạy.
+
 Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
 `LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.
 Chưa biết URL/model/VRAM nên để trống, không khởi Gemma thứ hai. Embedding dùng

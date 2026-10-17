@@ -10,7 +10,9 @@ upload or a render that is still committing is never collected:
   grace period is removed.
 
 Withdrawn versions keep their source object: withdrawal revokes visibility,
-deleting content is a separate, audited operation.
+deleting content is a separate, audited operation. A collection never runs while a
+backup holds the maintenance lock (ops.backup), so a backup copies every blob its
+database snapshot names.
 """
 from __future__ import annotations
 
@@ -23,6 +25,7 @@ from .base import ObjectStore
 from .service import ObjectInUse, delete_object
 
 GRACE = timedelta(hours=24)
+MAINTENANCE_LOCK = 'bazi.storage.maintenance'   # session advisory lock shared with backups
 REFERENCES = (('book_versions', 'object_id'), ('page_revisions', 'rendered_object_id'),
               ('evaluation_runs', 'report_object_id'), ('backups', 'manifest_object_id'),
               ('ingestion_batch_items', 'object_id'))
@@ -30,6 +33,18 @@ REFERENCES = (('book_versions', 'object_id'), ('page_revisions', 'rendered_objec
 
 def collect(engine: Engine, store: ObjectStore, grace: timedelta = GRACE,
             dry_run: bool = False) -> dict:
+    with engine.connect() as lock:
+        if not lock.execute(text('SELECT pg_try_advisory_lock(hashtext(:k))'),
+                            {'k': MAINTENANCE_LOCK}).scalar():
+            return {'dry_run': dry_run, 'skipped': 'BACKUP_RUNNING', 'unreferenced_objects': 0,
+                    'orphan_blobs': 0, 'removed_objects': 0, 'removed_blobs': 0}
+        try:
+            return _collect(engine, store, grace, dry_run)
+        finally:
+            lock.execute(text('SELECT pg_advisory_unlock(hashtext(:k))'), {'k': MAINTENANCE_LOCK})
+
+
+def _collect(engine: Engine, store: ObjectStore, grace: timedelta, dry_run: bool) -> dict:
     unused = ' AND '.join(f'NOT EXISTS (SELECT 1 FROM {table} t WHERE t.{column} = o.id)'
                           for table, column in REFERENCES)
     with engine.connect() as conn:

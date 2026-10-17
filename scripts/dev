@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-"""Windows development / Ubuntu deployment preflight and corpus inspection.
+"""Windows development / Ubuntu deployment preflight, corpus inspection, backup/restore.
 
-No service is started and no secret value is printed. Later task commands are
-added only with their implementation and tests, not as success-shaped stubs.
+No secret value is printed. Later task commands are added only with their
+implementation and tests, not as success-shaped stubs.
+
+    python3 scripts/dev backup --dest /srv/bazi-backups
+    python3 scripts/dev restore-preflight --manifest /srv/bazi-backups/<name>/manifest.json
+    python3 scripts/dev restore --manifest /srv/bazi-backups/<name>/manifest.json --confirm <name>
+
+Backup and restore run the application image (pg_dump/pg_restore 17) through Docker
+Compose. A restore always goes into a separate Compose project with new volumes; the
+running system is never overwritten (docs/12).
 """
 from __future__ import annotations
 
@@ -158,6 +166,62 @@ def doctor(root: Path = ROOT, target: str = 'dev') -> dict:
             'checks': checks}
 
 
+LIVE_PROJECT = 'bazi-ai'      # name: in infra/compose.yaml
+RESTORE_PROJECT = 'bazi-restore'
+
+
+ENV_FILE = ROOT / '.env'
+
+
+def compose(docker: str, project: str | None, *args: str, env_file: Path = ENV_FILE) -> list[str]:
+    command = [docker, 'compose', '--env-file', str(env_file), '-f',
+               str(ROOT / 'infra/compose.yaml')]
+    return command + (['-p', project] if project else []) + list(args)
+
+
+def cli(*args: str) -> list[str]:
+    return ['python', '-m', 'backend.app.cli', *args]
+
+
+def backup_commands(docker: str, dest: Path, name: str | None, project: str | None = None,
+                    env_file: Path = ENV_FILE) -> list[list[str]]:
+    """The worker container has the objects volume and the database network."""
+    args = ['--dest', '/backups'] + (['--name', name] if name else [])
+    return [compose(docker, project, 'run', '--rm', '-T', '-v', f'{dest.resolve()}:/backups',
+                    'worker', *cli('backup', *args), env_file=env_file)]
+
+
+APP_IMAGE = 'bazi-ai-app:local'
+
+
+def preflight_commands(docker: str, manifest: Path) -> list[list[str]]:
+    # Read-only check: no Compose project, network, volume or .env is involved.
+    return [[docker, 'run', '--rm', '--network', 'none', '--read-only', '-v',
+             f'{manifest.resolve().parent}:/backup:ro', APP_IMAGE,
+             *cli('restore-preflight', '--manifest', '/backup/manifest.json')]]
+
+
+def restore_commands(docker: str, manifest: Path, confirm: str, project: str,
+                     env_file: Path = ENV_FILE) -> list[list[str]]:
+    if project == LIVE_PROJECT:
+        raise SystemExit(f'Restore into a new project with new volumes, not {LIVE_PROJECT}.')
+    folder = manifest.resolve().parent
+    return [compose(docker, project, 'up', '-d', '--wait', 'postgres', 'redis', env_file=env_file),
+            compose(docker, project, 'run', '--rm', '-T', '-v', f'{folder}:/backup:ro', 'worker',
+                    *cli('restore', '--manifest', '/backup/manifest.json', '--confirm', confirm),
+                    env_file=env_file),
+            compose(docker, project, 'run', '--rm', '-T', 'worker', *cli('create-runtime-login'),
+                    env_file=env_file)]
+
+
+def run_all(commands: list[list[str]]) -> int:
+    for command in commands:
+        result = subprocess.run(command, cwd=ROOT, check=False)
+        if result.returncode != 0:
+            return result.returncode
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -166,7 +230,47 @@ def main(argv=None) -> int:
     inspect = commands.add_parser('inspect-books')
     inspect.add_argument('directory', nargs='?', type=Path, default=ROOT / 'inputs/books')
     inspect.add_argument('--sample-chars', type=int, choices=range(0, 2001), default=0, metavar='0..2000')
+    back = commands.add_parser('backup', help='consistent backup into a host directory')
+    back.add_argument('--dest', type=Path, required=True,
+                      help='encrypted storage, writable by uid 10001; outside the volumes')
+    back.add_argument('--name')
+    back.add_argument('--project', help='Compose project to back up (default: the live one)')
+    pre = commands.add_parser('restore-preflight', help='verify a backup, change nothing')
+    pre.add_argument('--manifest', type=Path, required=True)
+    rest = commands.add_parser('restore', help='restore into a NEW Compose project and volumes')
+    rest.add_argument('--manifest', type=Path, required=True)
+    rest.add_argument('--confirm', required=True, help='the backup name, typed again')
+    rest.add_argument('--project', default=RESTORE_PROJECT)
+    for sub in (back, rest):
+        sub.add_argument('--env-file', type=Path, default=ENV_FILE)
     args = parser.parse_args(argv)
+    if args.command in ('backup', 'restore-preflight', 'restore'):
+        docker = docker_executable()
+        if not docker:
+            print('Docker is required for backup/restore.', file=sys.stderr)
+            return 2
+        if args.command == 'backup':
+            return run_all(backup_commands(docker, args.dest, args.name, args.project,
+                                           args.env_file))
+        if args.command == 'restore-preflight':
+            return run_all(preflight_commands(docker, args.manifest))
+        up, restore, login = restore_commands(docker, args.manifest, args.confirm, args.project,
+                                              args.env_file)
+        code = run_all([up, restore])
+        if code:
+            return code
+        if run_all([login]):
+            # The containers read .env through env_file; the restore itself is complete.
+            print(f'Restored, but the API login role was not created: set POSTGRES_APP_USER and'
+                  f' POSTGRES_APP_PASSWORD in .env, then run: docker compose --env-file .env -f'
+                  f' infra/compose.yaml -p {args.project} run --rm worker python -m'
+                  f' backend.app.cli create-runtime-login', file=sys.stderr)
+            return 3
+        print(f'Restored into project {args.project!r} (its own volumes). Check it on another'
+              f' port: GATEWAY_PORT=3001 docker compose --env-file .env -f infra/compose.yaml'
+              f' -p {args.project} --profile app up -d. Switch only after checks pass; keep'
+              f' the old volumes until the restored system has run a while.')
+        return 0
     if args.command == 'doctor':
         result = doctor(target=args.target)
         print(json.dumps(result, indent=2, ensure_ascii=False))

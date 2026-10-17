@@ -4,6 +4,8 @@
     python -m backend.app.cli bootstrap-admin --email admin@example.test
     python -m backend.app.cli export-openapi          # contracts/openapi.json snapshot
     python -m backend.app.cli gc --dry-run              # unreferenced objects, orphan blobs
+    python -m backend.app.cli backup --dest /backups    # db.dump + objects + manifest.json
+    python -m backend.app.cli restore --manifest /backup/<name>/manifest.json --confirm <name>
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
@@ -163,6 +165,64 @@ def collect_garbage(args) -> int:
     return 0
 
 
+def _owner_database(settings):
+    from .ops.backup import Database
+    url = settings.database_url
+    return Database(url.host or 'localhost', url.port or 5432, url.username, url.password or '',
+                    url.database)
+
+
+def _print(payload: dict) -> None:
+    print(json.dumps(payload, ensure_ascii=False, indent=1, default=str))
+
+
+def run_backup(args) -> int:
+    from .ops.backup import BackupError, create_backup
+    from .storage import build_store
+    settings = load_settings()
+    try:
+        manifest = create_backup(_owner_database(settings), build_store(settings),
+                                 Path(args.dest), args.name, args.pg_dump, args.pg_restore)
+    except BackupError as exc:
+        _print({'ok': False, 'code': exc.code, 'message': str(exc), 'details': exc.details})
+        return 1
+    _print({'ok': True, 'name': manifest['name'], 'path': str(Path(args.dest) / manifest['name']),
+            'created_at': manifest['created_at'], 'schema_head': manifest['schema_head'],
+            'objects': manifest['objects']['count'],
+            'object_bytes': manifest['objects']['total_bytes'],
+            'database_bytes': manifest['database']['size_bytes'],
+            'duration_seconds': manifest['duration_seconds']})
+    return 0
+
+
+def run_restore(args) -> int:
+    from .ops.backup import BackupError, preflight, restore
+    from .storage import build_store
+    from .storage.local import LocalObjectStore
+    if args.command == 'restore-preflight':
+        try:
+            result = preflight(Path(args.manifest), args.pg_restore)
+        except BackupError as exc:
+            result = {'ok': False, 'code': exc.code, 'message': str(exc)}
+        _print(result)
+        return 0 if result['ok'] else 1
+    settings = load_settings()
+    # Restored blobs were accepted once; today's upload limit does not apply to them.
+    store = (LocalObjectStore(settings.storage_root) if settings.storage_backend == 'local'
+             else build_store(settings))
+    try:
+        report = restore(Path(args.manifest), _owner_database(settings), store, args.confirm,
+                         args.pg_restore)
+    except BackupError as exc:
+        _print({'ok': False, 'code': exc.code, 'message': str(exc), 'details': exc.details})
+        return 1
+    if args.report:
+        Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=1),
+                                     encoding='utf-8')
+    _print({'ok': True, **report})
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python -m backend.app.cli')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -192,6 +252,19 @@ def main(argv: list[str] | None = None) -> int:
     pipe.add_argument('--name', required=True)
     pipe.add_argument('--embedding-profile', required=True, help='id of a provisioned profile')
     pipe.add_argument('--ocr-languages', help='Tesseract languages, default vie+eng')
+    back = commands.add_parser('backup', help='consistent backup: db.dump, objects, manifest')
+    back.add_argument('--dest', required=True, help='directory on encrypted storage')
+    back.add_argument('--name', help='default bazi-<UTC timestamp>')
+    back.add_argument('--pg-dump', default='pg_dump')
+    back.add_argument('--pg-restore', default='pg_restore')
+    pre = commands.add_parser('restore-preflight', help='verify a backup without restoring')
+    pre.add_argument('--manifest', required=True)
+    pre.add_argument('--pg-restore', default='pg_restore')
+    rest = commands.add_parser('restore', help='restore into an EMPTY database and store')
+    rest.add_argument('--manifest', required=True)
+    rest.add_argument('--confirm', required=True, help='the backup name, typed again')
+    rest.add_argument('--report', help='also write the restore report to this file')
+    rest.add_argument('--pg-restore', default='pg_restore')
     gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
     gc.add_argument('--grace-hours', type=float, default=24.0)
     gc.add_argument('--dry-run', action='store_true')
@@ -207,6 +280,10 @@ def main(argv: list[str] | None = None) -> int:
             return collect_garbage(args)
         if args.command == 'pipeline-profile':
             return pipeline_profile(args)
+        if args.command == 'backup':
+            return run_backup(args)
+        if args.command in ('restore', 'restore-preflight'):
+            return run_restore(args)
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

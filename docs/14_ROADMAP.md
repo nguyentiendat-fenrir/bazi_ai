@@ -93,7 +93,12 @@ khác tra tại bảng cuối file này.
   phiên bản (publish có xác nhận thiếu trang, thu hồi gõ tên), hàng đợi duyệt và trang duyệt
   ảnh + bbox + sửa khối + diff + rebase khi 412; API ảnh trang PNG, pipeline profiles (CLI
   tạo), review item theo id; 17 E2E trên stack thật.
-- Việc kế tiếp: T052.1/T053.1 backup/restore kho.
+- T052.1 ✅ backup nhất quán không chặn ghi (pg_dump trên snapshot đã export + blob theo
+  địa chỉ nội dung + khóa GC), manifest kiểm sha256, `scripts/dev backup`. T053.1 ✅
+  preflight + restore vào Compose project/volume mới, kiểm số dòng mọi bảng/blob/release;
+  đã thử trọn vòng qua Compose trên máy dev. Mã hóa/retention/API thuộc T052/T053 đầy đủ.
+- K5 xong phần làm được trên máy dev. Việc kế tiếp: K6 (engine lá số T026–T034, rồi
+  suy luận/chat T039–T045).
 
 ## Các giai đoạn
 
@@ -240,8 +245,8 @@ trước khi trình duyệt.
 | T049 | Security hardening và privacy deletion | K7 | |
 | T050 | Evaluation harness và quality regression | K7 | |
 | T051 | Benchmark throughput, storage và observability | K7 | |
-| T052 | Backup service và CLI | K5/K7 | |
-| T053 | Restore drill và disaster recovery | K5/K7 | |
+| T052 | Backup service và CLI | K5/K7 | T052.1 ✅ |
+| T053 | Restore drill và disaster recovery | K5/K7 | T053.1 ✅ |
 | T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | |
 | T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | |
 | T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | |

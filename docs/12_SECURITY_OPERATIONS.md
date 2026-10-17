@@ -69,7 +69,7 @@ Document text luôn là quoted untrusted evidence. Prompt template đặt ranh g
 
 Admin ghi rights_status (`unknown/private_reference/licensed/public_domain/restricted`) và chính sách external_processing, export/distribution. Unknown mặc định local-private; không tự bật gửi provider hoặc xuất full text. Chat quote length caps configurable theo quyền, ưu tiên diễn giải với locator. Không scrape/tải thêm sách tự động. Không thể suy quyền thương mại từ việc có PDF. Trước commercialization phải review quyền sách, license parser/model và dependencies; checklist này không là tư vấn pháp lý kết luận.
 
-Đã triển khai (T018): embedding profile khai `locality: local` (CLI `--locality local`) cho máy chủ tự host; profile khác coi là bên ngoài, và stage embed từ chối gửi text của version không bật `external_processing_allowed` (`EXTERNAL_PROCESSING_DENIED`, không gọi provider). Publish chặn version `restricted` hoặc đã withdraw. Withdraw (T019) thu hồi ngay: release active mới không chứa version và `visibility_epoch` tăng; GC chỉ xóa bytes không còn tham chiếu sau thời gian ân hạn và không được chạy trong cửa sổ backup (khóa này đến cùng T052.1).
+Đã triển khai (T018): embedding profile khai `locality: local` (CLI `--locality local`) cho máy chủ tự host; profile khác coi là bên ngoài, và stage embed từ chối gửi text của version không bật `external_processing_allowed` (`EXTERNAL_PROCESSING_DENIED`, không gọi provider). Publish chặn version `restricted` hoặc đã withdraw. Withdraw (T019) thu hồi ngay: release active mới không chứa version và `visibility_epoch` tăng; GC chỉ xóa bytes không còn tham chiếu sau thời gian ân hạn và không chạy khi một backup đang giữ khóa bảo trì (T052.1).
 
 ## Observability và cost
 
@@ -83,6 +83,8 @@ Release đầu dùng **maintenance backup window** ngắn có thông báo, thay 
 
 Nếu tương lai thêm hot backup, cần WAL/PITR + coordinated object manifest, ADR riêng; không bỏ requirement backup/restore release hiện tại. Retention mặc định 7 daily+4 weekly trong storage quota; ít nhất một bản ngoài ổ đang chạy. Backup không chứa API secrets; recovery key riêng. Blob orphan cleanup bị khóa trong backup window.
 
+Đã triển khai (T052.1, `backend/app/ops/backup.py`): `scripts/dev backup --dest <thư mục>` chạy `python -m backend.app.cli backup` trong container worker (image app có pg_dump/pg_restore 17 từ kho PGDG, khóa kiểm theo fingerprint). Backup là thư mục `<tên>/`: `db.dump` (pg_dump custom), `objects/..` (mọi blob `ready` theo địa chỉ nội dung, kiểm sha256 + kích thước khi chép) và `manifest.json` (format `bazi-backup-1`, schema head, phiên bản server, sha256 dump, danh sách blob, số dòng của **mọi** bảng, release đang active). Ghi vào `.<tên>.partial`, kiểm `pg_restore --list`, rồi mới đổi tên: thư mục có manifest luôn đầy đủ. Nhất quán mà không chặn ghi: pg_dump đọc đúng snapshot được export từ transaction đã liệt kê objects/đếm dòng; blob bất biến, hàng `objects` chỉ commit sau khi bytes đã lưu; GC giữ cùng advisory lock `bazi.storage.maintenance` nên không xóa gì trong lúc backup (GC thấy khóa → bỏ qua lượt, `BACKUP_RUNNING`). Không chép secret; **chưa mã hóa** ở lớp này — thư mục đích phải nằm trên ổ mã hóa, ngoài các volume, uid 10001 ghi được. Retention, mã hóa archive, API `/operations/backups` thuộc T052 đầy đủ.
+
 ## Restore runbook bắt buộc kiểm thử
 
 Khi mất toàn bộ DB, dùng `scripts/dev restore --manifest <backup-manifest-path>` từ host để dựng recovery stack; không phụ thuộc bảng backups trong DB đã mất. Manifest ngoài archive tự mô tả encryption version/checksums, không chứa key. API restore chỉ là giao diện cho trường hợp server quản trị còn hoạt động.
@@ -93,6 +95,8 @@ Khi mất toàn bộ DB, dùng `scripts/dev restore --manifest <backup-manifest-
 4. Chạy orphan/missing-object check, foreign-key integrity, open source pages, chart deterministic hash, retrieve known evidence, replay conversation citations, requeue unfinished jobs bằng DB/outbox; không phát lại việc có side effect đã hoàn thành.
 5. Index vector lexical thiếu có thể rebuild theo đúng model/profile/version, vẫn chưa declare ready đến khi coverage đạt. So checksum và synthetic tests, chuyển volumes/cổng khi pass; nếu fail giữ system cũ.
 6. Ghi restore report và measured RTO/RPO. Mục tiêu RPO≤24h theo daily backup, RTO phải đo thực tế; chưa cam kết số phút.
+
+Đã triển khai (T053.1): `scripts/dev restore-preflight --manifest …` (container không mạng, read-only: sha256 dump, `pg_restore --list`, rehash mọi blob, schema head có trong code) và `scripts/dev restore --manifest … --confirm <tên backup>` luôn dựng **Compose project mới** (`bazi-restore`, volume riêng; từ chối project đang chạy). CLI restore từ chối DB đã có bảng (`TARGET_NOT_EMPTY`), sai tên xác nhận, preflight lỗi hoặc thiếu chỗ ổ; tạo role `bazi_runtime` nếu thiếu; chép blob trước (idempotent) rồi `pg_restore --single-transaction`; kiểm lại số dòng mọi bảng, schema head, release active và từng blob trong store mới; báo cáo thời gian restore (một phần RTO) và tuổi backup (RPO). Sau đó `create-runtime-login`, chạy app ở cổng khác để kiểm rồi mới chuyển. Đã thử trên máy dev: project tạm → backup → restore vào project mới (82 bảng, blob khớp) → xóa volume tạm. Chưa có: deletion ledger (chưa có tính năng xóa), kiểm chart/chat (chưa có), API restore.
 
 ## Deletion
 
