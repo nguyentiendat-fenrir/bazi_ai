@@ -24,6 +24,7 @@ Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi c�
 | 18 | EXPERIMENT | Top lexical/vector 80, fused 40, context 8/6k tokens, RRF k=60 | Ablations và p95/recall quyết định; school/ACL filters cố định |
 | 19 | EXPERIMENT | OCR DPI 200–300, concurrency1; worker ingest2; resource quotas | Benchmark trên máy thực, no GPU requirement |
 | 20 | EXPERIMENT | Reranker multilingual local hoặc API, timeout fallback | Module rerank bắt buộc, lựa chọn model không cố định vào provider |
+| 22 | FIXED | Native PDF extraction dùng PDFium (pypdfium2, Apache-2.0/BSD) làm backend mặc định sau adapter; Docling layout pipeline là profile tùy chọn khi đã benchmark — [chi tiết](#adr-22-chi-tiết) | Không kéo torch/model layout vào worker mặc định; không dùng pypdf cho extraction |
 | 21 | FIXED | Kho tri thức trước; Windows dev native, Ubuntu 22.04 runtime cùng host Gemma — [chi tiết](#adr-21-chi-tiết) | Không ép WSL trên máy dev; không đổi schema/API |
 
 ## ADR-21 chi tiết
@@ -47,6 +48,10 @@ Phương án loại: ép WSL; OCR mọi trang; dùng Gemma chat làm embedding m
 CASE tự thành nguồn chuẩn; xóa evidence để ít file. Rollback: revert commit
 T057 `49636dd`, không chạm input/volumes; các commit sau đó (bỏ TASKS/AGENTS/reports,
 tái cấu trúc docs) độc lập, revert riêng nếu cần. Không migration/DTO mới.
+
+## ADR-22 chi tiết
+
+**ACCEPTED 17/10/2026, T011.** Bổ sung ADR-12 (giữ nguyên ý "parser adapters, PyMuPDF chỉ là tùy chọn"). Đo trên 4 PDF thật (815 trang): pypdf tách sai chữ có dấu ("tinh th ần"); PDFium trả đúng ("tinh thần", "có thể"), 1–3,5 s/cuốn, 0 ký tự U+FFFD, có bbox từng ký tự, font, cỡ, độ đậm và **màu** (Tử Bình phân lớp bình chú bằng màu), nhãn trang và vùng ảnh. Docling cũng dùng PDFium cho đường native; pipeline đầy đủ của Docling cần torch và model layout (GB, tranh VRAM với Gemma) và chưa benchmark trên gold. Quyết định: stage `validate`/`extract` dùng `backend/app/ingestion/pdf_native.py` (pypdfium2 5.14 / PDFium 156); `PARSER_VERSION` nằm trong idempotency key và layout của revision nên đổi backend tạo revision/generation mới. Docling layout là profile thêm sau khi so trên bộ trang gán nhãn (T014). Rollback: đổi handler của pipeline profile, revision cũ giữ nguyên.
 
 ## Nguồn kỹ thuật chính thức và điều đã sử dụng
 

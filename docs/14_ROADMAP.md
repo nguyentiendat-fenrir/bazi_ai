@@ -36,7 +36,9 @@ khác tra tại bảng cuối file này.
 - T010 ✅ queue bền trong PostgreSQL: lease + fencing token, compute/persist tách, retry jitter,
   cancel, outbox + dedupe, watchdog/reconciler, Celery chỉ là tín hiệu; smoke thật
   outbox → Redis → Celery worker → DB.
-- Việc kế tiếp: T011 native PDF extraction; smoke T002 trên Ubuntu khi có máy.
+- T011 ✅ extraction native bằng PDFium (ADR-22): block theo font/màu, bbox sau rotation,
+  phân loại trang, nhãn trang, ba sách audit đủ 613 trang, 0 U+FFFD; stage validate/extract.
+- Việc kế tiếp: T012 OCR theo trang/vùng; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -141,7 +143,7 @@ trước khi trình duyệt.
 | T008 | API contracts nền và client skeleton | K1 | ✅ (TS client → T043.1) |
 | T009 | Catalog, upload batch và dedupe | K2 | ✅ |
 | T010 | Durable queue, outbox, lease và retry | K2 | ✅ |
-| T011 | Inspector và native PDF extraction | K2 | |
+| T011 | Inspector và native PDF extraction | K2 | ✅ |
 | T012 | OCR sandbox theo trang/vùng | K2 | |
 | T013 | DOCX extraction và canonical rendering | K2 | |
 | T014 | Unicode, cấu trúc và quality review | K2 | |

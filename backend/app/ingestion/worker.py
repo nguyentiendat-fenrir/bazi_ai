@@ -77,6 +77,9 @@ class StageHandler(Protocol):
 
     def persist(self, conn: Connection, ctx: JobContext, unit: Unit, result: Any) -> dict: ...
 
+    # Optional: ``attach(conn, ctx, unit, output_ref)`` links an output computed by an
+    # earlier job (same idempotency key) to this job's generation. Must be idempotent.
+
 
 def load_context(conn: Connection, job_id: uuid.UUID, engine: Engine, store: ObjectStore,
                  worker_id: str) -> JobContext:
@@ -136,7 +139,13 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
                         'message': f'{handler.name} {unit.key} failed {queue.MAX_ATTEMPTS} times'})
                     return 'failed'
             if claimed.lease is None:
-                continue  # already published by an earlier attempt or parent job
+                # Computed before (retry job or another generation of the same version):
+                # reuse the output, but still link it to this generation.
+                attach = getattr(handler, 'attach', None)
+                if attach is not None:
+                    with engine.begin() as conn:
+                        attach(conn, ctx, unit, claimed.output_ref)
+                continue
             lease = claimed.lease
             try:
                 result = handler.compute(ctx, unit)
