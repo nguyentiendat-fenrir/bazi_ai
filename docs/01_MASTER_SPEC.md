@@ -3,9 +3,9 @@
 ## Điều chỉnh triển khai — 17/10/2026, ADR-21
 
 Ưu tiên kho tri thức/RAG; dev Windows native, runtime OCR Ubuntu 22.04 cùng host
-với Gemma llama.cpp. Yêu cầu WSL2 máy dev và thứ tự tuần tự cũ được thay bằng
-TASKS/docs/14. R01–R11 vẫn là mục tiêu release đầy đủ; T057 không phải bàn giao
-ứng dụng. Không thay schema/API/facts engine.
+với Gemma llama.cpp. Không bắt buộc WSL2 trên máy dev; triển khai kho nguồn trước
+theo docs/07. R01–R11 vẫn là mục tiêu release đầy đủ, chưa phải các chức năng
+đã triển khai. Không thay schema/API/facts engine.
 
 ## Sản phẩm và phạm vi bàn giao
 

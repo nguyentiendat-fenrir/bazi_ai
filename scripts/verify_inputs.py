@@ -130,7 +130,7 @@ def archive_payloads(data: bytes, expected: dict, totals: dict | None = None) ->
     try:
         import rarfile
     except ImportError as exc:
-        raise VerificationError('RAR_READER_MISSING: install scripts/requirements-t001.txt') from exc
+        raise VerificationError('RAR_READER_MISSING: run uv sync --locked') from exc
     if len(data) > MAX_ARCHIVE:
         raise VerificationError('ARCHIVE_SIZE_LIMIT')
     try:

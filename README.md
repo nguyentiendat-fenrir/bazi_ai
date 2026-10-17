@@ -6,8 +6,7 @@ Gemma dùng container `ghcr.io/ggml-org/llama.cpp:server-cuda` đã có trên Ub
 
 Hiện có công cụ bảo toàn nguồn, kiểm kê PDF/DOCX/Markdown, kiểm tra môi trường,
 tests và PostgreSQL/Redis Compose. **Chưa có web app, OCR worker, index RAG hay
-kết nối Gemma hoạt động.** Xem [roadmap](docs/14_IMPLEMENTATION_ROADMAP.md),
-[kế hoạch từ sách thật](docs/07_RAG_ENGINE.md) và [báo cáo T057](reports/tasks/T057.md).
+kết nối Gemma hoạt động.** Xem [kế hoạch RAG từ sách thật](docs/07_RAG_ENGINE.md).
 
 ## Cấu trúc
 
@@ -18,12 +17,12 @@ kết nối Gemma hoạt động.** Xem [roadmap](docs/14_IMPLEMENTATION_ROADMAP
 | `inputs/books/` | Sách gốc local, không Git; chép riêng sang Ubuntu |
 | `inputs/source/`, `legacy/bazi/` | Archive/mã BaZi gốc bảo toàn, tái dùng khi làm lá số |
 | `tests/` | Unit, integration, bảo mật đầu vào và regression |
-| `docs/`, `TASKS.md` | Contracts, ADR và thứ tự triển khai hiện hành |
-| `reports/tasks/`, `evidence/` | Báo cáo task và bằng chứng lịch sử phải giữ |
+| `docs/` | Thiết kế kỹ thuật, API/schema và kế hoạch RAG |
+| `evidence/` | Manifest và audit dùng để kiểm chứng nguồn |
 | `.tools/`, `.cache/`, `.artifacts/`, `.venv/` | Công cụ/cache/output local đã ignore |
 
 Không tạo module rỗng. `backend/` và frontend sẽ xuất hiện cùng chức năng thật.
-Scaffold Next.js/proxy/worker trỏ tới code chưa có đã bỏ ở T057; stack dài hạn
+Scaffold Next.js/proxy/worker trỏ tới code chưa có đã bỏ; stack dài hạn
 vẫn là FastAPI + Next.js + PostgreSQL/pgvector + Celery.
 
 ## Dev Windows
@@ -42,7 +41,7 @@ uv run --locked python scripts/scan_secrets.py
 Inspector chỉ đọc, xuất JSON SHA256/trang/đoạn/bảng/cờ xem lại; không OCR/publish.
 Lưu output local vào `.artifacts/` nếu cần, không Git. `--sample-chars 1000` bật
 trích đoạn local; mặc định không xuất text sách. Terminal Windows cũ có thể đặt
-`$env:PYTHONIOENCODING='utf-8'`. T001 dùng `python scripts/verify_inputs.py --check`
+`$env:PYTHONIOENCODING='utf-8'`. Dùng `python scripts/verify_inputs.py --check`
 với UnRAR trong PATH để kiểm archive/ba PDF audit/legacy. RAR5 integration cần
 WinRAR trên Windows; không nhầm test skip là đã kiểm. Không chạy venv trong RAR.
 

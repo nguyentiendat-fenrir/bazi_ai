@@ -8,7 +8,7 @@ PostgreSQL, Redis và `corpus-inspect` chạy một lần; không tham chiếu m
 Image mang code, sách mount read-only, DB/objects/checkpoints ngoài Git.
 
 Ưu tiên library → jobs → review → search/evaluation; calculation/DSL/chat sau.
-Subtask/dependencies hiện hành ở TASKS/docs/14. Gemma ngoài Compose dự án,
+Kế hoạch corpus hiện hành ở docs/07. Gemma ngoài Compose dự án,
 provider `openai_compatible`; OCR không dùng LLM sửa chữ âm thầm, mọi đề xuất là
 draft cần nguồn và reviewer. Không thay business schema/REST contracts.
 

@@ -15,11 +15,11 @@ gate bắt buộc WSL trên máy dev. Giữ schema/API, source preservation và 
   layout parser/OCR production ADR-11/12; không có publish hoặc HTTP API mới.
 - Bỏ scaffold frontend/proxy và service command trỏ module vắng mặt. Thêm lại
   cùng implementation/tests. Giữ backend lock cho foundation kế tiếp.
-- Giữ sách, legacy, audit/evidence và contracts đã duyệt; bỏ phần AGENTS lặp nguyên văn.
+- Giữ sách, legacy, manifest kiểm nguồn và contracts kỹ thuật.
 
 Phương án loại: ép WSL; OCR mọi trang; dùng Gemma chat làm embedding mặc định;
 CASE tự thành nguồn chuẩn; xóa evidence để ít file. Rollback bằng revert commit
-T057, không chạm input/volumes. Không migration/DTO mới. Kết quả ở reports/tasks/T057.md.
+`49636dd`, không chạm input/volumes. Không migration/DTO mới.
 
 Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi cần ADR diff; `EXPERIMENT` là tham số phải đo, không phải lý do bỏ module. Ngày đối chiếu nguồn kỹ thuật 10–11/10/2026. Patch versions xác minh lại ở T002.
 

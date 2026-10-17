@@ -2,7 +2,7 @@
 
 ## Trạng thái tài liệu
 
-Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằng chứng đã chạy trong Work nằm ở 02 và evidence: 9 observation tests legacy, PDF metrics, package checks. Không đánh dấu các test ứng dụng dưới đây đã pass. Runner `scripts/dev test Txxx` phải map tới test paths của TASKS, tạo report command/exit code/duration/fixtures hash.
+Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằng chứng đã chạy trong Work nằm ở 02 và evidence: 9 observation tests legacy, PDF metrics, package checks. Không đánh dấu các test ứng dụng dưới đây đã pass. Chạy suite hiện có bằng `python -B -m unittest discover -s tests -v`; các module mới bổ sung kiểm thử tương ứng khi triển khai.
 
 ## Tầng kiểm thử
 
