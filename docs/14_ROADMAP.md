@@ -58,8 +58,10 @@ khác tra tại bảng cuối file này.
 - T019 ✅ jobs API (list/chi tiết/sự kiện/retry/cancel) + `job_events` bền, reprocess giữ bản
   sửa, withdraw thu hồi ngay khỏi release active, review queue (accept/exclude/retry/dismiss
   kèm rebuild), GC object/blob mồ côi có thời gian ân hạn. K2 xong phần backend.
-- Việc kế tiếp: K3 — T020 trường phái/phương pháp/concept/aliases; smoke T002 trên Ubuntu khi
-  có máy.
+- T020 ✅ school/topic/method/concept/alias có revision và review (submit/return/approve/
+  reject/revoke, base_revision → 412), tìm alias không dấu theo trường phái, trường phái của
+  sách theo version/khoảng trang (M010) thành phân loại chunk theo generation.
+- Việc kế tiếp: T021 trích xuất candidates từ nguồn; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -174,7 +176,7 @@ trước khi trình duyệt.
 | T017 | Sửa OCR incremental và impact | K2 | ✅ |
 | T018 | Publication và active corpus release | K2 | ✅ |
 | T019 | Reprocess, withdrawal, GC và jobs API | K2 | ✅ |
-| T020 | Trường phái, phương pháp, concept và aliases | K3 | |
+| T020 | Trường phái, phương pháp, concept và aliases | K3 | ✅ |
 | T021 | Trích xuất candidates từ nguồn | K3 | |
 | T022 | Duyệt assertions/rules và relations | K3 | |
 | T023 | Kho mệnh lệ và structured chart từ sách | K3 | |

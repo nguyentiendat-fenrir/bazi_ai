@@ -73,6 +73,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T019): `GET /jobs` (V; lọc state/batch_id/book_version_id, cursor), `GET /jobs/{id}` (JobDTO + `stages[{stage,units,computed,reused,done}]` + `retried_by`), `GET /jobs/{id}/events` (`after_seq`, `limit`; `page.next_cursor` là seq cuối), `POST /jobs/{id}/retry` (202 job con; job chưa kết thúc/thành công → 409 `JOB_NOT_RETRYABLE`, generation đã niêm phong → 409 `GENERATION_CLOSED`, đang có job → 409 `JOB_ACTIVE`; `failed_units_only=false` → 422 vì dựng lại toàn bộ là `/process`), `POST /jobs/{id}/cancel` (202 `cancel_requested` khi worker đang chạy, 200 khi đã kết thúc hoặc hủy xong ngay), `POST /book-versions/{id}/process`, `POST /book-versions/{id}/withdraw`, `GET /review-items` (mặc định `state=open`; lọc reason/book_version_id/generation_id), `POST /review-items/{id}/resolve` (item đã đóng → 409 `REVIEW_CLOSED`; accept/exclude/retry cho item tri thức → 422).
 
+Đã triển khai (T020): `GET/POST /schools` (+ `GET /schools/{id}`), `GET/POST /topics`, `GET/POST /methods` (+ `GET /methods/{id}`, `POST /methods/{id}/revisions` với `base_revision`), `GET/POST /concepts` (list trả revision mới nhất mỗi key, lọc school_id/state/q không dấu, cursor), `GET /concepts/{id}` (terms, các revision, lịch sử review), `POST /concepts/{id}/revisions`, `GET /terms` (q không dấu, school_id, concept_id, state; kèm concept + school), `POST /terms`, `GET /terms/{id}`, school scopes, `POST /reviews` cho method/concept/term/school_scope (assertion/rule/case thêm ở T022). Không có `POST /terms/{id}/revisions`: đổi alias là thêm term mới rồi revoke term cũ.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ
@@ -88,7 +90,7 @@ Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. A
 | GET/POST /concepts | R/V | school_id,canonical_key,label,description; draft revision |
 | GET/POST /terms | R/V | concept_id,form_nfc,language,alias_kind,evidence_id; draft |
 | POST /concepts/{id}/revisions | V | base_revision, changes, reason | 
-| POST /terms/{id}/revisions | V | base_concept_revision, changed form/scope,reason; tạo concept revision + alias set mới |
+| GET/POST /book-versions/{id}/school-scopes | R/V | school_id, first_page?, last_page?, reason → draft scope; duyệt qua /reviews |
 | GET/POST /assertions | R/V | AssertionInput theo 06 + evidence_ids |
 | GET /assertions/{id} | R | revision + sources + relations |
 | POST /assertions/{id}/revisions | V | base_revision,statement,applicability,exceptions,evidence_ids |
@@ -97,7 +99,7 @@ Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. A
 | GET /rules/{id} | R | DSL, sources, tests, lifecycle |
 | POST /rules/{id}/revisions | V | base_revision,DSL,evidence_ids,reason |
 | POST /rules/{id}/validate | V | fixtures[] | schema/type/DAG/positive-negative-unknown results |
-| POST /reviews | V | entity_kind,entity_id,base_revision,decision,reason | guarded approve/reject/revoke, trace audit |
+| POST /reviews | V | entity_kind,entity_id,base_revision,decision submit/return/approve/reject/revoke,reason; Idempotency-Key | guarded transition, review row cùng transaction, audit |
 | GET/POST /rulesets | R/V | school_id,method_id,rule_revision_ids | snapshot validate + ready, không lấy draft |
 | POST /rulesets/{id}/activate | V | expected_current_id | active method setting update atomic |
 | GET /knowledge/impact | V | entity_kind,entity_id | downstream analysis/case/rule revisions |

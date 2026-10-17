@@ -26,6 +26,7 @@ import re
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from ..knowledge import scopes
 from .structure import BlockRef, build_sections
 from .worker import JobContext, Unit
 
@@ -309,3 +310,5 @@ class ChunkStage:
             conn.execute(text('UPDATE ingestion_jobs SET counters = counters || CAST(:c AS jsonb)'
                               ' WHERE id = :j'),
                          {'j': ctx.job_id, 'c': json.dumps({'chunks': len(output['members'])})})
+        # School of each chunk from the version's approved scopes (reviewed, not guessed).
+        scopes.classify(conn, ctx.generation_id, ctx.book_version_id)
