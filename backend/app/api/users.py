@@ -11,12 +11,14 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DBAPIError
 
-from ..auth.deps import db, require_role
+from ..auth.deps import current_principal, db, require_role
+from ..auth.erasure import erase
 from ..auth.passwords import MAX_LENGTH, MIN_LENGTH
-from ..auth.service import create_user, list_users, update_user
+from ..auth.service import Principal, create_user, list_users, update_user
 from ..core.concurrency import etag, require_if_match
 from ..core.errors import AppError
-from .auth import Email
+from ..core.logging import request_id_var
+from .auth import Email, ErasureInput, ErasureResult
 from .health import envelope
 from .schemas import (AUTHENTICATED_ERRORS, Envelope, ListEnvelope, UserDTO, permission,
                       problem_responses)
@@ -103,3 +105,14 @@ def patch(user_id: uuid.UUID, body: UserPatch, request: Request, response: Respo
         raise _db_conflict(exc) or exc
     response.headers['ETag'] = etag(user_revision(row))
     return envelope(user_dto(row))
+
+
+@router.post('/{user_id}/erasure', response_model=Envelope[ErasureResult],
+             responses={**AUTHENTICATED_ERRORS, **problem_responses(404, 409)},
+             openapi_extra=permission('A'))
+def erase_user_data(user_id: uuid.UUID, body: ErasureInput,
+                    principal: Principal = Depends(current_principal),
+                    conn: Connection = Depends(db)) -> dict:
+    """Erase another person's private data (and optionally the account) on request."""
+    return envelope(erase(conn, principal.user_id, user_id, body.confirm, body.delete_account,
+                          request_id=request_id_var.get() or ''))

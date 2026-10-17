@@ -126,7 +126,11 @@ khác tra tại bảng cuối file này.
   chiếu mã nguồn endpoint), ví dụ success/failure sinh từ schema cho mọi body/response và được
   kiểm khớp schema; frontend gửi header qua `params.header` có kiểu; unit test mọi URL
   `/api/v1` trong frontend (kể cả SSE, upload, ảnh trang) có trong contract.
-- Việc kế tiếp: K7 (T049–T056).
+- T049 ✅ xóa dữ liệu cá nhân (tự xóa/admin xóa, tùy chọn xóa tài khoản, hàm DB xóa cứng theo
+  đồ thị FK, ledger áp lại khi restore, test canary toàn DB) + chống prompt injection (dấu
+  phân cách không giả được, `reasoning-2`, test SEC04 có mutation check); xóa hồ sơ sinh xóa
+  trắng bản mã ngay.
+- Việc kế tiếp: T050–T056.
 
 ## Các giai đoạn
 
@@ -270,7 +274,7 @@ trước khi trình duyệt.
 | T046 | Library upload/jobs/OCR review dashboard | K5/K6 | T046.1 ✅ |
 | T047 | Knowledge/rules/cases admin UI | K6 | ✅ |
 | T048 | Evaluation/settings/dashboard UI | K6 | ✅ |
-| T049 | Security hardening và privacy deletion | K7 | |
+| T049 | Security hardening và privacy deletion | K7 | ✅ |
 | T050 | Evaluation harness và quality regression | K7 | |
 | T051 | Benchmark throughput, storage và observability | K7 | |
 | T052 | Backup service và CLI | K5/K7 | T052.1 ✅ |

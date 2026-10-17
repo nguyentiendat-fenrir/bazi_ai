@@ -35,6 +35,17 @@ class BackupCommandTests(unittest.TestCase):
         self.assertEqual(preflight[:6], ['docker', 'run', '--rm', '--network', 'none', '--read-only'])
         self.assertNotIn('compose', preflight)
 
+    def test_deletion_ledger_is_exported_and_passed_read_only_to_a_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            [export] = dev.ledger_commands('docker', Path(directory))
+        self.assertNotIn('-p', export)                        # read from the live project
+        self.assertEqual(export[-3:], ['deletion-ledger', '--out', '/backups/deletion-ledger.json'])
+        ledger = Path('/srv/backups/deletion-ledger.json')
+        _, restore, _ = dev.restore_commands('docker', Path('/srv/backups/n/manifest.json'), 'n',
+                                             'bazi-restore', ledger=ledger)
+        self.assertIn(f'{ledger.resolve()}:/ledger.json:ro', restore)
+        self.assertEqual(restore[-2:], ['--deletion-ledger', '/ledger.json'])
+
 
 if __name__ == '__main__':
     unittest.main()

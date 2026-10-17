@@ -6,6 +6,7 @@ import type { FormEvent } from 'react'
 
 import { api, call, type Schemas } from '@/api/client'
 import { Dialog } from '@/components/Dialog'
+import { ErasureDialog } from '@/components/ErasureDialog'
 import { SettingsTabs } from '@/components/SettingsTabs'
 import { Badge, ErrorState, Forbidden, FormError, Loading, PageHeader } from '@/components/ui'
 import { ROLES, formatDateTime } from '@/lib/format'
@@ -65,6 +66,7 @@ export default function UsersPage() {
   const users = useQuery(admin ? 'users' : null, () => call(api.GET('/api/v1/users')))
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<unknown>(null)
+  const [erasing, setErasing] = useState<User | null>(null)
   if (!admin) return <Forbidden what="quản lý người dùng" />
 
   const patch = async (u: User, body: { role?: Role, enabled?: boolean }) => {
@@ -94,7 +96,7 @@ export default function UsersPage() {
         <div className="table-wrap">
           <table>
             <caption className="visually-hidden">Người dùng</caption>
-            <thead><tr><th scope="col">Email</th><th scope="col">Vai trò</th><th scope="col">Đăng nhập</th><th scope="col">Tạo lúc</th></tr></thead>
+            <thead><tr><th scope="col">Email</th><th scope="col">Vai trò</th><th scope="col">Đăng nhập</th><th scope="col">Tạo lúc</th><th scope="col"><span className="visually-hidden">Thao tác</span></th></tr></thead>
             <tbody>
               {users.data.data.map((u) => (
                 <tr key={u.id}>
@@ -113,6 +115,10 @@ export default function UsersPage() {
                     </label>
                   </td>
                   <td className="nowrap">{formatDateTime(u.created_at)}</td>
+                  <td>{u.id !== me?.id && !u.email.endsWith('@invalid') && (
+                    <button type="button" className="button button-ghost button-small" aria-label={`Xóa dữ liệu của ${u.email}`}
+                            onClick={() => setErasing(u)}>Xóa dữ liệu…</button>
+                  )}</td>
                 </tr>
               ))}
             </tbody>
@@ -120,6 +126,10 @@ export default function UsersPage() {
         </div>
       )}
       <NewUser open={creating} onClose={() => setCreating(false)} onSaved={users.reload} />
+      {erasing && (
+        <ErasureDialog open onClose={() => setErasing(null)} email={erasing.email} userId={erasing.id}
+                       onDone={() => users.reload()} />
+      )}
     </>
   )
 }

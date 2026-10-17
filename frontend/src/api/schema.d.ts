@@ -123,6 +123,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/erasure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erase Own Data
+         * @description Hard-delete the caller's charts, profiles, conversations, private cases and settings;
+         *     with ``delete_account`` also sign-in. Library content and reviewed knowledge stay.
+         */
+        post: operations["erase_own_data_api_v1_auth_erasure_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -1707,6 +1728,26 @@ export interface paths {
         patch: operations["patch_api_v1_users__user_id__patch"];
         trace?: never;
     };
+    "/api/v1/users/{user_id}/erasure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erase User Data
+         * @description Erase another person's private data (and optionally the account) on request.
+         */
+        post: operations["erase_user_data_api_v1_users__user_id__erasure_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2868,7 +2909,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "UNKNOWN_EVIDENCE" | "SOURCE_WITHDRAWN" | "SPAN_INVALID" | "SOURCE_CHANGED" | "QUOTE_MISMATCH";
+            code: "UNKNOWN_EVIDENCE" | "SOURCE_WITHDRAWN" | "SPAN_INVALID" | "SOURCE_CHANGED" | "QUOTE_MISMATCH" | "UNSUPPORTED_DETAIL";
             /** Evidence Id */
             evidence_id: string;
         };
@@ -3418,6 +3459,11 @@ export interface components {
             data: components["schemas"]["DatasetDTO"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[ErasureResult] */
+        Envelope_ErasureResult_: {
+            data: components["schemas"]["ErasureResult"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[EvaluationRunDTO] */
         Envelope_EvaluationRunDTO_: {
             data: components["schemas"]["EvaluationRunDTO"];
@@ -3656,6 +3702,33 @@ export interface components {
             /** Data */
             data: components["schemas"]["RulesetDTO"][];
             meta: components["schemas"]["Meta"];
+        };
+        /** ErasureInput */
+        ErasureInput: {
+            /**
+             * Confirm
+             * @description the account email
+             */
+            confirm: string;
+            /**
+             * Delete Account
+             * @default false
+             */
+            delete_account: boolean;
+        };
+        /** ErasureResult */
+        ErasureResult: {
+            /** Account Deleted */
+            account_deleted: boolean;
+            /**
+             * Counts
+             * @description rows removed per kind; no content
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** User Id */
+            user_id: string;
         };
         /** EvaluationRunDTO */
         EvaluationRunDTO: {
@@ -6110,6 +6183,21 @@ export interface components {
             /** Visibility Epoch */
             visibility_epoch: number | null;
         };
+        /** SelfErasureInput */
+        SelfErasureInput: {
+            /**
+             * Confirm
+             * @description the account email
+             */
+            confirm: string;
+            /**
+             * Delete Account
+             * @default false
+             */
+            delete_account: boolean;
+            /** Password */
+            password: string;
+        };
         /** SettingDTO */
         SettingDTO: {
             /** Key */
@@ -8512,6 +8600,219 @@ export interface operations {
                      *       "status": 412,
                      *       "title": "Revision Mismatch",
                      *       "type": "urn:bazi:problem:revision_mismatch"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    erase_own_data_api_v1_auth_erasure_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "confirm": "example",
+                 *       "delete_account": false,
+                 *       "password": "example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SelfErasureInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "account_deleted": true,
+                     *         "counts": {},
+                     *         "user_id": "example"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_ErasureResult_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
                      *     }
                      */
                     "application/problem+json": unknown;
@@ -36001,6 +36302,252 @@ export interface operations {
                      *       "status": 428,
                      *       "title": "Precondition Required",
                      *       "type": "urn:bazi:problem:precondition_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    erase_user_data_api_v1_users__user_id__erasure_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "confirm": "example",
+                 *       "delete_account": false
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErasureInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "account_deleted": true,
+                     *         "counts": {},
+                     *         "user_id": "example"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_ErasureResult_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
                      *     }
                      */
                     "application/problem+json": unknown;

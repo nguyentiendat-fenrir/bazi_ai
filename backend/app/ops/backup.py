@@ -277,9 +277,39 @@ def _restore_blobs(manifest: dict, root: Path, store: ObjectStore) -> int:
     return copied
 
 
+LEDGER_FORMAT = 'bazi-deletion-ledger-1'
+
+
+def export_ledger(db: Database) -> dict:
+    """Erasures recorded by the live system, for a restore of an older backup (docs/12)."""
+    with psycopg.connect(db.conninfo()) as conn:
+        rows = conn.execute('SELECT subject_id, account_deleted, created_at FROM deletion_ledger'
+                            ' ORDER BY created_at, id').fetchall()
+    return {'format': LEDGER_FORMAT, 'exported_at': datetime.now(timezone.utc).isoformat(),
+            'entries': [{'subject_id': str(s), 'account_deleted': a, 'erased_at': t.isoformat()}
+                        for s, a, t in rows]}
+
+
+def reapply_ledger(db: Database, ledger: dict, since: datetime) -> int:
+    """Erase again everyone erased after ``since`` (the backup time); one transaction."""
+    if ledger.get('format') != LEDGER_FORMAT:
+        raise BackupError('LEDGER_INVALID', f'the deletion ledger must be {LEDGER_FORMAT}')
+    entries = [e for e in ledger['entries'] if datetime.fromisoformat(e['erased_at']) > since]
+    with psycopg.connect(db.conninfo()) as conn:
+        if conn.execute("SELECT to_regproc('bazi_erase_owner')").fetchone()[0] is None:
+            raise BackupError('LEDGER_NEEDS_UPGRADE', 'this backup predates erasure support;'
+                              ' run alembic upgrade head, then restore again with the ledger')
+        for entry in entries:
+            if conn.execute('SELECT 1 FROM users WHERE id = %s', (entry['subject_id'],)).fetchone():
+                conn.execute('SELECT bazi_erase_owner(%s, %s, NULL)',
+                             (entry['subject_id'], entry['account_deleted']))
+    return len(entries)
+
+
 def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
-            pg_restore: str = 'pg_restore') -> dict:
-    """Restore into an empty database and object store; returns a report (RTO/RPO)."""
+            pg_restore: str = 'pg_restore', ledger: dict | None = None) -> dict:
+    """Restore into an empty database and object store; returns a report (RTO/RPO). With the
+    live system's deletion ledger, erasures made after the backup are applied again."""
     started = time.monotonic()
     manifest, root = load_manifest(manifest_path)
     if confirm != manifest['name']:
@@ -323,6 +353,7 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
     if problems:
         raise BackupError('VERIFY_FAILED', 'restored data does not match the backup', problems)
     created = datetime.fromisoformat(manifest['created_at'])
+    erasures = reapply_ledger(db, ledger, created) if ledger is not None else None
     return {
         'backup': manifest['name'], 'restored_at': datetime.now(timezone.utc).isoformat(
             timespec='seconds'),
@@ -330,6 +361,7 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
         'backup_age_hours': round((datetime.now(timezone.utc) - created).total_seconds() / 3600, 2),
         'tables': len(facts['counts']), 'rows': sum(facts['counts'].values()),
         'objects': len(facts['objects']), 'objects_written': blobs,
+        'erasures_reapplied': erasures,
         'schema_head': facts['schema_head'], 'active_corpus': facts['active_corpus'],
         'next_steps': ['create-runtime-login for the API login role',
                        'alembic upgrade head if this application is newer than the backup',

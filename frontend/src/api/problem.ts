@@ -84,6 +84,9 @@ const MESSAGES: Record<string, string> = {
   IDEMPOTENCY_IN_PROGRESS: 'Yêu cầu giống hệt đang được xử lý. Đợi giây lát.',
   JOB_ACTIVE: 'Phiên bản này đang có job chạy. Đợi job xong hoặc hủy job.',
   VERSION_WITHDRAWN: 'Phiên bản sách đã bị thu hồi.',
+  CONFIRMATION_MISMATCH: 'Nội dung xác nhận chưa đúng: gõ đúng email của tài khoản.',
+  PASSWORD_INCORRECT: 'Mật khẩu không đúng.',
+  LAST_ADMIN: 'Đây là quản trị viên cuối cùng đang hoạt động; thêm quản trị viên khác trước.',
   SERVER_ERROR: 'Máy chủ gặp lỗi. Thử lại sau; nếu lặp lại, gửi mã yêu cầu cho quản trị.',
 }
 

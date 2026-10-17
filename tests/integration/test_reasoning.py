@@ -118,7 +118,7 @@ class ReasoningTests(ConversationMixin, PipelineTestCase):
                     'claims': [
                         {'text': source, 'kind': 'source_statement', 'evidence': ['E1'],
                          'school_key': 'manh_phai'},
-                        {'text': 'Theo sách thì chắc chắn sẽ giàu 100%.', 'kind': 'interpretation',
+                        {'text': 'Theo sách thì chắc chắn sẽ giàu.', 'kind': 'interpretation',
                          'evidence': ['E1'], 'school_key': 'manh_phai'},
                         {'text': 'Một đoạn không có trong gói.', 'kind': 'source_statement',
                          'evidence': ['E9']},

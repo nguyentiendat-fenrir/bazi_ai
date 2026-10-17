@@ -63,6 +63,15 @@ def _words(value: str, accented: bool) -> set[str]:
     return {w for w in _WORD.findall(base) if fold(w) not in STOPWORDS and len(w) > 1}
 
 
+# Numbers, years, URLs and code-like tokens ("sk-live-123"): a claim may only state the ones
+# its sources contain. Word overlap cannot catch an invented detail inside a quoted sentence.
+_DETAIL = re.compile(r'https?://\S+|[\w.-]*\d[\w.-]*', re.UNICODE)
+
+
+def details(value: str) -> set[str]:
+    return {d.strip('.-').lower() for d in _DETAIL.findall(nfc(value)) if d.strip('.-')}
+
+
 def support(claim: str, source: str) -> float:
     """Share of the claim's content words in the source; with diacritics when the claim has
     them ("lắm" is not "làm", "to" is not "tố"), folded only for an accent-free claim."""
@@ -128,7 +137,7 @@ def resolve(conn: Connection, principal: Principal, bundle_id: uuid.UUID,
                                   sorted({g['book_version_id'] for g in groups.values()}))
     results = []
     for index, claim in enumerate(claims):
-        problems, citations, scores = [], [], []
+        problems, citations, scores, cited_texts = [], [], [], []
         for handle in dict.fromkeys(claim['evidence_ids']):
             group = groups.get(handle)
             if group is None:
@@ -151,6 +160,7 @@ def resolve(conn: Connection, principal: Principal, bundle_id: uuid.UUID,
                 continue
             score = support(claim['text'], cited)
             scores.append(score)
+            cited_texts.append(cited)
             citations.append({
                 'evidence_id': handle,
                 'evidence_span_ids': [_materialise(conn, group['book_version_id'], r)
@@ -166,6 +176,9 @@ def resolve(conn: Connection, principal: Principal, bundle_id: uuid.UUID,
                             'printed_page_label': r['printed_page_label'],
                             'start_offset': r['start_offset'], 'end_offset': r['end_offset'],
                             'bbox': r['bbox']} for r in rows]})
+        invented = details(claim['text']) - details('\n'.join(cited_texts))
+        if cited_texts and invented:
+            problems.append({'evidence_id': claim['evidence_ids'][0], 'code': 'UNSUPPORTED_DETAIL'})
         if problems or not claim['evidence_ids']:
             status = 'invalid'
             citations = []

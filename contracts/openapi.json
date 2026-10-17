@@ -2997,7 +2997,8 @@
               "SOURCE_WITHDRAWN",
               "SPAN_INVALID",
               "SOURCE_CHANGED",
-              "QUOTE_MISMATCH"
+              "QUOTE_MISMATCH",
+              "UNSUPPORTED_DETAIL"
             ],
             "title": "Code",
             "type": "string"
@@ -4446,6 +4447,22 @@
         "title": "Envelope[DatasetDTO]",
         "type": "object"
       },
+      "Envelope_ErasureResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ErasureResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ErasureResult]",
+        "type": "object"
+      },
       "Envelope_EvaluationRunDTO_": {
         "properties": {
           "data": {
@@ -5212,6 +5229,54 @@
           "meta"
         ],
         "title": "Envelope[list[RulesetDTO]]",
+        "type": "object"
+      },
+      "ErasureInput": {
+        "properties": {
+          "confirm": {
+            "description": "the account email",
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Confirm",
+            "type": "string"
+          },
+          "delete_account": {
+            "default": false,
+            "title": "Delete Account",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "ErasureInput",
+        "type": "object"
+      },
+      "ErasureResult": {
+        "properties": {
+          "account_deleted": {
+            "title": "Account Deleted",
+            "type": "boolean"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "rows removed per kind; no content",
+            "title": "Counts",
+            "type": "object"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "account_deleted",
+          "counts"
+        ],
+        "title": "ErasureResult",
         "type": "object"
       },
       "EvaluationRunDTO": {
@@ -11258,6 +11323,34 @@
         "title": "SearchResult",
         "type": "object"
       },
+      "SelfErasureInput": {
+        "properties": {
+          "confirm": {
+            "description": "the account email",
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Confirm",
+            "type": "string"
+          },
+          "delete_account": {
+            "default": false,
+            "title": "Delete Account",
+            "type": "boolean"
+          },
+          "password": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm",
+          "password"
+        ],
+        "title": "SelfErasureInput",
+        "type": "object"
+      },
       "SettingDTO": {
         "properties": {
           "key": {
@@ -14602,6 +14695,214 @@
           "knowledge"
         ],
         "x-permission": "V"
+      }
+    },
+    "/api/v1/auth/erasure": {
+      "post": {
+        "description": "Hard-delete the caller's charts, profiles, conversations, private cases and settings;\nwith ``delete_account`` also sign-in. Library content and reviewed knowledge stay.",
+        "operationId": "erase_own_data_api_v1_auth_erasure_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "confirm": "example",
+                "delete_account": false,
+                "password": "example"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SelfErasureInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "account_deleted": true,
+                    "counts": {},
+                    "user_id": "example"
+                  },
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ErasureResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Erase Own Data",
+        "tags": [
+          "auth"
+        ],
+        "x-permission": "O"
       }
     },
     "/api/v1/auth/login": {
@@ -42841,6 +43142,255 @@
           }
         },
         "summary": "Patch",
+        "tags": [
+          "users"
+        ],
+        "x-permission": "A"
+      }
+    },
+    "/api/v1/users/{user_id}/erasure": {
+      "post": {
+        "description": "Erase another person's private data (and optionally the account) on request.",
+        "operationId": "erase_user_data_api_v1_users__user_id__erasure_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "confirm": "example",
+                "delete_account": false
+              },
+              "schema": {
+                "$ref": "#/components/schemas/ErasureInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "account_deleted": true,
+                    "counts": {},
+                    "user_id": "example"
+                  },
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ErasureResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Erase User Data",
         "tags": [
           "users"
         ],

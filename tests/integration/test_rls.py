@@ -140,6 +140,20 @@ class RlsTests(unittest.TestCase):
                                       " WHERE proname = 'bazi_guard_referenced_delete'").fetchone()
         self.assertEqual(prosecdef, (True,))
 
+    def test_erasure_bypass_cannot_be_forged_by_the_runtime(self):
+        # The delete guard only stands aside for bazi_erase_owner's own transaction (M015).
+        for statement in ('INSERT INTO erasure_tokens VALUES (txid_current())',
+                          'SELECT count(*) FROM erasure_tokens',
+                          'SELECT count(*) FROM deletion_ledger'):
+            with self.subTest(statement=statement):
+                with self.assertRaises(errors.InsufficientPrivilege):
+                    with self.conn.transaction():
+                        self.conn.execute(statement)
+        source = self.conn.execute("SELECT prosrc FROM pg_proc"
+                                   " WHERE proname = 'bazi_guard_referenced_delete'").fetchone()[0]
+        self.assertIn('erasure_tokens', source)
+        self.assertNotIn('current_setting', source)
+
     def test_shared_library_tables_readable(self):
         self.act_as(self.bob)
         self.assertEqual(self.conn.execute(

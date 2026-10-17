@@ -13,9 +13,11 @@ from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy.engine import Engine
 
 from ..auth.deps import SESSION_COOKIE, current_principal, engine
+from ..auth.erasure import erase
 from ..auth.service import Principal, authenticate, create_session, revoke_session
 from ..core.db import transaction
 from ..core.errors import AppError
+from ..core.logging import request_id_var
 from .health import envelope
 from .schemas import (AUTHENTICATED_ERRORS, COMMON_ERRORS, Envelope, LoginResult, MeDTO,
                       permission, problem_responses)
@@ -79,3 +81,34 @@ def logout(response: Response, principal: Principal = Depends(current_principal)
             openapi_extra=permission('R'))
 def me(principal: Principal = Depends(current_principal)) -> dict:
     return envelope(user_dto(principal))
+
+
+class ErasureInput(BaseModel):
+    confirm: str = Field(min_length=1, max_length=254, description='the account email')
+    delete_account: bool = False
+
+
+class SelfErasureInput(ErasureInput):
+    password: str = Field(min_length=1, max_length=1024)
+
+
+class ErasureResult(BaseModel):
+    user_id: str
+    account_deleted: bool
+    counts: dict[str, int] = Field(description='rows removed per kind; no content')
+
+
+@router.post('/erasure', response_model=Envelope[ErasureResult],
+             responses={**AUTHENTICATED_ERRORS, **problem_responses(409)},
+             openapi_extra=permission('O'))
+def erase_own_data(body: SelfErasureInput, response: Response,
+                   principal: Principal = Depends(current_principal),
+                   db_engine: Engine = Depends(engine)) -> dict:
+    """Hard-delete the caller's charts, profiles, conversations, private cases and settings;
+    with ``delete_account`` also sign-in. Library content and reviewed knowledge stay."""
+    with transaction(db_engine, principal.user_id) as conn:
+        result = erase(conn, principal.user_id, principal.user_id, body.confirm,
+                       body.delete_account, body.password, request_id_var.get() or '')
+    if body.delete_account:
+        response.delete_cookie(SESSION_COOKIE, path='/')
+    return envelope(result)

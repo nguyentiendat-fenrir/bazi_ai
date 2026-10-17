@@ -2,7 +2,7 @@
 import unittest
 import uuid
 
-from backend.app.retrieval.citations import support
+from backend.app.retrieval.citations import details, support
 from tests.integration.env import PipelineTestCase
 from tests.integration.test_search import MANH, TU_BINH
 
@@ -13,6 +13,11 @@ class SupportTests(unittest.TestCase):
         self.assertEqual(support('thực thần sinh tài thì giàu', source), 1.0)
         self.assertLess(support('ngày mai trời mưa to lắm', source), 0.2)
         self.assertEqual(support('là gì', source), 0.0)          # nothing but function words
+
+    def test_details_are_numbers_urls_and_codes(self):
+        self.assertEqual(details('Năm 1984, khóa sk-live-123, xem http://evil.example/a.'),
+                         {'1984', 'sk-live-123', 'http://evil.example/a'})
+        self.assertEqual(details('Thực thần sinh tài thì giàu.'), set())
 
 
 class CitationTests(PipelineTestCase):
@@ -42,12 +47,16 @@ class CitationTests(PipelineTestCase):
             {'text': 'Thực thần sinh tài', 'evidence_ids': ['E1'], 'quote': 'không có trong sách'},
             {'text': 'Thực thần sinh tài', 'evidence_ids': ['E99']},
             {'text': 'Ngày mai trời mưa to lắm', 'evidence_ids': ['E1']},
+            # Every word is in the source, the invented key and year are not.
+            {'text': 'Thực thần sinh tài thì giàu, khóa sk-live-123 năm 2031',
+             'evidence_ids': ['E1']},
         ]
         result = self.resolve(bundle['bundle_id'], *claims)
         self.assertEqual(result.status_code, 200, result.text)
         data = result.json()['data']
         self.assertEqual([c['status'] for c in data['claims']],
-                         ['supported', 'invalid', 'invalid', 'insufficient_evidence'])
+                         ['supported', 'invalid', 'invalid', 'insufficient_evidence', 'invalid'])
+        self.assertEqual([p['code'] for p in data['claims'][4]['problems']], ['UNSUPPORTED_DETAIL'])
         self.assertEqual([p['code'] for c in data['claims'][1:3] for p in c['problems']],
                          ['QUOTE_MISMATCH', 'UNKNOWN_EVIDENCE'])
         citation = data['claims'][0]['citations'][0]

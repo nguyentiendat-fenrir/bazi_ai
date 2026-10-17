@@ -504,6 +504,18 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 |---|---|
 | actor_id uuid? FK users; action text; target_kind text; target_id uuid?; trace_id text; redacted_diff jsonb; outcome text | append-only; index(target_kind,target_id,created_at); không raw birth/key/chat |
 
+### `deletion_ledger`
+
+| Cột (không có updated_at) | Ràng buộc / index / ghi chú |
+|---|---|
+| id uuid PK; created_at timestamptz; subject_id uuid (không FK); account_deleted bool; requested_by uuid? (không FK); counts jsonb | append-only; index(created_at); runtime không có quyền trực tiếp — chỉ `bazi_erase_owner` (M015) ghi; chỉ id + thời điểm + số dòng, không nội dung; restore áp lại các mục sau thời điểm backup |
+
+### `erasure_tokens`
+
+| Cột | Ràng buộc / index / ghi chú |
+|---|---|
+| txid bigint PK | chỉ tồn tại trong transaction của `bazi_erase_owner` (ghi đầu, xóa cuối); guard xóa-khi-bị-tham-chiếu (SECURITY DEFINER) chỉ đứng ngoài khi `txid_current()` có ở đây; runtime không đọc/ghi được nên không giả được |
+
 
 ## Quan hệ, invariants và index chuyên biệt
 

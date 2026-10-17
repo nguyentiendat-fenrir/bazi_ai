@@ -188,7 +188,7 @@ class Citation(BaseModel):
 class CitationProblem(BaseModel):
     evidence_id: str
     code: Literal['UNKNOWN_EVIDENCE', 'SOURCE_WITHDRAWN', 'SPAN_INVALID', 'SOURCE_CHANGED',
-                  'QUOTE_MISMATCH']
+                  'QUOTE_MISMATCH', 'UNSUPPORTED_DETAIL']
 
 
 class ClaimResult(BaseModel):

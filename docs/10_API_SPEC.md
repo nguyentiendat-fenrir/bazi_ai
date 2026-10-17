@@ -21,6 +21,8 @@ Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu.
 | POST /auth/login | public+rate limit | email,password | 200 user+CSRF, HttpOnly session cookie |
 | POST /auth/logout | R | — | 204 revoke current session |
 | GET /auth/me | R | — | UserDTO, role, capabilities |
+| POST /auth/erasure | O | confirm (email), password, delete_account | ErasureResult counts; xóa cứng dữ liệu riêng (T049) |
+| POST /users/{id}/erasure | A | confirm (email người đó), delete_account | ErasureResult counts |
 | GET/POST /users | A | create email,password,role | list/201 UserDTO, không password_hash |
 | PATCH /users/{id} | A | role,enabled | 200 ETag; không disable last active admin |
 | GET/PATCH /settings | R (own) / A (system) | scope, values allowlist | redacted config; key values không secret |

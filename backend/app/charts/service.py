@@ -177,8 +177,10 @@ def delete_profile(conn: Connection, profile_id, delete_linked_charts: bool) -> 
         for (chart_id,) in conn.execute(text('SELECT id FROM bazi_charts WHERE profile_id = :p'),
                                         {'p': row.id}).all():
             deleted += delete_chart(conn, chart_id)
-    conn.execute(text('UPDATE birth_profiles SET deleted_at = now() WHERE id = :id'),
-                 {'id': row.id})
+    # The row stays for charts that kept it as their origin; its label and encrypted birth
+    # data go now (docs/12 · Deletion), so nothing private outlives the request.
+    conn.execute(text("UPDATE birth_profiles SET deleted_at = now(), label = '',"
+                      " birth_input_encrypted = ''::bytea WHERE id = :id"), {'id': row.id})
     return {'profile_id': str(row.id), 'charts_deleted': deleted,
             'charts_kept': row.charts_count - deleted}
 
@@ -233,7 +235,7 @@ CHART_SELECT = (
     ' c.validation_status, c.input_snapshot_encrypted, c.created_at, p.label AS profile_label,'
     ' pol.key AS policy_id FROM bazi_charts c'
     ' JOIN calculation_policies pol ON pol.id = c.policy_id'
-    ' LEFT JOIN birth_profiles p ON p.id = c.profile_id')
+    ' LEFT JOIN birth_profiles p ON p.id = c.profile_id AND p.deleted_at IS NULL')
 
 
 def _chart_summary(row) -> dict:

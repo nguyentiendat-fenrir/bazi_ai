@@ -7,6 +7,7 @@ implementation and tests, not as success-shaped stubs.
     python3 scripts/dev backup --dest /srv/bazi-backups
     python3 scripts/dev restore-preflight --manifest /srv/bazi-backups/<name>/manifest.json
     python3 scripts/dev restore --manifest /srv/bazi-backups/<name>/manifest.json --confirm <name>
+    python3 scripts/dev deletion-ledger --dest /srv/bazi-backups   # before restoring an old backup
 
 Backup and restore run the application image (pg_dump/pg_restore 17) through Docker
 Compose. A restore always goes into a separate Compose project with new volumes; the
@@ -201,14 +202,28 @@ def preflight_commands(docker: str, manifest: Path) -> list[list[str]]:
              *cli('restore-preflight', '--manifest', '/backup/manifest.json')]]
 
 
+def ledger_commands(docker: str, dest: Path, project: str | None = None,
+                    env_file: Path = ENV_FILE) -> list[list[str]]:
+    """Erasures of the live system, so a restore of an older backup can apply them again."""
+    return [compose(docker, project, 'run', '--rm', '-T', '-v', f'{dest.resolve()}:/backups',
+                    'worker', *cli('deletion-ledger', '--out', '/backups/deletion-ledger.json'),
+                    env_file=env_file)]
+
+
 def restore_commands(docker: str, manifest: Path, confirm: str, project: str,
-                     env_file: Path = ENV_FILE) -> list[list[str]]:
+                     env_file: Path = ENV_FILE, ledger: Path | None = None) -> list[list[str]]:
     if project == LIVE_PROJECT:
         raise SystemExit(f'Restore into a new project with new volumes, not {LIVE_PROJECT}.')
     folder = manifest.resolve().parent
+    mounts = ['-v', f'{folder}:/backup:ro']
+    extra: list[str] = []
+    if ledger is not None:
+        mounts += ['-v', f'{ledger.resolve()}:/ledger.json:ro']
+        extra = ['--deletion-ledger', '/ledger.json']
     return [compose(docker, project, 'up', '-d', '--wait', 'postgres', 'redis', env_file=env_file),
-            compose(docker, project, 'run', '--rm', '-T', '-v', f'{folder}:/backup:ro', 'worker',
-                    *cli('restore', '--manifest', '/backup/manifest.json', '--confirm', confirm),
+            compose(docker, project, 'run', '--rm', '-T', *mounts, 'worker',
+                    *cli('restore', '--manifest', '/backup/manifest.json', '--confirm', confirm,
+                         *extra),
                     env_file=env_file),
             compose(docker, project, 'run', '--rm', '-T', 'worker', *cli('create-runtime-login'),
                     env_file=env_file)]
@@ -241,10 +256,15 @@ def main(argv=None) -> int:
     rest.add_argument('--manifest', type=Path, required=True)
     rest.add_argument('--confirm', required=True, help='the backup name, typed again')
     rest.add_argument('--project', default=RESTORE_PROJECT)
-    for sub in (back, rest):
+    rest.add_argument('--deletion-ledger', type=Path,
+                      help='from `deletion-ledger`: erasures after the backup are applied again')
+    led = commands.add_parser('deletion-ledger', help='export erasures of the live system')
+    led.add_argument('--dest', type=Path, required=True)
+    led.add_argument('--project', help='Compose project (default: the live one)')
+    for sub in (back, rest, led):
         sub.add_argument('--env-file', type=Path, default=ENV_FILE)
     args = parser.parse_args(argv)
-    if args.command in ('backup', 'restore-preflight', 'restore'):
+    if args.command in ('backup', 'restore-preflight', 'restore', 'deletion-ledger'):
         docker = docker_executable()
         if not docker:
             print('Docker is required for backup/restore.', file=sys.stderr)
@@ -254,8 +274,10 @@ def main(argv=None) -> int:
                                            args.env_file))
         if args.command == 'restore-preflight':
             return run_all(preflight_commands(docker, args.manifest))
+        if args.command == 'deletion-ledger':
+            return run_all(ledger_commands(docker, args.dest, args.project, args.env_file))
         up, restore, login = restore_commands(docker, args.manifest, args.confirm, args.project,
-                                              args.env_file)
+                                              args.env_file, args.deletion_ledger)
         code = run_all([up, restore])
         if code:
             return code

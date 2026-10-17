@@ -6,6 +6,7 @@
     python -m backend.app.cli gc --dry-run              # unreferenced objects, orphan blobs
     python -m backend.app.cli backup --dest /backups    # db.dump + objects + manifest.json
     python -m backend.app.cli restore --manifest /backup/<name>/manifest.json --confirm <name>
+    python -m backend.app.cli deletion-ledger --out /backups/ledger.json   # erasures since
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
@@ -215,8 +216,10 @@ def run_restore(args) -> int:
     store = (LocalObjectStore(settings.storage_root) if settings.storage_backend == 'local'
              else build_store(settings))
     try:
+        ledger = (json.loads(Path(args.deletion_ledger).read_text('utf-8'))
+                  if args.deletion_ledger else None)
         report = restore(Path(args.manifest), _owner_database(settings), store, args.confirm,
-                         args.pg_restore)
+                         args.pg_restore, ledger)
     except BackupError as exc:
         _print({'ok': False, 'code': exc.code, 'message': str(exc), 'details': exc.details})
         return 1
@@ -269,6 +272,10 @@ def main(argv: list[str] | None = None) -> int:
     rest.add_argument('--confirm', required=True, help='the backup name, typed again')
     rest.add_argument('--report', help='also write the restore report to this file')
     rest.add_argument('--pg-restore', default='pg_restore')
+    rest.add_argument('--deletion-ledger', help='ledger exported from the live system; erasures'
+                      ' made after the backup are applied again')
+    led = commands.add_parser('deletion-ledger', help='export erasures for a later restore')
+    led.add_argument('--out', required=True)
     gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
     gc.add_argument('--grace-hours', type=float, default=24.0)
     gc.add_argument('--dry-run', action='store_true')
@@ -288,6 +295,12 @@ def main(argv: list[str] | None = None) -> int:
             return run_backup(args)
         if args.command in ('restore', 'restore-preflight'):
             return run_restore(args)
+        if args.command == 'deletion-ledger':
+            from .ops.backup import export_ledger
+            ledger = export_ledger(_owner_database(load_settings()))
+            Path(args.out).write_text(json.dumps(ledger, indent=1), encoding='utf-8')
+            _print({'ok': True, 'entries': len(ledger['entries']), 'path': args.out})
+            return 0
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

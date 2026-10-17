@@ -4,10 +4,12 @@
 import { useState } from 'react'
 
 import { api, call, ifMatch, type Schemas } from '@/api/client'
+import { ErasureDialog } from '@/components/ErasureDialog'
 import { SettingsTabs } from '@/components/SettingsTabs'
 import { UsageTable } from '@/components/UsageTable'
 import { ErrorState, FormError, Loading, Notice, PageHeader } from '@/components/ui'
 import { useQuery } from '@/lib/query'
+import { useSession } from '@/lib/session'
 
 type Setting = Schemas['SettingDTO']
 
@@ -23,6 +25,9 @@ export default function SettingsPage() {
   const usage = useQuery('usage:own', () => call(api.GET('/api/v1/usage')))
   const [error, setError] = useState<unknown>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const { user, recheck } = useSession()
+  const [erasing, setErasing] = useState(false)
+  const [erased, setErased] = useState<string | null>(null)
 
   const save = async (key: string, value: string, current: Setting | undefined) => {
     setError(null)
@@ -78,6 +83,23 @@ export default function SettingsPage() {
           )}
         </section>
       </div>
+      <section className="panel">
+        <h2>Dữ liệu của bạn</h2>
+        <p className="muted">Lá số, hồ sơ ngày sinh, hội thoại, ca mẫu riêng và cài đặt chỉ bạn xem được. Bạn có thể xóa vĩnh viễn toàn bộ, kèm hoặc không kèm tài khoản.</p>
+        {erased && <Notice tone="ok">{erased}</Notice>}
+        <button type="button" className="button button-danger" onClick={() => setErasing(true)}>Xóa dữ liệu của tôi…</button>
+      </section>
+      {user && (
+        <ErasureDialog open={erasing} onClose={() => setErasing(false)} email={user.email} onDone={(outcome) => {
+          if (outcome.account_deleted) {
+            recheck()
+            return
+          }
+          const c = outcome.counts
+          setErased(`Đã xóa ${c.charts ?? 0} lá số, ${c.birth_profiles ?? 0} hồ sơ, ${c.conversations ?? 0} hội thoại, ${c.cases ?? 0} ca mẫu.`)
+          view.reload()
+        }} />
+      )}
     </>
   )
 }
