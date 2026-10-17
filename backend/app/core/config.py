@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     postgres_app_password: SecretStr | None = None
     redis_url: str = 'redis://redis:6379/0'
 
+    storage_backend: Literal['local', 's3'] = 'local'
+    # Containers set STORAGE_ROOT=/data/objects (volume); the dev default stays git-ignored.
+    storage_root: str = '.artifacts/objects'
+    s3_endpoint_url: str | None = None
+    s3_bucket: str | None = None
+    s3_region: str = 'us-east-1'
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: SecretStr | None = None
+    max_upload_bytes: int = Field(250 * 1024 * 1024, ge=1)
+
     session_ttl_hours: int = Field(12, ge=1, le=24 * 30)
     # Origins allowed to send cookie-authenticated unsafe requests (CSRF defence).
     allowed_origins: list[str] = ['http://127.0.0.1:8000', 'http://localhost:8000',
@@ -55,7 +65,8 @@ class Settings(BaseSettings):
 
     @field_validator('postgres_password', 'postgres_app_user', 'postgres_app_password',
                      'session_signing_key', 'field_encryption_key', 'llm_api_key', 'llm_base_url',
-                     'llm_model', 'embedding_model', mode='before')
+                     'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
+                     's3_access_key_id', 's3_secret_access_key', mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".
@@ -69,6 +80,12 @@ class Settings(BaseSettings):
         if not value.startswith(('http://', 'https://')) or not value.rstrip('/').endswith('/v1'):
             raise ValueError('must be an http(s) URL ending in /v1')
         return value.rstrip('/')
+
+    @model_validator(mode='after')
+    def s3_complete(self) -> 'Settings':
+        if self.storage_backend == 's3' and not self.s3_bucket:
+            raise ValueError('storage_backend s3 requires s3_bucket')
+        return self
 
     @model_validator(mode='after')
     def production_secrets(self) -> 'Settings':
@@ -120,7 +137,7 @@ class Settings(BaseSettings):
     def secret_values(self) -> list[str]:
         """Configured secret strings, used by the log redactor."""
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
-                   self.field_encryption_key, self.llm_api_key)
+                   self.field_encryption_key, self.llm_api_key, self.s3_secret_access_key)
         return [s.get_secret_value() for s in secrets if s is not None]
 
 

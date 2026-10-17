@@ -25,7 +25,9 @@ khác tra tại bảng cuối file này.
   DB, registry tham chiếu đa hình, seed chỉ taxonomy; 26 integration tests.
 - T006 ✅ auth: Argon2id, session cookie + CSRF + Origin guard, giới hạn đăng nhập, roles,
   RLS chạy bằng login runtime (M008), chặn mất admin cuối, CLI bootstrap; tests API + RLS.
-- Việc kế tiếp: T007 ObjectStore; smoke T002 trên Ubuntu khi có máy.
+- T007 ✅ ObjectStore local + S3 (boto3), content-addressed, staging atomic, range, chặn
+  traversal, xóa có kiểm tham chiếu; contract tests trên local và S3 (moto).
+- Việc kế tiếp: T008 API contracts; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -125,7 +127,7 @@ trước khi trình duyệt.
 | T004 | Migrations storage và document schema | K1 | ✅ |
 | T005 | Migrations knowledge, chart, chat và jobs | K1 | ✅ |
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | ✅ |
-| T007 | ObjectStore local và S3 adapters | K1 | |
+| T007 | ObjectStore local và S3 adapters | K1 | ✅ |
 | T008 | API contracts nền và client skeleton | K1 | |
 | T009 | Catalog, upload batch và dedupe | K2 | |
 | T010 | Durable queue, outbox, lease và retry | K2 | |

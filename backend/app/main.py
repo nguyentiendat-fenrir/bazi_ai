@@ -16,13 +16,14 @@ from .core.errors import install_error_handlers
 from .core.health import ReadinessCheck, default_checks
 from .core.logging import configure_logging
 from .core.middleware import OriginGuardMiddleware, RequestContextMiddleware
+from .storage import ObjectStore, build_store, storage_check
 
 API_PREFIX = '/api/v1'
 
 
 def create_app(settings: Settings | None = None,
                readiness_checks: list[ReadinessCheck] | None = None,
-               engine: Engine | None = None) -> FastAPI:
+               engine: Engine | None = None, store: ObjectStore | None = None) -> FastAPI:
     settings = settings or load_settings()
     configure_logging(settings.log_level, settings.secret_values())
     public_docs = settings.app_env != 'production'
@@ -35,11 +36,12 @@ def create_app(settings: Settings | None = None,
     engine = engine or make_engine(settings.runtime_database_url)  # lazy: no connect yet
     app.state.settings = settings
     app.state.engine = engine
+    app.state.store = store = store or build_store(settings)
     app.state.login_limiter = LoginLimiter(settings.login_max_failures,
                                            settings.login_window_seconds)
     app.state.readiness_checks = (readiness_checks if readiness_checks is not None else
                                   [database_check(engine), runtime_role_check(engine, settings),
-                                   *default_checks(settings)])
+                                   storage_check(store), *default_checks(settings)])
     install_error_handlers(app)
     # Added last runs first: request context wraps everything, origin guard inside it.
     app.add_middleware(OriginGuardMiddleware, allowed_origins=settings.allowed_origins)
