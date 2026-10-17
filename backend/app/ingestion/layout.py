@@ -85,6 +85,8 @@ SENTENCE_END = ('.', '!', '?', ':', '"', '”', ')', ';')
 
 
 def is_chart_row(text: str) -> bool:
+    if HEADING_PATTERNS[0][0].match(text.strip()):
+        return False    # "Chương 31: Luận Chính Quan" names its topic with chart words
     words = [w.strip('.,:;()') for w in text.lower().split()]
     words = [w for w in words if w]
     return len(words) >= 2 and sum(w in CHART_TOKENS or w.isdigit() for w in words) / len(words) >= 0.6

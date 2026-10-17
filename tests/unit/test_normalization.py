@@ -41,12 +41,16 @@ class LayoutTests(unittest.TestCase):
     def test_headings(self):
         cases = {'CHƯƠNG 1: ỨNG KỲ': (1, 'chapter'), 'II. Các khái niệm đặc thù': (1, 'roman'),
                  '1. Khái niệm khách - chủ': (2, 'decimal1'), '1.2 Tượng Ất mộc': (3, 'decimal2'),
-                 'BA PHƯƠNG THỨC ỨNG KỲ': (1, 'uppercase')}
+                 'BA PHƯƠNG THỨC ỨNG KỲ': (1, 'uppercase'),
+                 # Chapter titles named with chart words are still titles (Tử Bình p.84).
+                 'Chương 31: Luận Chính Quan': (1, 'chapter'),
+                 'Chương 21 - Quan Sát': (1, 'chapter'), 'CHƯƠNG 3: ĐẠI VẬN': (1, 'chapter')}
         for text_, expected in cases.items():
             with self.subTest(text=text_):
                 self.assertEqual(layout.heading(text_, 12, 400, 12, 1), expected)
         self.assertIsNone(layout.heading('Mậu Kỷ Bính Canh', 9, 400, 7.6, 1))      # chart row
         self.assertIsNone(layout.heading('Thực Thương nhật chủ t.Tài', 9, 700, 7.6, 1))
+        self.assertFalse(layout.is_chart_row('Chương 39: Luận Thiên Quan'))
         self.assertIsNone(layout.heading('1. Thất chính Tứ dư là hệ thống chiêm tinh dùng'
                                          ' bảy chính tinh và bốn dư tinh để luận đoán vận'
                                          ' mệnh con người theo phép xưa.', 7.6, 400, 7.6, 3))

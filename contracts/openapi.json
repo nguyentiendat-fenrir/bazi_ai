@@ -262,6 +262,209 @@
         "title": "BatchItem",
         "type": "object"
       },
+      "BlockChange": {
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "paragraph",
+                  "heading",
+                  "table",
+                  "figure",
+                  "caption"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "maximum": 6.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "ordinal": {
+            "minimum": 0.0,
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "body",
+                  "header",
+                  "footer",
+                  "folio",
+                  "toc"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "body removes the page-furniture role",
+            "title": "Role"
+          },
+          "speaker_layer": {
+            "anyOf": [
+              {
+                "enum": [
+                  "original_author",
+                  "commentator",
+                  "translator",
+                  "editor",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker Layer"
+          },
+          "table_cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Cells"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "ordinal"
+        ],
+        "title": "BlockChange",
+        "type": "object"
+      },
+      "BlockDTO": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": true,
+            "title": "Attributes",
+            "type": "object"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Bbox",
+            "type": "array"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "paragraph",
+              "heading",
+              "table",
+              "figure",
+              "caption"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "speaker_layer": {
+            "enum": [
+              "original_author",
+              "commentator",
+              "translator",
+              "editor",
+              "unknown"
+            ],
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          },
+          "table_cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Cells"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ordinal",
+          "kind",
+          "bbox",
+          "start_offset",
+          "end_offset",
+          "text",
+          "table_cells",
+          "speaker_layer",
+          "attributes"
+        ],
+        "title": "BlockDTO",
+        "type": "object"
+      },
       "Body_upload_api_v1_uploads_post": {
         "properties": {
           "batch_id": {
@@ -520,6 +723,79 @@
         "title": "CheckDTO",
         "type": "object"
       },
+      "CorrectionInput": {
+        "properties": {
+          "base_revision_id": {
+            "format": "uuid",
+            "title": "Base Revision Id",
+            "type": "string"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/BlockChange"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Changes",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_revision_id",
+          "changes",
+          "reason"
+        ],
+        "title": "CorrectionInput",
+        "type": "object"
+      },
+      "CorrectionResult": {
+        "properties": {
+          "changed_blocks": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Changed Blocks",
+            "type": "array"
+          },
+          "coalesced": {
+            "description": "joined a rebuild that was still queued",
+            "title": "Coalesced",
+            "type": "boolean"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/RevisionRef"
+          },
+          "source_changed": {
+            "$ref": "#/components/schemas/SourceChanged"
+          }
+        },
+        "required": [
+          "revision",
+          "changed_blocks",
+          "generation_id",
+          "job_id",
+          "coalesced",
+          "source_changed"
+        ],
+        "title": "CorrectionResult",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "accepted": {
@@ -580,6 +856,38 @@
         "title": "Envelope[BookDTO]",
         "type": "object"
       },
+      "Envelope_CorrectionResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CorrectionResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[CorrectionResult]",
+        "type": "object"
+      },
+      "Envelope_ImpactDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ImpactDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ImpactDTO]",
+        "type": "object"
+      },
       "Envelope_LiveStatus_": {
         "properties": {
           "data": {
@@ -626,6 +934,22 @@
           "meta"
         ],
         "title": "Envelope[MeDTO]",
+        "type": "object"
+      },
+      "Envelope_PageRevisionDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PageRevisionDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PageRevisionDTO]",
         "type": "object"
       },
       "Envelope_ReadyStatus_": {
@@ -808,6 +1132,179 @@
         "title": "Grant",
         "type": "object"
       },
+      "ImpactCounts": {
+        "properties": {
+          "assertion": {
+            "title": "Assertion",
+            "type": "integer"
+          },
+          "case_revision": {
+            "title": "Case Revision",
+            "type": "integer"
+          },
+          "chunk_added": {
+            "title": "Chunk Added",
+            "type": "integer"
+          },
+          "chunk_removed": {
+            "title": "Chunk Removed",
+            "type": "integer"
+          },
+          "chunk_reused": {
+            "title": "Chunk Reused",
+            "type": "integer"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "integer"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "integer"
+          },
+          "section_added": {
+            "title": "Section Added",
+            "type": "integer"
+          },
+          "section_removed": {
+            "title": "Section Removed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "chunk_added",
+          "chunk_removed",
+          "chunk_reused",
+          "section_added",
+          "section_removed",
+          "evidence",
+          "rule",
+          "assertion",
+          "case_revision"
+        ],
+        "title": "ImpactCounts",
+        "type": "object"
+      },
+      "ImpactDTO": {
+        "properties": {
+          "base_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Generation Id"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ImpactCounts"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "page",
+                  "chunk_added",
+                  "chunk_removed",
+                  "evidence",
+                  "rule",
+                  "assertion",
+                  "case_revision"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "cursor for the next page of ids of kind",
+            "title": "Next Cursor"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generation_id",
+          "base_generation_id",
+          "state",
+          "job",
+          "counts",
+          "kind",
+          "ids",
+          "next_cursor"
+        ],
+        "title": "ImpactDTO",
+        "type": "object"
+      },
+      "JobRef": {
+        "properties": {
+          "counters": {
+            "additionalProperties": true,
+            "title": "Counters",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "counters"
+        ],
+        "title": "JobRef",
+        "type": "object"
+      },
       "ListEnvelope_BookDTO_": {
         "properties": {
           "data": {
@@ -829,6 +1326,29 @@
           "meta"
         ],
         "title": "ListEnvelope[BookDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_PageSummaryDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PageSummaryDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[PageSummaryDTO]",
         "type": "object"
       },
       "ListEnvelope_UserDTO_": {
@@ -1009,6 +1529,251 @@
         "title": "Page",
         "type": "object"
       },
+      "PageLayout": {
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "page_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Class"
+          },
+          "rotation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotation"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "rotation",
+          "page_class"
+        ],
+        "title": "PageLayout",
+        "type": "object"
+      },
+      "PageRevisionDTO": {
+        "properties": {
+          "base_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Revision Id"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/BlockDTO"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_latest": {
+            "title": "Is Latest",
+            "type": "boolean"
+          },
+          "latest_revision_id": {
+            "format": "uuid",
+            "title": "Latest Revision Id",
+            "type": "string"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/PageLayout"
+          },
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_kind": {
+            "title": "Page Kind",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "printed_label_verified": {
+            "title": "Printed Label Verified",
+            "type": "boolean"
+          },
+          "printed_page_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Printed Page Label"
+          },
+          "quality": {
+            "additionalProperties": true,
+            "title": "Quality",
+            "type": "object"
+          },
+          "revision_no": {
+            "title": "Revision No",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "accepted",
+              "review_required",
+              "excluded"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "page_id",
+          "book_version_id",
+          "physical_page_number",
+          "page_kind",
+          "revision_no",
+          "base_revision_id",
+          "latest_revision_id",
+          "is_latest",
+          "state",
+          "printed_page_label",
+          "printed_label_verified",
+          "quality",
+          "layout",
+          "text",
+          "created_at",
+          "blocks"
+        ],
+        "title": "PageRevisionDTO",
+        "type": "object"
+      },
+      "PageSummaryDTO": {
+        "properties": {
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_kind": {
+            "title": "Page Kind",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "printed_label_verified": {
+            "title": "Printed Label Verified",
+            "type": "boolean"
+          },
+          "printed_page_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Printed Page Label"
+          },
+          "quality": {
+            "additionalProperties": true,
+            "title": "Quality",
+            "type": "object"
+          },
+          "revision_id": {
+            "format": "uuid",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "revision_no": {
+            "title": "Revision No",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "accepted",
+              "review_required",
+              "excluded"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id",
+          "physical_page_number",
+          "page_kind",
+          "revision_id",
+          "revision_no",
+          "state",
+          "printed_page_label",
+          "printed_label_verified",
+          "quality"
+        ],
+        "title": "PageSummaryDTO",
+        "type": "object"
+      },
       "Problem": {
         "description": "application/problem+json (RFC 9457) with a stable ``code``.",
         "properties": {
@@ -1094,6 +1859,37 @@
           "checks"
         ],
         "title": "ReadyStatus",
+        "type": "object"
+      },
+      "RevisionRef": {
+        "properties": {
+          "base_revision_id": {
+            "format": "uuid",
+            "title": "Base Revision Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "revision_no": {
+            "title": "Revision No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "page_id",
+          "revision_no",
+          "base_revision_id"
+        ],
+        "title": "RevisionRef",
         "type": "object"
       },
       "RuntimeConfigDTO": {
@@ -1212,6 +2008,50 @@
           "settings"
         ],
         "title": "SettingsView",
+        "type": "object"
+      },
+      "SourceChanged": {
+        "properties": {
+          "assertion": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Assertion",
+            "type": "array"
+          },
+          "case_revision": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Case Revision",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "rule": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Rule",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence",
+          "rule",
+          "assertion",
+          "case_revision"
+        ],
+        "title": "SourceChanged",
         "type": "object"
       },
       "UploadResult": {
@@ -1790,6 +2630,123 @@
         "summary": "Get Version",
         "tags": [
           "books"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/book-versions/{version_id}/pages": {
+      "get": {
+        "operationId": "list_pages_api_v1_book_versions__version_id__pages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_PageSummaryDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Pages",
+        "tags": [
+          "pages"
         ],
         "x-permission": "R"
       }
@@ -2486,6 +3443,148 @@
         "x-permission": "R"
       }
     },
+    "/api/v1/generations/{generation_id}/impact": {
+      "get": {
+        "operationId": "generation_impact_api_v1_generations__generation_id__impact_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "page",
+                    "chunk_added",
+                    "chunk_removed",
+                    "evidence",
+                    "rule",
+                    "assertion",
+                    "case_revision"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ImpactDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Generation Impact",
+        "tags": [
+          "pages"
+        ],
+        "x-permission": "V"
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "description": "Process is up. No dependency calls, versions or configuration.",
@@ -2713,6 +3812,227 @@
         "summary": "Get Batch",
         "tags": [
           "uploads"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/page-revisions/{revision_id}": {
+      "get": {
+        "operationId": "get_revision_api_v1_page_revisions__revision_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "revision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Revision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PageRevisionDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Revision",
+        "tags": [
+          "pages"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/pages/{page_id}/corrections": {
+      "post": {
+        "operationId": "correct_page_api_v1_pages__page_id__corrections_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_CorrectionResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Correct Page",
+        "tags": [
+          "pages"
         ],
         "x-permission": "V"
       }

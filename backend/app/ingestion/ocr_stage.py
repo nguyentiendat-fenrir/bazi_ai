@@ -66,7 +66,9 @@ class OcrStage:
             rows = conn.execute(text(
                 "SELECT p.physical_page_number AS n, r.id, r.text_hash,"
                 " (r.quality->>'needs_ocr')::boolean AS needs_ocr, r.quality->>'page_class' AS cls,"
-                " r.layout->'image_boxes' AS boxes FROM generation_pages gp"
+                " r.layout->'image_boxes' AS boxes,"
+                # OCR output and human corrections are final for this page's text.
+                " (r.quality ? 'ocr' OR r.quality ? 'correction') AS settled FROM generation_pages gp"
                 ' JOIN pages p ON p.id = gp.page_id JOIN page_revisions r ON r.id = gp.page_revision_id'
                 " WHERE gp.generation_id = :g AND p.page_kind = 'pdf_page'"
                 ' ORDER BY p.physical_page_number'), {'g': ctx.generation_id}).mappings().all()
@@ -75,7 +77,7 @@ class OcrStage:
         units = []
         for row in rows:
             boxes = [b for b in (row['boxes'] or []) if _region_area(b) >= MIN_REGION_AREA]
-            if not (row['needs_ocr'] or boxes):
+            if row['settled'] or not (row['needs_ocr'] or boxes):
                 continue
             digest = hashlib.sha256(json.dumps(
                 [row['text_hash'].strip(), boxes, self._langs(ctx), DPI_STEPS, version,

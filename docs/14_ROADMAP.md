@@ -49,7 +49,10 @@ khác tra tại bảng cuối file này.
   định danh chunk ổn định, chủ đề đề xuất.
 - T016 ✅ registry embedding profile/collection, provider openai_compatible + fixture offline,
   stage embed (lexical FTS + vector theo lô, không nhân bản, tái dùng theo hash).
-- Việc kế tiếp: T017 sửa OCR gia tăng; smoke T002 trên Ubuntu khi có máy.
+- T017 ✅ sửa trang thành revision mới (If-Match + idempotency), generation gia tăng tái dùng
+  chunk/vector, gộp bản sửa khi rebuild còn chờ, flag `SOURCE_CHANGED` theo ký tự bị sửa,
+  API impact; kèm sửa lỗi tiêu đề "Chương N: …" bị đọc thành hàng lá số (parser v5).
+- Việc kế tiếp: T018 publication + active corpus release; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -161,7 +164,7 @@ trước khi trình duyệt.
 | T014 | Unicode, cấu trúc và quality review | K2 | ✅ (hiệu chỉnh ngưỡng → T025.1) |
 | T015 | Semantic chunking và provenance | K2 | ✅ |
 | T016 | Embedding/index staging và model registry | K2 | ✅ |
-| T017 | Sửa OCR incremental và impact | K2 | |
+| T017 | Sửa OCR incremental và impact | K2 | ✅ |
 | T018 | Publication và active corpus release | K2 | |
 | T019 | Reprocess, withdrawal, GC và jobs API | K2 | |
 | T020 | Trường phái, phương pháp, concept và aliases | K3 | |

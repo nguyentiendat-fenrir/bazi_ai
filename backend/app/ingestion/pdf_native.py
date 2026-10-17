@@ -21,7 +21,7 @@ import pypdfium2.raw as pdfium_c
 from . import layout
 from .normalize import normalize
 
-PARSER_VERSION = f'pdfium-native-4/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
+PARSER_VERSION = f'pdfium-native-5/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
 MAX_PAGES = 3000
 _DIGITS = re.compile(r'^(\d{1,4}|[ivxlcdm]{1,7})$', re.IGNORECASE)
 
