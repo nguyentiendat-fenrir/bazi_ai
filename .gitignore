@@ -15,3 +15,5 @@ __pycache__/
 /frontend/.next/
 /.cache/
 /.artifacts/
+
+.claude/settings.local.json
