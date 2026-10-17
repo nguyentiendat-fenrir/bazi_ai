@@ -126,6 +126,7 @@ def fixtures(target: Path) -> dict:
     return {'clean_a': book('sach-mau-a.pdf', 'mẫu A', 3, False),
             'clean_b': book('sach-mau-b.pdf', 'mẫu B', 3, False),
             'clean_c': book('sach-mau-c.pdf', 'mẫu C', 2, False),
+            'knowledge': book('sach-tri-thuc.pdf', 'tri thức', 1, False),
             'scan': book('sach-co-trang-quet.pdf', 'có trang quét', 2, True),
             'corrupt': str(corrupt), 'not_pdf': str(not_pdf)}
 

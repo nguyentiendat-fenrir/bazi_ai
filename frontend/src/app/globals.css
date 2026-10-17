@@ -276,3 +276,16 @@ details.panel summary { cursor: pointer; font-weight: 600; }
 .citations blockquote { margin: 2px 0; padding: 4px 10px; border-left: 3px solid var(--teal); background: var(--surface-2); white-space: pre-wrap; }
 .composer { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; display: grid; gap: 8px; position: sticky; bottom: 0; }
 @media (max-width: 1100px) { .chat { grid-template-columns: minmax(0, 1fr); } .chat-list { position: static; } }
+
+/* ---- knowledge admin ---------------------------------------------------------------- */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tabs a { padding: 8px 12px; border-bottom: 2px solid transparent; color: var(--text); text-decoration: none; }
+.tabs a[aria-current="page"] { border-bottom-color: var(--teal); font-weight: 600; }
+.tabs a:hover { background: var(--surface-2); }
+textarea.code, pre.code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+pre.code { background: var(--surface-2); padding: 10px; border-radius: 4px; overflow: auto; max-height: 420px; }
+.statement { white-space: pre-wrap; font-size: 15px; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
+.inline-form .field { margin: 0; }
+.review-history { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+td.wrap { white-space: normal; min-width: 280px; }

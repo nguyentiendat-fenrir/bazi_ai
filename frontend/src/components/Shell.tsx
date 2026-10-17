@@ -30,6 +30,7 @@ export const NAV: NavItem[] = [
   { href: '/books/upload', label: 'Tải sách lên', needs: 'library:review' },
   { href: '/jobs', label: 'Jobs xử lý', needs: 'library:review' },
   { href: '/review', label: 'Duyệt nguồn', needs: 'library:review', match: ['/pages'] },
+  { href: '/knowledge/terms', label: 'Tri thức', needs: 'library:review', match: ['/knowledge', '/cases'] },
 ]
 
 function active(pathname: string, item: NavItem): boolean {

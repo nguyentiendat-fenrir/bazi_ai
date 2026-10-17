@@ -10,7 +10,7 @@ interface Stack {
   users: Record<Role, { id: string, email: string }>
   password: string
   pipeline_profile_id: string
-  fixtures: Record<'clean_a' | 'clean_b' | 'clean_c' | 'scan' | 'corrupt' | 'not_pdf', string>
+  fixtures: Record<'clean_a' | 'clean_b' | 'clean_c' | 'knowledge' | 'scan' | 'corrupt' | 'not_pdf', string>
   api: string
 }
 

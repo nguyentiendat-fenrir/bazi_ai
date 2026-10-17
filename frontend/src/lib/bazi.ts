@@ -116,3 +116,11 @@ export const TERMS: Record<string, string> = {
 export const CAUSES: Record<string, string> = {
   day_rollover: 'đổi ngày', hour_boundary: 'đổi canh giờ', ...TERMS,
 }
+
+export type PayloadPillars = Partial<Record<Position, { stem: string, branch: string } | null>>
+
+/** Year · month · day · hour of a case payload; an unknown pillar shows as a dash. */
+export function pillarsLine(payload: unknown): string {
+  const pillars = (payload as { pillars?: PayloadPillars } | null)?.pillars ?? {}
+  return POSITIONS.map((p) => { const x = pillars[p]; return x ? ganzhi(x.stem, x.branch) : '—' }).join(' · ')
+}
