@@ -102,7 +102,9 @@ khác tra tại bảng cuối file này.
   Mặt Trời, khoảng bất định → biến thể, đại vận/lưu niên, âm lịch VN/CN, ChartFacts +
   hash). T029 ⏳ oracle độc lập VSOP87 (≤57 s mọi tiết 1900–2100), khớp lunar-python,
   hồi quy 32 lá số; còn bảng HKO và chuyên gia duyệt policy/bảng.
-- Việc kế tiếp: T030 lưu hồ sơ/lá số (mã hóa) + API, rồi T031–T034 rule engine.
+- T030 ✅ hồ sơ sinh + lá số: BirthInput mã hóa AES-GCM theo chủ sở hữu/bản ghi, facts bất
+  biến (hash do DB kiểm), policy lưu DB khi dùng lần đầu và không được trôi, API có kiểu.
+- Việc kế tiếp: T031–T034 rule engine (ruleset, DAG, duyệt, đánh giá lại).
 
 ## Các giai đoạn
 
@@ -231,7 +233,7 @@ trước khi trình duyệt.
 | T027 | Timezone và giờ Mặt Trời | K6 | ✅ |
 | T028 | Tiết khí, ngày Tý và chu kỳ vận | K6 | ✅ |
 | T029 | Oracle độc lập và regression calculation | K6 | ⏳ chờ HKO + chuyên gia |
-| T030 | Profiles/charts persistence và API | K6 | |
+| T030 | Profiles/charts persistence và API | K6 | ✅ |
 | T031 | DSL validator và typed interpreter | K6 | |
 | T032 | Rule DAG, exceptions và conflict trace | K6 | |
 | T033 | Rule approval gates và immutable rulesets | K6 | |

@@ -120,6 +120,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/birth-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_api_v1_birth_profiles_get"];
+        put?: never;
+        /** Create Profile */
+        post: operations["create_profile_api_v1_birth_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/birth-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["get_profile_api_v1_birth_profiles__profile_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Profile */
+        delete: operations["delete_profile_api_v1_birth_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Profile
+         * @description A new revision; charts made earlier keep their own input and facts.
+         */
+        patch: operations["update_profile_api_v1_birth_profiles__profile_id__patch"];
+        trace?: never;
+    };
     "/api/v1/book-versions/{version_id}": {
         parameters: {
             query?: never;
@@ -280,6 +320,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calculation-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calculation Policies */
+        get: operations["calculation_policies_api_v1_calculation_policies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases": {
         parameters: {
             query?: never;
@@ -328,6 +385,45 @@ export interface paths {
         /** Revise Case */
         post: operations["revise_case_api_v1_cases__case_id__revisions_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/charts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Charts */
+        get: operations["list_charts_api_v1_charts_get"];
+        put?: never;
+        /**
+         * Create Chart
+         * @description 422 with the code (NONEXISTENT_TIME, AMBIGUOUS_TIME, UNSUPPORTED_RANGE, ...) and field.
+         */
+        post: operations["create_chart_api_v1_charts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/charts/{chart_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Chart */
+        get: operations["get_chart_api_v1_charts__chart_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Chart */
+        delete: operations["delete_chart_api_v1_charts__chart_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1642,6 +1738,59 @@ export interface components {
             /** Version Id */
             version_id: string | null;
         };
+        /** BirthInput */
+        BirthInput: {
+            /**
+             * Calendar System
+             * @default gregorian
+             * @enum {string}
+             */
+            calendar_system: "gregorian" | "lunar_vn" | "lunar_cn";
+            /** Fold */
+            fold?: (0 | 1) | null;
+            /** Latitude */
+            latitude?: number | null;
+            /**
+             * Local Datetime
+             * @description YYYY-MM-DDTHH:MM[:SS], no offset
+             */
+            local_datetime?: string | null;
+            /**
+             * Local Time
+             * @description HH:MM[:SS] with lunar_date
+             */
+            local_time?: string | null;
+            /** Longitude */
+            longitude?: number | null;
+            lunar_date?: components["schemas"]["LunarDate"] | null;
+            /**
+             * Policy Id
+             * @default standard-v1
+             */
+            policy_id: string;
+            /**
+             * Sex For Luck
+             * @default unspecified
+             * @enum {string}
+             */
+            sex_for_luck: "male" | "female" | "unspecified";
+            /**
+             * Time Accuracy
+             * @default minute
+             * @enum {string}
+             */
+            time_accuracy: "minute" | "hour" | "unknown";
+            /**
+             * Timezone
+             * @description IANA zone, e.g. Asia/Ho_Chi_Minh
+             */
+            timezone: string;
+            /**
+             * Uncertainty Minutes
+             * @default 0
+             */
+            uncertainty_minutes: number;
+        };
         /** BlockChange */
         BlockChange: {
             /** Kind */
@@ -2067,6 +2216,132 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ChartDTO */
+        ChartDTO: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            facts: components["schemas"]["ChartFacts"];
+            /** Facts Hash */
+            facts_hash: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Pillars
+             * @description e.g. {"year": "jia-chen", "hour": null}
+             */
+            pillars: {
+                [key: string]: string | null;
+            };
+            /** Policy Id */
+            policy_id: string;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Label */
+            profile_label: string | null;
+            /** Profile Revision */
+            profile_revision: number | null;
+            /**
+             * Validation Status
+             * @enum {string}
+             */
+            validation_status: "valid" | "partial";
+        };
+        /** ChartFacts */
+        ChartFacts: {
+            /** Auxiliary */
+            auxiliary: {
+                [key: string]: unknown;
+            };
+            /** Chart Id */
+            chart_id: string;
+            /** Computed At */
+            computed_at: string;
+            cycles: components["schemas"]["Cycles"] | null;
+            /** Engine Manifest */
+            engine_manifest: {
+                [key: string]: unknown;
+            };
+            /** Facts Hash */
+            facts_hash: string;
+            input_snapshot: components["schemas"]["BirthInput"];
+            normalized_time: components["schemas"]["NormalizedTime"];
+            pillars: components["schemas"]["Pillars"];
+            /** Policy Snapshot */
+            policy_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Relations */
+            relations: components["schemas"]["Relation"][];
+            /** Schema Version */
+            schema_version: string;
+            /** Variants */
+            variants: components["schemas"]["Variant"][];
+            /** Warnings */
+            warnings: components["schemas"]["ChartWarning"][];
+        };
+        /** ChartInput */
+        ChartInput: {
+            birth_input?: components["schemas"]["BirthInput"] | null;
+            /**
+             * Policy Id
+             * @description overrides the input policy
+             */
+            policy_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Revision */
+            profile_revision?: number | null;
+        };
+        /** ChartSummary */
+        ChartSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Facts Hash */
+            facts_hash: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Pillars
+             * @description e.g. {"year": "jia-chen", "hour": null}
+             */
+            pillars: {
+                [key: string]: string | null;
+            };
+            /** Policy Id */
+            policy_id: string;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Label */
+            profile_label: string | null;
+            /** Profile Revision */
+            profile_revision: number | null;
+            /**
+             * Validation Status
+             * @enum {string}
+             */
+            validation_status: "valid" | "partial";
+        };
+        /** ChartWarning */
+        ChartWarning: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+            /** Positions */
+            positions: string[];
+        };
         /** CheckDTO */
         CheckDTO: {
             /** Code */
@@ -2318,6 +2593,35 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** Cycles */
+        Cycles: {
+            /** Da Yun */
+            da_yun: components["schemas"]["DaYun"][] | null;
+            /** Direction */
+            direction: ("forward" | "backward") | null;
+            /** Liu Nian */
+            liu_nian: components["schemas"]["LiuNian"][];
+            start_age_components: components["schemas"]["StartAge"] | null;
+            /** Start Instant */
+            start_instant: string | null;
+            /** Start Method */
+            start_method: string;
+            /** Start Range Utc */
+            start_range_utc: string[] | null;
+        };
+        /** DaYun */
+        DaYun: {
+            /** Branch */
+            branch: string;
+            /** End */
+            end: string | null;
+            /** Index */
+            index: number;
+            /** Start */
+            start: string | null;
+            /** Stem */
+            stem: string;
+        };
         /** DatasetDTO */
         DatasetDTO: {
             /**
@@ -2446,6 +2750,11 @@ export interface components {
             data: components["schemas"]["CaseDetail"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[ChartDTO] */
+        Envelope_ChartDTO_: {
+            data: components["schemas"]["ChartDTO"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[ConceptDetail] */
         Envelope_ConceptDetail_: {
             data: components["schemas"]["ConceptDetail"];
@@ -2511,9 +2820,14 @@ export interface components {
             data: components["schemas"]["PageRevisionDTO"];
             meta: components["schemas"]["Meta"];
         };
-        /** Envelope[ProfileDTO] */
-        Envelope_ProfileDTO_: {
-            data: components["schemas"]["ProfileDTO"];
+        /** Envelope[PolicyCatalog] */
+        Envelope_PolicyCatalog_: {
+            data: components["schemas"]["PolicyCatalog"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ProfileDeleted] */
+        Envelope_ProfileDeleted_: {
+            data: components["schemas"]["ProfileDeleted"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[PublishOntologyResult] */
@@ -2857,6 +3171,18 @@ export interface components {
             role_scope?: ("reader" | "reviewer" | "admin") | null;
             /** User Id */
             user_id?: string | null;
+        };
+        /** HiddenStem */
+        HiddenStem: {
+            /**
+             * Rank
+             * @enum {string}
+             */
+            rank: "main" | "middle" | "residual";
+            /** Stem */
+            stem: string;
+            /** Ten God */
+            ten_god: string;
         };
         /** Hit */
         Hit: {
@@ -3239,6 +3565,13 @@ export interface components {
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
+        /** ListEnvelope[ChartSummary] */
+        ListEnvelope_ChartSummary_: {
+            /** Data */
+            data: components["schemas"]["ChartSummary"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
         /** ListEnvelope[ConceptDTO] */
         ListEnvelope_ConceptDTO_: {
             /** Data */
@@ -3305,7 +3638,14 @@ export interface components {
         /** ListEnvelope[ProfileDTO] */
         ListEnvelope_ProfileDTO_: {
             /** Data */
-            data: components["schemas"]["ProfileDTO"][];
+            data: components["schemas"]["backend__app__api__models__ProfileDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
+        /** ListEnvelope[ProfileSummary] */
+        ListEnvelope_ProfileSummary_: {
+            /** Data */
+            data: components["schemas"]["ProfileSummary"][];
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
@@ -3365,6 +3705,19 @@ export interface components {
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
+        /** LiuNian */
+        LiuNian: {
+            /** Branch */
+            branch: string;
+            /** End Instant */
+            end_instant: string;
+            /** Solar Term Year */
+            solar_term_year: number;
+            /** Start Instant */
+            start_instant: string;
+            /** Stem */
+            stem: string;
+        };
         /** LiveStatus */
         LiveStatus: {
             /**
@@ -3385,6 +3738,20 @@ export interface components {
             /** Csrf Token */
             csrf_token: string;
             user: components["schemas"]["MeDTO"];
+        };
+        /** LunarDate */
+        LunarDate: {
+            /** Day */
+            day: number;
+            /**
+             * Is Leap Month
+             * @default false
+             */
+            is_leap_month: boolean;
+            /** Month */
+            month: number;
+            /** Year */
+            year: number;
         };
         /** MeDTO */
         MeDTO: {
@@ -3459,6 +3826,37 @@ export interface components {
             description: string;
             /** Reason */
             reason: string;
+        };
+        /** NormalizedTime */
+        NormalizedTime: {
+            /** Birth Instant Utc */
+            birth_instant_utc: string;
+            /** Civil Local */
+            civil_local: string;
+            /**
+             * Clock Basis
+             * @enum {string}
+             */
+            clock_basis: "civil" | "apparent_solar";
+            /** Eot Minutes */
+            eot_minutes: number | null;
+            /** Fold */
+            fold: number;
+            /** Interval Utc */
+            interval_utc: string[] | null;
+            /** Longitude Correction Minutes */
+            longitude_correction_minutes: number | null;
+            next_jie: components["schemas"]["SolarTerm"];
+            /** Pillar Clock Local */
+            pillar_clock_local: string;
+            previous_jie: components["schemas"]["SolarTerm"];
+            /**
+             * Time Accuracy
+             * @enum {string}
+             */
+            time_accuracy: "minute" | "hour" | "unknown";
+            /** Utc Offset Seconds */
+            utc_offset_seconds: number;
         };
         /** OntologyDiff */
         OntologyDiff: {
@@ -3628,6 +4026,52 @@ export interface components {
              */
             state: "accepted" | "review_required" | "excluded";
         };
+        /** Pillar */
+        Pillar: {
+            /** Branch */
+            branch: string;
+            /** Branch Element */
+            branch_element?: string | null;
+            /** Branch Label */
+            branch_label: string;
+            /** Cycle Index */
+            cycle_index: number;
+            /** Growth Stage */
+            growth_stage?: string | null;
+            /**
+             * Hidden Stems
+             * @default []
+             */
+            hidden_stems: components["schemas"]["HiddenStem"][];
+            /** Na Yin */
+            na_yin?: string | null;
+            /** Na Yin Element */
+            na_yin_element?: string | null;
+            /** Na Yin Label */
+            na_yin_label?: string | null;
+            /** Polarity */
+            polarity?: ("yang" | "yin") | null;
+            /** Stem */
+            stem: string;
+            /** Stem Element */
+            stem_element?: string | null;
+            /** Stem Label */
+            stem_label: string;
+            /**
+             * Ten God
+             * @description null for the day pillar (day master)
+             */
+            ten_god?: string | null;
+            /** Void */
+            void?: boolean | null;
+        };
+        /** Pillars */
+        Pillars: {
+            day: components["schemas"]["Pillar"] | null;
+            hour: components["schemas"]["Pillar"] | null;
+            month: components["schemas"]["Pillar"] | null;
+            year: components["schemas"]["Pillar"] | null;
+        };
         /** PipelineProfileDTO */
         PipelineProfileDTO: {
             /** Chunker Version */
@@ -3656,6 +4100,23 @@ export interface components {
             /** Renderer Version */
             renderer_version: string | null;
         };
+        /** PolicyCatalog */
+        PolicyCatalog: {
+            /** Calendars */
+            calendars: string[];
+            /** Max Uncertainty Minutes */
+            max_uncertainty_minutes: number;
+            /** Policies */
+            policies: {
+                [key: string]: unknown;
+            }[];
+            /** Range */
+            range: {
+                [key: string]: number;
+            };
+            /** Time Accuracy */
+            time_accuracy: string[];
+        };
         /** ProcessInput */
         ProcessInput: {
             /**
@@ -3671,71 +4132,47 @@ export interface components {
              */
             scope: "full";
         };
-        /** ProfileDTO */
-        ProfileDTO: {
-            /** Active */
-            active: boolean;
-            /** Config */
-            config: {
-                [key: string]: unknown;
-            };
+        /** ProfileDeleted */
+        ProfileDeleted: {
+            /** Charts Deleted */
+            charts_deleted: number;
+            /** Charts Kept */
+            charts_kept: number;
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+        };
+        /** ProfilePatch */
+        ProfilePatch: {
+            birth_input?: components["schemas"]["BirthInput"] | null;
+            /** Label */
+            label?: string | null;
+        };
+        /** ProfileSummary */
+        ProfileSummary: {
+            /** Charts Count */
+            charts_count: number;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
-            /** Dimension */
-            dimension: number | null;
-            /** Enabled */
-            enabled: boolean;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Is Fixture */
-            is_fixture: boolean;
+            /** Label */
+            label: string;
+            /** Revision */
+            revision: number;
             /**
-             * Kind
-             * @enum {string}
+             * Updated At
+             * Format: date-time
              */
-            kind: "llm" | "embedding" | "reranker";
-            /** Model Name */
-            model_name: string;
-            /** Model Revision */
-            model_revision: string;
-            /** Provider */
-            provider: string;
-            /** Secret Ref */
-            secret_ref: string | null;
-        };
-        /** ProfileInput */
-        ProfileInput: {
-            /**
-             * Config
-             * @description no secrets; base_url, timeout, locality, json_mode, prices, daily_budget…
-             */
-            config?: {
-                [key: string]: unknown;
-            };
-            /** Dimension */
-            dimension?: number | null;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "llm" | "embedding" | "reranker";
-            /** Model Name */
-            model_name: string;
-            /** Model Revision */
-            model_revision: string;
-            /** Provider */
-            provider: string;
-            /**
-             * Secret Ref
-             * @description name of an allowlisted env var
-             */
-            secret_ref?: string | null;
+            updated_at: string;
         };
         /** PublishInput */
         PublishInput: {
@@ -3799,6 +4236,24 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "degraded" | "fail";
+        };
+        /** Relation */
+        Relation: {
+            /**
+             * Completeness
+             * @enum {string}
+             */
+            completeness: "full" | "partial";
+            /** Conditions Evaluated */
+            conditions_evaluated: boolean;
+            /** Element */
+            element?: string | null;
+            /** Members */
+            members: string[];
+            /** Positions */
+            positions: string[];
+            /** Type */
+            type: string;
         };
         /** RelationDTO */
         RelationDTO: {
@@ -4558,6 +5013,15 @@ export interface components {
             /** Settings */
             settings: components["schemas"]["SettingDTO"][];
         };
+        /** SolarTerm */
+        SolarTerm: {
+            /** Instant Utc */
+            instant_utc: string;
+            /** Key */
+            key: string;
+            /** Source Version */
+            source_version: string;
+        };
         /** SourceChanged */
         SourceChanged: {
             /** Assertion */
@@ -4632,6 +5096,17 @@ export interface components {
             stage: string;
             /** Units */
             units: number;
+        };
+        /** StartAge */
+        StartAge: {
+            /** Days */
+            days: number;
+            /** Hours */
+            hours: number;
+            /** Months */
+            months: number;
+            /** Years */
+            years: number;
         };
         /** TermDTO */
         TermDTO: {
@@ -4931,6 +5406,28 @@ export interface components {
             /** Valid */
             valid: boolean;
         };
+        /** Variant */
+        Variant: {
+            /** From Utc */
+            from_utc: string;
+            /** Pillars */
+            pillars: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Reasons */
+            reasons: components["schemas"]["VariantReason"][];
+            /** To Utc */
+            to_utc: string;
+        };
+        /** VariantReason */
+        VariantReason: {
+            /** Cause */
+            cause: string;
+            /** Position */
+            position: string;
+        };
         /** VersionDTO */
         VersionDTO: {
             /**
@@ -5006,6 +5503,37 @@ export interface components {
             /** Visibility Epoch */
             visibility_epoch: number | null;
         };
+        /** ProfileDTO */
+        backend__app__api__charts__ProfileDTO: {
+            birth_input: components["schemas"]["BirthInput"];
+            /** Charts Count */
+            charts_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ProfileInput */
+        backend__app__api__charts__ProfileInput: {
+            birth_input: components["schemas"]["BirthInput"];
+            /** Label */
+            label: string;
+        };
         /** RevisionRef */
         backend__app__api__knowledge__RevisionRef: {
             /**
@@ -5020,6 +5548,72 @@ export interface components {
              * @enum {string}
              */
             state: "draft" | "in_review" | "approved" | "rejected" | "revoked";
+        };
+        /** ProfileDTO */
+        backend__app__api__models__ProfileDTO: {
+            /** Active */
+            active: boolean;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dimension */
+            dimension: number | null;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Fixture */
+            is_fixture: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "llm" | "embedding" | "reranker";
+            /** Model Name */
+            model_name: string;
+            /** Model Revision */
+            model_revision: string;
+            /** Provider */
+            provider: string;
+            /** Secret Ref */
+            secret_ref: string | null;
+        };
+        /** ProfileInput */
+        backend__app__api__models__ProfileInput: {
+            /**
+             * Config
+             * @description no secrets; base_url, timeout, locality, json_mode, prices, daily_budget…
+             */
+            config?: {
+                [key: string]: unknown;
+            };
+            /** Dimension */
+            dimension?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "llm" | "embedding" | "reranker";
+            /** Model Name */
+            model_name: string;
+            /** Model Revision */
+            model_revision: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Secret Ref
+             * @description name of an allowlisted env var
+             */
+            secret_ref?: string | null;
         };
         /** ImpactDTO */
         backend__app__api__ontology__ImpactDTO: {
@@ -5120,6 +5714,16 @@ export interface components {
         /** Envelope[ImpactDTO] */
         backend__app__api__schemas__Envelope_ImpactDTO___2: {
             data: components["schemas"]["backend__app__api__ontology__ImpactDTO"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ProfileDTO] */
+        backend__app__api__schemas__Envelope_ProfileDTO___1: {
+            data: components["schemas"]["backend__app__api__models__ProfileDTO"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ProfileDTO] */
+        backend__app__api__schemas__Envelope_ProfileDTO___2: {
+            data: components["schemas"]["backend__app__api__charts__ProfileDTO"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[ResolveResult] */
@@ -5756,6 +6360,425 @@ export interface operations {
             };
             /** @description Internal Server Error */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_profiles_api_v1_birth_profiles_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEnvelope_ProfileSummary_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    create_profile_api_v1_birth_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["backend__app__api__charts__ProfileInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_ProfileDTO___2"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_profile_api_v1_birth_profiles__profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_ProfileDTO___2"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    delete_profile_api_v1_birth_profiles__profile_id__delete: {
+        parameters: {
+            query?: {
+                delete_linked_charts?: boolean;
+            };
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ProfileDeleted_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    update_profile_api_v1_birth_profiles__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfilePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_ProfileDTO___2"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6769,6 +7792,66 @@ export interface operations {
             };
         };
     };
+    calculation_policies_api_v1_calculation_policies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_PolicyCatalog_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     list_cases_api_v1_cases_get: {
         parameters: {
             query?: {
@@ -7108,6 +8191,336 @@ export interface operations {
             };
             /** @description Precondition Failed */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_charts_api_v1_charts_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEnvelope_ChartSummary_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    create_chart_api_v1_charts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChartInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ChartDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_chart_api_v1_charts__chart_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chart_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ChartDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    delete_chart_api_v1_charts__chart_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chart_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9582,7 +10995,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileInput"];
+                "application/json": components["schemas"]["backend__app__api__models__ProfileInput"];
             };
         };
         responses: {
@@ -9592,7 +11005,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Envelope_ProfileDTO_"];
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_ProfileDTO___1"];
                 };
             };
             /** @description Unauthorized */
@@ -9664,7 +11077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Envelope_ProfileDTO_"];
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_ProfileDTO___1"];
                 };
             };
             /** @description Unauthorized */

@@ -41,6 +41,7 @@ BLACK = (0, 0, 0)
 # Distinct titles: identical ones would repeat at the page edge like a running header.
 TITLES = ['THỂ DỤNG', 'CÁCH CỤC', 'ĐẠI VẬN', 'THẬP THẦN', 'NGŨ HÀNH', 'DỤNG THẦN']
 PASSWORD = 'correct horse battery staple'
+FIELD_KEY = 'test-field-encryption-key-not-a-secret'
 
 
 def no_ocr():
@@ -71,7 +72,7 @@ class PipelineTestCase(unittest.TestCase):
         cls.tmp = Path(tempfile.mkdtemp())
         cls.store = LocalObjectStore(cls.tmp / 'store')
         cls.pipeline = cls.pipeline_profile(f'env-{uuid.uuid4().hex[:6]}')
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {'FIELD_ENCRYPTION_KEY': FIELD_KEY}, clear=True):
             config = load_settings(_env_file=None)
         cls.app = create_app(config, engine=cls.engine, store=cls.store)
         configure_logging('WARNING', [], stream=io.StringIO())

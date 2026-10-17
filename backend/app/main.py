@@ -8,11 +8,12 @@ from __future__ import annotations
 from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
-from .api import (assertions, auth, books, cases, evaluation, health, jobs, knowledge, models,
-                  ontology, pages, pipelines, releases, reviews, rules, search,
+from .api import (assertions, auth, books, cases, charts, evaluation, health, jobs, knowledge,
+                  models, ontology, pages, pipelines, releases, reviews, rules, search,
                   settings as settings_api, uploads, users)
 from .auth.ratelimit import LoginLimiter
 from .core.config import Settings, load_settings
+from .core.crypto import FieldCipher
 from .core.db import database_check, make_engine, runtime_role_check
 from .core.errors import install_error_handlers
 from .core.health import ReadinessCheck, default_checks
@@ -39,6 +40,9 @@ def create_app(settings: Settings | None = None,
     app.state.settings = settings
     app.state.engine = engine
     app.state.store = store = store or build_store(settings)
+    # Birth data is stored only when a field-encryption key is configured.
+    app.state.cipher = (FieldCipher(settings.field_encryption_key.get_secret_value())
+                        if settings.field_encryption_key else None)
     app.state.login_limiter = LoginLimiter(settings.login_max_failures,
                                            settings.login_window_seconds)
     app.state.readiness_checks = (readiness_checks if readiness_checks is not None else
@@ -52,6 +56,6 @@ def create_app(settings: Settings | None = None,
                    uploads.router, pages.router, releases.router, jobs.router, reviews.router,
                    knowledge.router, assertions.router, rules.router, cases.router,
                    ontology.router, search.router, evaluation.router, models.router,
-                   pipelines.router):
+                   pipelines.router, charts.router):
         app.include_router(router, prefix=API_PREFIX)
     return app

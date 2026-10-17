@@ -798,6 +798,140 @@
         "title": "BatchItem",
         "type": "object"
       },
+      "BirthInput": {
+        "additionalProperties": false,
+        "properties": {
+          "calendar_system": {
+            "default": "gregorian",
+            "enum": [
+              "gregorian",
+              "lunar_vn",
+              "lunar_cn"
+            ],
+            "title": "Calendar System",
+            "type": "string"
+          },
+          "fold": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fold"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "local_datetime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "YYYY-MM-DDTHH:MM[:SS], no offset",
+            "title": "Local Datetime"
+          },
+          "local_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HH:MM[:SS] with lunar_date",
+            "title": "Local Time"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "lunar_date": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LunarDate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policy_id": {
+            "default": "standard-v1",
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "sex_for_luck": {
+            "default": "unspecified",
+            "enum": [
+              "male",
+              "female",
+              "unspecified"
+            ],
+            "title": "Sex For Luck",
+            "type": "string"
+          },
+          "time_accuracy": {
+            "default": "minute",
+            "enum": [
+              "minute",
+              "hour",
+              "unknown"
+            ],
+            "title": "Time Accuracy",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA zone, e.g. Asia/Ho_Chi_Minh",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "uncertainty_minutes": {
+            "default": 0,
+            "maximum": 720.0,
+            "minimum": 0.0,
+            "title": "Uncertainty Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "timezone"
+        ],
+        "title": "BirthInput",
+        "type": "object"
+      },
       "BlockChange": {
         "properties": {
           "kind": {
@@ -1872,6 +2006,366 @@
         "title": "Changes",
         "type": "object"
       },
+      "ChartDTO": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/ChartFacts"
+          },
+          "facts_hash": {
+            "title": "Facts Hash",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pillars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "e.g. {\"year\": \"jia-chen\", \"hour\": null}",
+            "title": "Pillars",
+            "type": "object"
+          },
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Label"
+          },
+          "profile_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Revision"
+          },
+          "validation_status": {
+            "enum": [
+              "valid",
+              "partial"
+            ],
+            "title": "Validation Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "profile_id",
+          "profile_label",
+          "profile_revision",
+          "policy_id",
+          "validation_status",
+          "pillars",
+          "facts_hash",
+          "created_at",
+          "facts"
+        ],
+        "title": "ChartDTO",
+        "type": "object"
+      },
+      "ChartFacts": {
+        "properties": {
+          "auxiliary": {
+            "additionalProperties": true,
+            "title": "Auxiliary",
+            "type": "object"
+          },
+          "chart_id": {
+            "title": "Chart Id",
+            "type": "string"
+          },
+          "computed_at": {
+            "title": "Computed At",
+            "type": "string"
+          },
+          "cycles": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cycles"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "engine_manifest": {
+            "additionalProperties": true,
+            "title": "Engine Manifest",
+            "type": "object"
+          },
+          "facts_hash": {
+            "title": "Facts Hash",
+            "type": "string"
+          },
+          "input_snapshot": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "normalized_time": {
+            "$ref": "#/components/schemas/NormalizedTime"
+          },
+          "pillars": {
+            "$ref": "#/components/schemas/Pillars"
+          },
+          "policy_snapshot": {
+            "additionalProperties": true,
+            "title": "Policy Snapshot",
+            "type": "object"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/Relation"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            },
+            "title": "Variants",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/ChartWarning"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "chart_id",
+          "computed_at",
+          "input_snapshot",
+          "normalized_time",
+          "policy_snapshot",
+          "engine_manifest",
+          "pillars",
+          "relations",
+          "cycles",
+          "auxiliary",
+          "warnings",
+          "variants",
+          "facts_hash"
+        ],
+        "title": "ChartFacts",
+        "type": "object"
+      },
+      "ChartInput": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BirthInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "overrides the input policy",
+            "title": "Policy Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Revision"
+          }
+        },
+        "title": "ChartInput",
+        "type": "object"
+      },
+      "ChartSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "facts_hash": {
+            "title": "Facts Hash",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pillars": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "e.g. {\"year\": \"jia-chen\", \"hour\": null}",
+            "title": "Pillars",
+            "type": "object"
+          },
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Label"
+          },
+          "profile_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Revision"
+          },
+          "validation_status": {
+            "enum": [
+              "valid",
+              "partial"
+            ],
+            "title": "Validation Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "profile_id",
+          "profile_label",
+          "profile_revision",
+          "policy_id",
+          "validation_status",
+          "pillars",
+          "facts_hash",
+          "created_at"
+        ],
+        "title": "ChartSummary",
+        "type": "object"
+      },
+      "ChartWarning": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "positions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Positions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "positions",
+          "detail"
+        ],
+        "title": "ChartWarning",
+        "type": "object"
+      },
       "CheckDTO": {
         "properties": {
           "code": {
@@ -2466,6 +2960,143 @@
         "title": "Coverage",
         "type": "object"
       },
+      "Cycles": {
+        "properties": {
+          "da_yun": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DaYun"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Da Yun"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "forward",
+                  "backward"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "liu_nian": {
+            "items": {
+              "$ref": "#/components/schemas/LiuNian"
+            },
+            "title": "Liu Nian",
+            "type": "array"
+          },
+          "start_age_components": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StartAge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_instant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Instant"
+          },
+          "start_method": {
+            "title": "Start Method",
+            "type": "string"
+          },
+          "start_range_utc": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Range Utc"
+          }
+        },
+        "required": [
+          "direction",
+          "start_method",
+          "start_age_components",
+          "start_instant",
+          "start_range_utc",
+          "da_yun",
+          "liu_nian"
+        ],
+        "title": "Cycles",
+        "type": "object"
+      },
+      "DaYun": {
+        "properties": {
+          "branch": {
+            "title": "Branch",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "stem",
+          "branch",
+          "start",
+          "end"
+        ],
+        "title": "DaYun",
+        "type": "object"
+      },
       "DatasetDTO": {
         "properties": {
           "created_at": {
@@ -2766,6 +3397,22 @@
         "title": "Envelope[CaseDetail]",
         "type": "object"
       },
+      "Envelope_ChartDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ChartDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ChartDTO]",
+        "type": "object"
+      },
       "Envelope_ConceptDetail_": {
         "properties": {
           "data": {
@@ -2974,10 +3621,10 @@
         "title": "Envelope[PageRevisionDTO]",
         "type": "object"
       },
-      "Envelope_ProfileDTO_": {
+      "Envelope_PolicyCatalog_": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/ProfileDTO"
+            "$ref": "#/components/schemas/PolicyCatalog"
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
@@ -2987,7 +3634,23 @@
           "data",
           "meta"
         ],
-        "title": "Envelope[ProfileDTO]",
+        "title": "Envelope[PolicyCatalog]",
+        "type": "object"
+      },
+      "Envelope_ProfileDeleted_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProfileDeleted"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ProfileDeleted]",
         "type": "object"
       },
       "Envelope_PublishOntologyResult_": {
@@ -3931,6 +4594,34 @@
         "title": "Grant",
         "type": "object"
       },
+      "HiddenStem": {
+        "properties": {
+          "rank": {
+            "enum": [
+              "main",
+              "middle",
+              "residual"
+            ],
+            "title": "Rank",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "ten_god": {
+            "title": "Ten God",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stem",
+          "rank",
+          "ten_god"
+        ],
+        "title": "HiddenStem",
+        "type": "object"
+      },
       "Hit": {
         "properties": {
           "book_id": {
@@ -4822,6 +5513,29 @@
         "title": "ListEnvelope[CaseDTO]",
         "type": "object"
       },
+      "ListEnvelope_ChartSummary_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ChartSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[ChartSummary]",
+        "type": "object"
+      },
       "ListEnvelope_ConceptDTO_": {
         "properties": {
           "data": {
@@ -5033,7 +5747,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/ProfileDTO"
+              "$ref": "#/components/schemas/backend__app__api__models__ProfileDTO"
             },
             "title": "Data",
             "type": "array"
@@ -5050,6 +5764,29 @@
           "meta"
         ],
         "title": "ListEnvelope[ProfileDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_ProfileSummary_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[ProfileSummary]",
         "type": "object"
       },
       "ListEnvelope_ReviewItemDTO_": {
@@ -5236,6 +5973,39 @@
         "title": "ListEnvelope[VersionDTO]",
         "type": "object"
       },
+      "LiuNian": {
+        "properties": {
+          "branch": {
+            "title": "Branch",
+            "type": "string"
+          },
+          "end_instant": {
+            "title": "End Instant",
+            "type": "string"
+          },
+          "solar_term_year": {
+            "title": "Solar Term Year",
+            "type": "integer"
+          },
+          "start_instant": {
+            "title": "Start Instant",
+            "type": "string"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "solar_term_year",
+          "stem",
+          "branch",
+          "start_instant",
+          "end_instant"
+        ],
+        "title": "LiuNian",
+        "type": "object"
+      },
       "LiveStatus": {
         "properties": {
           "status": {
@@ -5287,6 +6057,41 @@
           "csrf_token"
         ],
         "title": "LoginResult",
+        "type": "object"
+      },
+      "LunarDate": {
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "is_leap_month": {
+            "default": false,
+            "title": "Is Leap Month",
+            "type": "boolean"
+          },
+          "month": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "maximum": 2100.0,
+            "minimum": 1900.0,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "day"
+        ],
+        "title": "LunarDate",
         "type": "object"
       },
       "MeDTO": {
@@ -5458,6 +6263,105 @@
           "reason"
         ],
         "title": "MethodRevisionInput",
+        "type": "object"
+      },
+      "NormalizedTime": {
+        "properties": {
+          "birth_instant_utc": {
+            "title": "Birth Instant Utc",
+            "type": "string"
+          },
+          "civil_local": {
+            "title": "Civil Local",
+            "type": "string"
+          },
+          "clock_basis": {
+            "enum": [
+              "civil",
+              "apparent_solar"
+            ],
+            "title": "Clock Basis",
+            "type": "string"
+          },
+          "eot_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eot Minutes"
+          },
+          "fold": {
+            "title": "Fold",
+            "type": "integer"
+          },
+          "interval_utc": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Utc"
+          },
+          "longitude_correction_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude Correction Minutes"
+          },
+          "next_jie": {
+            "$ref": "#/components/schemas/SolarTerm"
+          },
+          "pillar_clock_local": {
+            "title": "Pillar Clock Local",
+            "type": "string"
+          },
+          "previous_jie": {
+            "$ref": "#/components/schemas/SolarTerm"
+          },
+          "time_accuracy": {
+            "enum": [
+              "minute",
+              "hour",
+              "unknown"
+            ],
+            "title": "Time Accuracy",
+            "type": "string"
+          },
+          "utc_offset_seconds": {
+            "title": "Utc Offset Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "birth_instant_utc",
+          "civil_local",
+          "pillar_clock_local",
+          "utc_offset_seconds",
+          "fold",
+          "eot_minutes",
+          "longitude_correction_minutes",
+          "previous_jie",
+          "next_jie",
+          "clock_basis",
+          "time_accuracy",
+          "interval_utc"
+        ],
+        "title": "NormalizedTime",
         "type": "object"
       },
       "OntologyDiff": {
@@ -5882,6 +6786,203 @@
         "title": "PageSummaryDTO",
         "type": "object"
       },
+      "Pillar": {
+        "properties": {
+          "branch": {
+            "title": "Branch",
+            "type": "string"
+          },
+          "branch_element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Element"
+          },
+          "branch_label": {
+            "title": "Branch Label",
+            "type": "string"
+          },
+          "cycle_index": {
+            "title": "Cycle Index",
+            "type": "integer"
+          },
+          "growth_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Growth Stage"
+          },
+          "hidden_stems": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HiddenStem"
+            },
+            "title": "Hidden Stems",
+            "type": "array"
+          },
+          "na_yin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Na Yin"
+          },
+          "na_yin_element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Na Yin Element"
+          },
+          "na_yin_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Na Yin Label"
+          },
+          "polarity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "yang",
+                  "yin"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Polarity"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          },
+          "stem_element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stem Element"
+          },
+          "stem_label": {
+            "title": "Stem Label",
+            "type": "string"
+          },
+          "ten_god": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null for the day pillar (day master)",
+            "title": "Ten God"
+          },
+          "void": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void"
+          }
+        },
+        "required": [
+          "stem",
+          "branch",
+          "stem_label",
+          "branch_label",
+          "cycle_index"
+        ],
+        "title": "Pillar",
+        "type": "object"
+      },
+      "Pillars": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pillar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hour": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pillar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "month": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pillar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "year": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pillar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "day",
+          "hour"
+        ],
+        "title": "Pillars",
+        "type": "object"
+      },
       "PipelineProfileDTO": {
         "properties": {
           "chunker_version": {
@@ -5944,6 +7045,52 @@
         "title": "PipelineProfileDTO",
         "type": "object"
       },
+      "PolicyCatalog": {
+        "properties": {
+          "calendars": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Calendars",
+            "type": "array"
+          },
+          "max_uncertainty_minutes": {
+            "title": "Max Uncertainty Minutes",
+            "type": "integer"
+          },
+          "policies": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "range": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Range",
+            "type": "object"
+          },
+          "time_accuracy": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Time Accuracy",
+            "type": "array"
+          }
+        },
+        "required": [
+          "policies",
+          "calendars",
+          "range",
+          "time_accuracy",
+          "max_uncertainty_minutes"
+        ],
+        "title": "PolicyCatalog",
+        "type": "object"
+      },
       "ProcessInput": {
         "properties": {
           "pipeline_profile_id": {
@@ -5970,164 +7117,99 @@
         "title": "ProcessInput",
         "type": "object"
       },
-      "ProfileDTO": {
+      "ProfileDeleted": {
         "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
+          "charts_deleted": {
+            "title": "Charts Deleted",
+            "type": "integer"
           },
-          "config": {
-            "additionalProperties": true,
-            "title": "Config",
-            "type": "object"
+          "charts_kept": {
+            "title": "Charts Kept",
+            "type": "integer"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "charts_deleted",
+          "charts_kept"
+        ],
+        "title": "ProfileDeleted",
+        "type": "object"
+      },
+      "ProfilePatch": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BirthInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "title": "ProfilePatch",
+        "type": "object"
+      },
+      "ProfileSummary": {
+        "properties": {
+          "charts_count": {
+            "title": "Charts Count",
+            "type": "integer"
           },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
           },
-          "dimension": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dimension"
-          },
-          "enabled": {
-            "title": "Enabled",
-            "type": "boolean"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
           },
-          "is_fixture": {
-            "title": "Is Fixture",
-            "type": "boolean"
-          },
-          "kind": {
-            "enum": [
-              "llm",
-              "embedding",
-              "reranker"
-            ],
-            "title": "Kind",
+          "label": {
+            "title": "Label",
             "type": "string"
           },
-          "model_name": {
-            "title": "Model Name",
-            "type": "string"
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
           },
-          "model_revision": {
-            "title": "Model Revision",
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
             "type": "string"
-          },
-          "provider": {
-            "title": "Provider",
-            "type": "string"
-          },
-          "secret_ref": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Secret Ref"
           }
         },
         "required": [
           "id",
-          "kind",
-          "provider",
-          "model_name",
-          "model_revision",
-          "dimension",
-          "config",
-          "secret_ref",
-          "enabled",
-          "active",
-          "is_fixture",
-          "created_at"
+          "label",
+          "revision",
+          "charts_count",
+          "created_at",
+          "updated_at"
         ],
-        "title": "ProfileDTO",
-        "type": "object"
-      },
-      "ProfileInput": {
-        "properties": {
-          "config": {
-            "additionalProperties": true,
-            "description": "no secrets; base_url, timeout, locality, json_mode, prices, daily_budget…",
-            "title": "Config",
-            "type": "object"
-          },
-          "dimension": {
-            "anyOf": [
-              {
-                "maximum": 4096.0,
-                "minimum": 8.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dimension"
-          },
-          "kind": {
-            "enum": [
-              "llm",
-              "embedding",
-              "reranker"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "model_name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Model Name",
-            "type": "string"
-          },
-          "model_revision": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Model Revision",
-            "type": "string"
-          },
-          "provider": {
-            "maxLength": 40,
-            "minLength": 1,
-            "title": "Provider",
-            "type": "string"
-          },
-          "secret_ref": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "name of an allowlisted env var",
-            "title": "Secret Ref"
-          }
-        },
-        "required": [
-          "kind",
-          "provider",
-          "model_name",
-          "model_revision"
-        ],
-        "title": "ProfileInput",
+        "title": "ProfileSummary",
         "type": "object"
       },
       "PublishInput": {
@@ -6276,6 +7358,60 @@
           "checks"
         ],
         "title": "ReadyStatus",
+        "type": "object"
+      },
+      "Relation": {
+        "properties": {
+          "completeness": {
+            "enum": [
+              "full",
+              "partial"
+            ],
+            "title": "Completeness",
+            "type": "string"
+          },
+          "conditions_evaluated": {
+            "title": "Conditions Evaluated",
+            "type": "boolean"
+          },
+          "element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element"
+          },
+          "members": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "positions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "positions",
+          "members",
+          "completeness",
+          "conditions_evaluated"
+        ],
+        "title": "Relation",
         "type": "object"
       },
       "RelationDTO": {
@@ -8000,6 +9136,29 @@
         "title": "SettingsView",
         "type": "object"
       },
+      "SolarTerm": {
+        "properties": {
+          "instant_utc": {
+            "title": "Instant Utc",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "instant_utc",
+          "source_version"
+        ],
+        "title": "SolarTerm",
+        "type": "object"
+      },
       "SourceChanged": {
         "properties": {
           "assertion": {
@@ -8165,6 +9324,34 @@
           "done"
         ],
         "title": "StageProgress",
+        "type": "object"
+      },
+      "StartAge": {
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "hours": {
+            "title": "Hours",
+            "type": "integer"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "years": {
+            "title": "Years",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "years",
+          "months",
+          "days",
+          "hours"
+        ],
+        "title": "StartAge",
         "type": "object"
       },
       "TermDTO": {
@@ -8903,6 +10090,61 @@
         "title": "ValidationResult",
         "type": "object"
       },
+      "Variant": {
+        "properties": {
+          "from_utc": {
+            "title": "From Utc",
+            "type": "string"
+          },
+          "pillars": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Pillars",
+            "type": "object"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/VariantReason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "to_utc": {
+            "title": "To Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_utc",
+          "to_utc",
+          "reasons",
+          "pillars"
+        ],
+        "title": "Variant",
+        "type": "object"
+      },
+      "VariantReason": {
+        "properties": {
+          "cause": {
+            "title": "Cause",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "cause"
+        ],
+        "title": "VariantReason",
+        "type": "object"
+      },
       "VersionDTO": {
         "properties": {
           "book_id": {
@@ -9100,6 +10342,71 @@
         "title": "WithdrawResult",
         "type": "object"
       },
+      "backend__app__api__charts__ProfileDTO": {
+        "properties": {
+          "birth_input": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "charts_count": {
+            "title": "Charts Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "revision",
+          "charts_count",
+          "created_at",
+          "updated_at",
+          "birth_input"
+        ],
+        "title": "ProfileDTO",
+        "type": "object"
+      },
+      "backend__app__api__charts__ProfileInput": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_input": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "birth_input"
+        ],
+        "title": "ProfileInput",
+        "type": "object"
+      },
       "backend__app__api__knowledge__RevisionRef": {
         "properties": {
           "id": {
@@ -9129,6 +10436,166 @@
           "state"
         ],
         "title": "RevisionRef",
+        "type": "object"
+      },
+      "backend__app__api__models__ProfileDTO": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_fixture": {
+            "title": "Is Fixture",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "embedding",
+              "reranker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_revision": {
+            "title": "Model Revision",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "secret_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Ref"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "provider",
+          "model_name",
+          "model_revision",
+          "dimension",
+          "config",
+          "secret_ref",
+          "enabled",
+          "active",
+          "is_fixture",
+          "created_at"
+        ],
+        "title": "ProfileDTO",
+        "type": "object"
+      },
+      "backend__app__api__models__ProfileInput": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "description": "no secrets; base_url, timeout, locality, json_mode, prices, daily_budget…",
+            "title": "Config",
+            "type": "object"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "maximum": 4096.0,
+                "minimum": 8.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "embedding",
+              "reranker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_revision": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model Revision",
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          },
+          "secret_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "name of an allowlisted env var",
+            "title": "Secret Ref"
+          }
+        },
+        "required": [
+          "kind",
+          "provider",
+          "model_name",
+          "model_revision"
+        ],
+        "title": "ProfileInput",
         "type": "object"
       },
       "backend__app__api__ontology__ImpactDTO": {
@@ -9409,6 +10876,38 @@
           "meta"
         ],
         "title": "Envelope[ImpactDTO]",
+        "type": "object"
+      },
+      "backend__app__api__schemas__Envelope_ProfileDTO___1": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__models__ProfileDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ProfileDTO]",
+        "type": "object"
+      },
+      "backend__app__api__schemas__Envelope_ProfileDTO___2": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__charts__ProfileDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ProfileDTO]",
         "type": "object"
       },
       "backend__app__api__schemas__Envelope_ResolveResult___1": {
@@ -10345,6 +11844,537 @@
           "auth"
         ],
         "x-permission": "R"
+      }
+    },
+    "/api/v1/birth-profiles": {
+      "get": {
+        "operationId": "list_profiles_api_v1_birth_profiles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_ProfileSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Profiles",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "R/O"
+      },
+      "post": {
+        "operationId": "create_profile_api_v1_birth_profiles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/backend__app__api__charts__ProfileInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ProfileDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create Profile",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "R/O"
+      }
+    },
+    "/api/v1/birth-profiles/{profile_id}": {
+      "delete": {
+        "operationId": "delete_profile_api_v1_birth_profiles__profile_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "delete_linked_charts",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Delete Linked Charts",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProfileDeleted_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete Profile",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "O"
+      },
+      "get": {
+        "operationId": "get_profile_api_v1_birth_profiles__profile_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ProfileDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Profile",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "O"
+      },
+      "patch": {
+        "description": "A new revision; charts made earlier keep their own input and facts.",
+        "operationId": "update_profile_api_v1_birth_profiles__profile_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ProfileDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Update Profile",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "O"
       }
     },
     "/api/v1/book-versions/{version_id}": {
@@ -11652,6 +13682,72 @@
         "x-permission": "R"
       }
     },
+    "/api/v1/calculation-policies": {
+      "get": {
+        "operationId": "calculation_policies_api_v1_calculation_policies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PolicyCatalog_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Calculation Policies",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "R"
+      }
+    },
     "/api/v1/cases": {
       "get": {
         "operationId": "list_cases_api_v1_cases_get",
@@ -12188,6 +14284,429 @@
           "knowledge"
         ],
         "x-permission": "V/O"
+      }
+    },
+    "/api/v1/charts": {
+      "get": {
+        "operationId": "list_charts_api_v1_charts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_ChartSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Charts",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "R/O"
+      },
+      "post": {
+        "description": "422 with the code (NONEXISTENT_TIME, AMBIGUOUS_TIME, UNSUPPORTED_RANGE, ...) and field.",
+        "operationId": "create_chart_api_v1_charts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ChartDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create Chart",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/charts/{chart_id}": {
+      "delete": {
+        "operationId": "delete_chart_api_v1_charts__chart_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chart_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chart Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete Chart",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "O"
+      },
+      "get": {
+        "operationId": "get_chart_api_v1_charts__chart_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chart_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chart Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ChartDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Chart",
+        "tags": [
+          "charts"
+        ],
+        "x-permission": "O"
       }
     },
     "/api/v1/citations/resolve": {
@@ -15475,7 +17994,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileInput"
+                "$ref": "#/components/schemas/backend__app__api__models__ProfileInput"
               }
             }
           },
@@ -15486,7 +18005,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_ProfileDTO_"
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ProfileDTO___1"
                 }
               }
             },
@@ -15575,7 +18094,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_ProfileDTO_"
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ProfileDTO___1"
                 }
               }
             },

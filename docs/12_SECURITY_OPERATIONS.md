@@ -57,6 +57,8 @@ API keys, DB credentials, signing/session secret và field-encryption key qua en
 
 Bảo vệ profiles bằng application-level authenticated encryption (AES-GCM qua thư viện chuẩn, random nonce, key version); PostgreSQL/object volumes và backup cần full-disk/encrypted storage để bảo vệ facts và derived timestamps. Không tuyên bố database mã hóa toàn bộ chỉ vì một cột đã encrypt. Session tokens random ≥256 bit chỉ hash lưu DB, Argon2id password hash, cookie HttpOnly/SameSite=Strict; production TLS Secure, loopback HTTP local exception ghi rõ. CSRF/Origin check, login rate-limit, audit access.
 
+Đã triển khai (T030, `core/crypto.py`): BirthInput của hồ sơ và input snapshot của lá số mã hóa AES-256-GCM (nonce 96 bit ngẫu nhiên, khóa HKDF-SHA256 từ `FIELD_ENCRYPTION_KEY`), associated data = loại + chủ sở hữu + id bản ghi nên bản mã chép sang dòng/người khác không giải được; `crypto_key_version` là dấu vân tay của khóa dẫn xuất. Sai khóa (restore với .env khác) → 409 `ENCRYPTION_KEY_MISMATCH`, thiếu khóa → 503 `ENCRYPTION_NOT_CONFIGURED`; không bao giờ trả dữ liệu rác. `facts` của lá số (gồm instant và giờ dân sự suy ra) vẫn là JSON thường trong DB: cần ổ mã hóa như trên. Xoay khóa chưa có (cần re-encrypt nền).
+
 RLS và service ACL ở 04; per-job principal/rights snapshot được re-check trước publish; đừng để worker chạy admin bỏ qua quyền của requester. Source download và citations không bypass ACL qua signed URLs dài hạn; localhost dùng authenticated proxy, S3 presigned nếu dùng ≤60s và không đưa key gốc ra UI. Database/storage không public ports.
 
 ## Upload sandbox và prompt injection

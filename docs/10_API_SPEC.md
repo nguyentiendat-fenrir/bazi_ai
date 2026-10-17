@@ -145,6 +145,8 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 | POST /charts/{id}/analyses | O | school_id,method_id,ruleset_id?,source_scope | 202 run_id,analysis_id |
 | GET /analyses/{id} | O | — | Answer+facts refs+trace+stale state |
 | GET /analyses/{id}/trace | O | cursor | RuleTrace[] |
+
+Đã triển khai (T030, `backend/app/charts/`, `api/charts.py`): `GET /calculation-policies` (policy + hash + mặc định, lịch `gregorian|lunar_vn|lunar_cn`, phạm vi 1900–2100); `GET/POST /birth-profiles` (danh sách không kèm dữ liệu sinh; tạo kiểm BirthInput bằng engine trước khi lưu, 422 mang code `NONEXISTENT_TIME`/`AMBIGUOUS_TIME`/... và path trường), `GET/PATCH /birth-profiles/{id}` (ETag = revision, PATCH cần If-Match → revision mới), `DELETE /birth-profiles/{id}` (xóa mềm; `delete_linked_charts=true` mới xóa lá số liên kết, trả số đã xóa/giữ); `POST /charts` (`birth_input` hoặc `profile_id` + `profile_revision`, `policy_id` ghi đè; revision cũ → 409 `PROFILE_REVISION_GONE`), `GET /charts` (`q` theo nhãn hồ sơ, cursor), `GET /charts/{id}` (ChartFacts đầy đủ có kiểu, kèm input đã giải mã, `chart_id`, `computed_at`), `DELETE /charts/{id}` (204; có analysis → 409). Mọi bảng theo chủ sở hữu bằng RLS (người khác → 404). Chưa có: xóa qua operation 202 + redaction chat (T05x), analyses (T031–T034/T039).
 | POST /search | R | query, mode, top_k, school_ids, book_ids, book_version_ids, topic_ids, page_from/page_to | status ok/no_match/empty_corpus/empty_filters, hits (chunk, ranks, sách, section, trang, spans), expansions, release_id, visibility_epoch, degraded |
 | GET /evidence/{id} | R rights | context_blocks<=2 | source locator + excerpt + viewer URL |
 | GET/POST /conversations | R/O | title,mode,context | list/201 ConversationDTO |

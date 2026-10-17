@@ -202,7 +202,9 @@ def main(argv: list[str] | None = None) -> int:
         state['api'] = f'http://127.0.0.1:{args.port}'
         origins = args.origin or ['http://127.0.0.1:3100']
         with patch.dict(os.environ, {'ALLOWED_ORIGINS': json.dumps(origins),
-                                     'LOG_LEVEL': 'WARNING'}, clear=True):
+                                     'LOG_LEVEL': 'WARNING',
+                                     'FIELD_ENCRYPTION_KEY': uuid.uuid4().hex * 2},
+                        clear=True):
             settings = load_settings(_env_file=None)
         engine = engine_for(runtime)
         store = LocalObjectStore(STATE_DIR / 'objects')
