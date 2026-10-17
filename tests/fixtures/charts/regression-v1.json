@@ -1,0 +1,1486 @@
+[
+ {
+  "input": {
+   "local_datetime": "1900-01-31T12:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ji",
+     "hai"
+    ],
+    "month": [
+     "ding",
+     "chou"
+    ],
+    "day": [
+     "jia",
+     "chen"
+    ],
+    "hour": [
+     "geng",
+     "wu"
+    ]
+   },
+   "birth_instant_utc": "1900-01-31T04:53:30Z",
+   "pillar_clock_local": "1900-01-31T12:00:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 8,
+    "months": 5,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "bing",
+    "branch": "zi",
+    "start": "1908-07-20T04:53:30Z",
+    "end": "1918-07-20T05:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1912-02-18T06:30",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ren",
+     "zi"
+    ],
+    "month": [
+     "ren",
+     "yin"
+    ],
+    "day": [
+     "jia",
+     "zi"
+    ],
+    "hour": [
+     "ding",
+     "mao"
+    ]
+   },
+   "birth_instant_utc": "1912-02-17T23:30:00Z",
+   "pillar_clock_local": "1912-02-18T06:30:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 4,
+    "months": 3,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "xin",
+    "branch": "chou",
+    "start": "1916-05-27T23:30:00Z",
+    "end": "1926-05-27T23:30:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1930-07-07T21:15",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "geng",
+     "wu"
+    ],
+    "month": [
+     "ren",
+     "wu"
+    ],
+    "day": [
+     "wu",
+     "wu"
+    ],
+    "hour": [
+     "gui",
+     "hai"
+    ]
+   },
+   "birth_instant_utc": "1930-07-07T14:15:00Z",
+   "pillar_clock_local": "1930-07-07T21:15:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 0,
+    "months": 1,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "gui",
+    "branch": "wei",
+    "start": "1930-08-07T14:15:00Z",
+    "end": "1940-08-07T14:15:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1944-03-03T03:03",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "shen"
+    ],
+    "month": [
+     "bing",
+     "yin"
+    ],
+    "day": [
+     "bing",
+     "yin"
+    ],
+    "hour": [
+     "geng",
+     "yin"
+    ]
+   },
+   "birth_instant_utc": "1944-03-02T19:03:00Z",
+   "pillar_clock_local": "1944-03-03T03:03:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 8,
+    "months": 11,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "yi",
+    "branch": "chou",
+    "start": "1953-02-22T19:03:00Z",
+    "end": "1963-02-22T19:03:00Z"
+   },
+   "warnings": [
+    "historical_offset",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1954-07-20T09:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "wu"
+    ],
+    "month": [
+     "xin",
+     "wei"
+    ],
+    "day": [
+     "ding",
+     "chou"
+    ],
+    "hour": [
+     "yi",
+     "si"
+    ]
+   },
+   "birth_instant_utc": "1954-07-20T01:00:00Z",
+   "pillar_clock_local": "1954-07-20T09:00:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 6,
+    "months": 4,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ren",
+    "branch": "shen",
+    "start": "1960-11-20T01:00:00Z",
+    "end": "1970-11-20T01:00:00Z"
+   },
+   "warnings": [
+    "historical_offset",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1965-06-01T10:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "yi",
+     "si"
+    ],
+    "month": [
+     "xin",
+     "si"
+    ],
+    "day": [
+     "bing",
+     "xu"
+    ],
+    "hour": [
+     "gui",
+     "si"
+    ]
+   },
+   "birth_instant_utc": "1965-06-01T02:00:00Z",
+   "pillar_clock_local": "1965-06-01T10:00:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 1,
+    "months": 7,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ren",
+    "branch": "wu",
+    "start": "1967-01-11T02:00:00Z",
+    "end": "1977-01-11T03:00:00Z"
+   },
+   "warnings": [
+    "historical_offset",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1965-06-01T10:00",
+   "timezone": "Asia/Bangkok",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "yi",
+     "si"
+    ],
+    "month": [
+     "xin",
+     "si"
+    ],
+    "day": [
+     "bing",
+     "xu"
+    ],
+    "hour": [
+     "gui",
+     "si"
+    ]
+   },
+   "birth_instant_utc": "1965-06-01T03:00:00Z",
+   "pillar_clock_local": "1965-06-01T10:00:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 1,
+    "months": 7,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ren",
+    "branch": "wu",
+    "start": "1967-01-11T03:00:00Z",
+    "end": "1977-01-11T03:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1975-04-30T11:30",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "yi",
+     "mao"
+    ],
+    "month": [
+     "geng",
+     "chen"
+    ],
+    "day": [
+     "bing",
+     "wu"
+    ],
+    "hour": [
+     "jia",
+     "wu"
+    ]
+   },
+   "birth_instant_utc": "1975-04-30T03:30:00Z",
+   "pillar_clock_local": "1975-04-30T11:30:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 8,
+    "months": 3,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ji",
+    "branch": "mao",
+    "start": "1983-07-30T04:30:00Z",
+    "end": "1993-07-30T04:30:00Z"
+   },
+   "warnings": [
+    "historical_offset",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1985-01-21T08:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "zi"
+    ],
+    "month": [
+     "ding",
+     "chou"
+    ],
+    "day": [
+     "geng",
+     "shen"
+    ],
+    "hour": [
+     "geng",
+     "chen"
+    ]
+   },
+   "birth_instant_utc": "1985-01-21T01:00:00Z",
+   "pillar_clock_local": "1985-01-21T08:00:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 5,
+    "months": 2,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "bing",
+    "branch": "zi",
+    "start": "1990-04-10T01:00:00Z",
+    "end": "2000-04-10T01:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1990-08-17T06:45",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "geng",
+     "wu"
+    ],
+    "month": [
+     "jia",
+     "shen"
+    ],
+    "day": [
+     "jia",
+     "yin"
+    ],
+    "hour": [
+     "ding",
+     "mao"
+    ]
+   },
+   "birth_instant_utc": "1990-08-16T23:45:00Z",
+   "pillar_clock_local": "1990-08-17T06:45:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 7,
+    "months": 3,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "yi",
+    "branch": "you",
+    "start": "1997-12-06T23:45:00Z",
+    "end": "2007-12-06T23:45:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1999-12-31T23:59:59",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ji",
+     "mao"
+    ],
+    "month": [
+     "bing",
+     "zi"
+    ],
+    "day": [
+     "ding",
+     "si"
+    ],
+    "hour": [
+     "ren",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "1999-12-31T16:59:59Z",
+   "pillar_clock_local": "1999-12-31T23:59:59",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 1,
+    "months": 9,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "chou",
+    "start": "2001-10-20T16:59:59Z",
+    "end": "2011-10-20T16:59:59Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2000-01-01T00:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ji",
+     "mao"
+    ],
+    "month": [
+     "bing",
+     "zi"
+    ],
+    "day": [
+     "wu",
+     "wu"
+    ],
+    "hour": [
+     "ren",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "1999-12-31T17:00:00Z",
+   "pillar_clock_local": "2000-01-01T00:00:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 8,
+    "months": 0,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "yi",
+    "branch": "hai",
+    "start": "2008-01-20T17:00:00Z",
+    "end": "2018-01-20T17:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2000-02-04T20:40",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "geng",
+     "chen"
+    ],
+    "month": [
+     "wu",
+     "yin"
+    ],
+    "day": [
+     "ren",
+     "chen"
+    ],
+    "hour": [
+     "geng",
+     "xu"
+    ]
+   },
+   "birth_instant_utc": "2000-02-04T13:40:00Z",
+   "pillar_clock_local": "2000-02-04T20:40:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 9,
+    "months": 11,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ji",
+    "branch": "mao",
+    "start": "2010-01-04T13:40:00Z",
+    "end": "2020-01-04T13:40:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2008-08-08T08:08",
+   "timezone": "Asia/Shanghai",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "wu",
+     "zi"
+    ],
+    "month": [
+     "geng",
+     "shen"
+    ],
+    "day": [
+     "geng",
+     "chen"
+    ],
+    "hour": [
+     "geng",
+     "chen"
+    ]
+   },
+   "birth_instant_utc": "2008-08-08T00:08:00Z",
+   "pillar_clock_local": "2008-08-08T08:08:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 0,
+    "months": 3,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ji",
+    "branch": "wei",
+    "start": "2008-11-18T00:08:00Z",
+    "end": "2018-11-18T00:08:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2012-12-21T11:11",
+   "timezone": "America/New_York",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ren",
+     "chen"
+    ],
+    "month": [
+     "ren",
+     "zi"
+    ],
+    "day": [
+     "bing",
+     "chen"
+    ],
+    "hour": [
+     "jia",
+     "wu"
+    ]
+   },
+   "birth_instant_utc": "2012-12-21T16:11:00Z",
+   "pillar_clock_local": "2012-12-21T11:11:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 4,
+    "months": 9,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "gui",
+    "branch": "chou",
+    "start": "2017-10-11T15:11:00Z",
+    "end": "2027-10-11T15:11:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2016-02-29T23:30",
+   "timezone": "Australia/Sydney",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "bing",
+     "shen"
+    ],
+    "month": [
+     "geng",
+     "yin"
+    ],
+    "day": [
+     "xin",
+     "si"
+    ],
+    "hour": [
+     "geng",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "2016-02-29T12:30:00Z",
+   "pillar_clock_local": "2016-02-29T23:30:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 8,
+    "months": 4,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ji",
+    "branch": "chou",
+    "start": "2024-07-09T13:30:00Z",
+    "end": "2034-07-09T13:30:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2020-03-08T03:30",
+   "timezone": "America/New_York",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "geng",
+     "zi"
+    ],
+    "month": [
+     "ji",
+     "mao"
+    ],
+    "day": [
+     "geng",
+     "xu"
+    ],
+    "hour": [
+     "wu",
+     "yin"
+    ]
+   },
+   "birth_instant_utc": "2020-03-08T07:30:00Z",
+   "pillar_clock_local": "2020-03-08T03:30:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 9,
+    "months": 0,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "geng",
+    "branch": "chen",
+    "start": "2029-03-08T08:30:00Z",
+    "end": "2039-03-08T08:30:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2021-11-07T01:30",
+   "timezone": "America/New_York",
+   "fold": 1,
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "xin",
+     "chou"
+    ],
+    "month": [
+     "ji",
+     "hai"
+    ],
+    "day": [
+     "ji",
+     "wei"
+    ],
+    "hour": [
+     "yi",
+     "chou"
+    ]
+   },
+   "birth_instant_utc": "2021-11-07T06:30:00Z",
+   "pillar_clock_local": "2021-11-07T01:30:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 9,
+    "months": 10,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "geng",
+    "branch": "zi",
+    "start": "2031-09-17T05:30:00Z",
+    "end": "2041-09-17T05:30:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2023-06-21T17:00",
+   "timezone": "Europe/Paris",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "gui",
+     "mao"
+    ],
+    "month": [
+     "wu",
+     "wu"
+    ],
+    "day": [
+     "geng",
+     "xu"
+    ],
+    "hour": [
+     "yi",
+     "you"
+    ]
+   },
+   "birth_instant_utc": "2023-06-21T15:00:00Z",
+   "pillar_clock_local": "2023-06-21T17:00:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 5,
+    "months": 3,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "si",
+    "start": "2028-09-21T15:00:00Z",
+    "end": "2038-09-21T15:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-02-04T15:27:07",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "chen"
+    ],
+    "month": [
+     "bing",
+     "yin"
+    ],
+    "day": [
+     "wu",
+     "xu"
+    ],
+    "hour": [
+     "geng",
+     "shen"
+    ]
+   },
+   "birth_instant_utc": "2024-02-04T08:27:07Z",
+   "pillar_clock_local": "2024-02-04T15:27:07",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 9,
+    "months": 11,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "mao",
+    "start": "2034-01-04T08:27:07Z",
+    "end": "2044-01-04T08:27:07Z"
+   },
+   "warnings": [
+    "near_solar_term",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-02-04T00:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "time_accuracy": "unknown",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": null,
+    "month": null,
+    "day": [
+     "wu",
+     "xu"
+    ],
+    "hour": null
+   },
+   "birth_instant_utc": "2024-02-03T17:00:00Z",
+   "pillar_clock_local": "2024-02-04T00:00:00",
+   "direction": null,
+   "start_age_components": null,
+   "first_da_yun": null,
+   "warnings": [
+    "approximate_time",
+    "boundary_uncertainty"
+   ],
+   "variants": 2
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-02-04T23:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "uncertainty_minutes": 30,
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "chen"
+    ],
+    "month": [
+     "bing",
+     "yin"
+    ],
+    "day": [
+     "wu",
+     "xu"
+    ],
+    "hour": null
+   },
+   "birth_instant_utc": "2024-02-04T16:00:00Z",
+   "pillar_clock_local": "2024-02-04T23:00:00",
+   "direction": "forward",
+   "start_age_components": null,
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "mao",
+    "start": null,
+    "end": null
+   },
+   "warnings": [
+    "boundary_uncertainty"
+   ],
+   "variants": 2
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-05-05T07:10",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "time_accuracy": "hour",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "chen"
+    ],
+    "month": null,
+    "day": [
+     "ji",
+     "si"
+    ],
+    "hour": [
+     "wu",
+     "chen"
+    ]
+   },
+   "birth_instant_utc": "2024-05-05T00:10:00Z",
+   "pillar_clock_local": "2024-05-05T07:10:00",
+   "direction": null,
+   "start_age_components": null,
+   "first_da_yun": null,
+   "warnings": [
+    "boundary_uncertainty"
+   ],
+   "variants": 2
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-06-15T12:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "longitude": 105.85,
+   "policy_id": "solar-time-v1",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "chen"
+    ],
+    "month": [
+     "geng",
+     "wu"
+    ],
+    "day": [
+     "geng",
+     "xu"
+    ],
+    "hour": [
+     "ren",
+     "wu"
+    ]
+   },
+   "birth_instant_utc": "2024-06-15T05:00:00Z",
+   "pillar_clock_local": "2024-06-15T12:03:19",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 7,
+    "months": 1,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "xin",
+    "branch": "wei",
+    "start": "2031-08-04T05:00:00Z",
+    "end": "2041-08-04T05:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2024-02-04T23:30",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "policy_id": "zi23-v1",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "chen"
+    ],
+    "month": [
+     "bing",
+     "yin"
+    ],
+    "day": [
+     "ji",
+     "hai"
+    ],
+    "hour": [
+     "jia",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "2024-02-04T16:30:00Z",
+   "pillar_clock_local": "2024-02-04T23:30:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 0,
+    "months": 1,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "yi",
+    "branch": "chou",
+    "start": "2024-03-04T16:30:00Z",
+    "end": "2034-03-04T16:30:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2030-10-10T10:10",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "geng",
+     "xu"
+    ],
+    "month": [
+     "bing",
+     "xu"
+    ],
+    "day": [
+     "wu",
+     "yin"
+    ],
+    "hour": [
+     "ding",
+     "si"
+    ]
+   },
+   "birth_instant_utc": "2030-10-10T03:10:00Z",
+   "pillar_clock_local": "2030-10-10T10:10:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 9,
+    "months": 5,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "hai",
+    "start": "2040-03-10T03:10:00Z",
+    "end": "2050-03-10T03:10:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2050-01-05T05:05",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ji",
+     "si"
+    ],
+    "month": [
+     "bing",
+     "zi"
+    ],
+    "day": [
+     "yi",
+     "you"
+    ],
+    "hour": [
+     "ji",
+     "mao"
+    ]
+   },
+   "birth_instant_utc": "2050-01-04T22:05:00Z",
+   "pillar_clock_local": "2050-01-05T05:05:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 0,
+    "months": 1,
+    "days": 0,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "chou",
+    "start": "2050-02-04T22:05:00Z",
+    "end": "2060-02-04T22:05:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "2099-12-31T23:00",
+   "timezone": "Asia/Ho_Chi_Minh"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ji",
+     "wei"
+    ],
+    "month": [
+     "bing",
+     "zi"
+    ],
+    "day": [
+     "ren",
+     "yin"
+    ],
+    "hour": [
+     "ren",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "2099-12-31T16:00:00Z",
+   "pillar_clock_local": "2099-12-31T23:00:00",
+   "direction": null,
+   "start_age_components": null,
+   "first_da_yun": null,
+   "warnings": [
+    "luck_direction_unknown",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "calendar_system": "lunar_vn",
+   "lunar_date": {
+    "year": 1985,
+    "month": 1,
+    "day": 1
+   },
+   "local_time": "08:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "jia",
+     "zi"
+    ],
+    "month": [
+     "ding",
+     "chou"
+    ],
+    "day": [
+     "geng",
+     "shen"
+    ],
+    "hour": [
+     "geng",
+     "chen"
+    ]
+   },
+   "birth_instant_utc": "1985-01-21T01:00:00Z",
+   "pillar_clock_local": "1985-01-21T08:00:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 4,
+    "months": 7,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "wu",
+    "branch": "yin",
+    "start": "1989-08-31T01:00:00Z",
+    "end": "1999-08-31T01:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "calendar_system": "lunar_cn",
+   "lunar_date": {
+    "year": 1985,
+    "month": 1,
+    "day": 1
+   },
+   "local_time": "08:00",
+   "timezone": "Asia/Shanghai",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "yi",
+     "chou"
+    ],
+    "month": [
+     "wu",
+     "yin"
+    ],
+    "day": [
+     "geng",
+     "yin"
+    ],
+    "hour": [
+     "geng",
+     "chen"
+    ]
+   },
+   "birth_instant_utc": "1985-02-20T00:00:00Z",
+   "pillar_clock_local": "1985-02-20T08:00:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 5,
+    "months": 4,
+    "days": 10,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ding",
+    "branch": "chou",
+    "start": "1990-06-29T23:00:00Z",
+    "end": "2000-06-30T00:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "calendar_system": "lunar_vn",
+   "lunar_date": {
+    "year": 2023,
+    "month": 2,
+    "day": 1,
+    "is_leap_month": true
+   },
+   "local_time": "22:00",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "female"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "gui",
+     "mao"
+    ],
+    "month": [
+     "yi",
+     "mao"
+    ],
+    "day": [
+     "ji",
+     "mao"
+    ],
+    "hour": [
+     "yi",
+     "hai"
+    ]
+   },
+   "birth_instant_utc": "2023-03-22T15:00:00Z",
+   "pillar_clock_local": "2023-03-22T22:00:00",
+   "direction": "forward",
+   "start_age_components": {
+    "years": 4,
+    "months": 5,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "bing",
+    "branch": "chen",
+    "start": "2027-09-11T15:00:00Z",
+    "end": "2037-09-11T15:00:00Z"
+   },
+   "warnings": [
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ },
+ {
+  "input": {
+   "local_datetime": "1968-01-29T00:30",
+   "timezone": "Asia/Ho_Chi_Minh",
+   "sex_for_luck": "male"
+  },
+  "expected": {
+   "pillars": {
+    "year": [
+     "ding",
+     "wei"
+    ],
+    "month": [
+     "gui",
+     "chou"
+    ],
+    "day": [
+     "wu",
+     "xu"
+    ],
+    "hour": [
+     "ren",
+     "zi"
+    ]
+   },
+   "birth_instant_utc": "1968-01-28T16:30:00Z",
+   "pillar_clock_local": "1968-01-29T00:30:00",
+   "direction": "backward",
+   "start_age_components": {
+    "years": 7,
+    "months": 5,
+    "days": 20,
+    "hours": 0
+   },
+   "first_da_yun": {
+    "index": 1,
+    "stem": "ren",
+    "branch": "zi",
+    "start": "1975-07-18T17:30:00Z",
+    "end": "1985-07-18T17:30:00Z"
+   },
+   "warnings": [
+    "historical_offset",
+    "pending_auxiliary_validation"
+   ],
+   "variants": 0
+  }
+ }
+]

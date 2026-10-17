@@ -97,8 +97,12 @@ khác tra tại bảng cuối file này.
   địa chỉ nội dung + khóa GC), manifest kiểm sha256, `scripts/dev backup`. T053.1 ✅
   preflight + restore vào Compose project/volume mới, kiểm số dòng mọi bảng/blob/release;
   đã thử trọn vòng qua Compose trên máy dev. Mã hóa/retention/API thuộc T052/T053 đầy đủ.
-- K5 xong phần làm được trên máy dev. Việc kế tiếp: K6 (engine lá số T026–T034, rồi
-  suy luận/chat T039–T045).
+- K5 xong phần làm được trên máy dev.
+- T026–T028 ✅ engine lá số `backend/app/calc/` (tiết khí UTC, tứ trụ, policy giờ Tý/giờ
+  Mặt Trời, khoảng bất định → biến thể, đại vận/lưu niên, âm lịch VN/CN, ChartFacts +
+  hash). T029 ⏳ oracle độc lập VSOP87 (≤57 s mọi tiết 1900–2100), khớp lunar-python,
+  hồi quy 32 lá số; còn bảng HKO và chuyên gia duyệt policy/bảng.
+- Việc kế tiếp: T030 lưu hồ sơ/lá số (mã hóa) + API, rồi T031–T034 rule engine.
 
 ## Các giai đoạn
 
@@ -223,10 +227,10 @@ trước khi trình duyệt.
 | T036 | Embedding/reranker benchmark và context packing | K4 | ⏳ |
 | T037 | Citation resolver và validator | K4 | ✅ |
 | T038 | LLM adapters, cost reservation và mocks | K4 | ✅ |
-| T026 | Adapter Calculation Engine và schema facts | K6 | |
-| T027 | Timezone và giờ Mặt Trời | K6 | |
-| T028 | Tiết khí, ngày Tý và chu kỳ vận | K6 | |
-| T029 | Oracle độc lập và regression calculation | K6 | |
+| T026 | Adapter Calculation Engine và schema facts | K6 | ✅ |
+| T027 | Timezone và giờ Mặt Trời | K6 | ✅ |
+| T028 | Tiết khí, ngày Tý và chu kỳ vận | K6 | ✅ |
+| T029 | Oracle độc lập và regression calculation | K6 | ⏳ chờ HKO + chuyên gia |
 | T030 | Profiles/charts persistence và API | K6 | |
 | T031 | DSL validator và typed interpreter | K6 | |
 | T032 | Rule DAG, exceptions và conflict trace | K6 | |
