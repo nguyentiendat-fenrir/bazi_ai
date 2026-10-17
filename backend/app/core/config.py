@@ -10,6 +10,7 @@ from typing import Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 MIN_SECRET_LENGTH = 32
 
@@ -74,6 +75,14 @@ class Settings(BaseSettings):
         if short:
             raise ValueError(f'{", ".join(short)} must be at least {MIN_SECRET_LENGTH} characters')
         return self
+
+    @property
+    def database_url(self) -> URL:
+        # URL objects escape the password and hide it in str()/repr().
+        password = self.postgres_password.get_secret_value() if self.postgres_password else None
+        return URL.create('postgresql+psycopg', username=self.postgres_user, password=password,
+                          host=self.postgres_host, port=self.postgres_port,
+                          database=self.postgres_db)
 
     @property
     def llm_configured(self) -> bool:

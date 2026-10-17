@@ -6,6 +6,14 @@ Logical schema v1. Mỗi bảng dưới đây mặc định có `id uuid PRIMARY
 
 Enums lifecycle ở 05/06/09 là contract chuẩn; DDL dùng TEXT+CHECK để migration rõ. JSONB không là chỗ chứa quan hệ tùy tiện: schema versioned, validate Pydantic/JSON Schema trước ghi. FK polymorphic chỉ cho reviews/review_items/analysis_dependencies/audit target: cần registry trigger kiểm tồn tại và delete guard; không gọi đó là FK native. Các quan hệ nghiệp vụ chính dùng FK thật. Tên table đặc biệt `embeddings_<collection>` là pattern vật lý, không tên SQL literal. `rulesets` active pointer nằm settings theo method; không suy active bằng revision số lớn nhất. `book_versions` visibility là private-by-default, book_access seed cho uploader và reviewer quản trị theo policy.
 
+Triển khai: Alembic tại `backend/migrations` (SQL viết tay, file này là contract). M001–M003 đã có từ T004; M004–M008 thêm ở T005/T006. Enum đã chốt (TEXT+CHECK):
+
+- `objects.state` staging/ready/quarantined/deleting; `storage_backend` local/s3. `book_versions.status` active/withdrawn (withdrawn ⇔ `withdrawn_at`). `book_access.role_scope` reader/reviewer/admin, `permission` read/review/manage. `settings.scope` system/user (user ⇔ `owner_id`).
+- `pages.page_kind` pdf_page/docx_rendered_page/docx_anchor. `page_revisions.state`, `chunks.quality_state` accepted/review_required/excluded. `blocks.kind` paragraph/heading/table/figure/caption. `chunks.kind` text/table/case. `speaker_layer` original_author/commentator/translator/editor/unknown (06).
+- `generations.state` building→ready→published→superseded, mọi trạng thái → withdrawn. `corpus_releases.state` building→ready→active→retired (ready/building → retired). `embedding_collections.distance` cosine/l2/inner_product, `state` provisioning/ready/retired.
+
+Hash dùng domain `sha256_hex` (64 hex thường). `page_revisions.text_hash` = SHA256 UTF-8 của `normalized_text`, `chunks.content_hash` = SHA256 của `text`, cả hai là CHECK. `manifest_hash` của generation/release chỉ được NULL khi `building` (hoặc withdrawn/retired) và đóng băng sau đó. `bbox` là mảng 4 số 0..1 với x0≤x1, y0≤y1, hoặc JSON `null` cho nguồn không có hình học (DOCX).
+
 Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column gọi unaccent không immutable mà bỏ qua lỗi; cập nhật folded text/tsvector qua ingestion application hoặc trigger versioned. Không đổi dictionary âm thầm trên dữ liệu cũ.
 
 ## Data dictionary
@@ -152,7 +160,7 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
 |---|---|
-| parent_id uuid? FK corpus_releases; embedding_collection_id uuid FK embedding_collections; ontology_release_id uuid FK ontology_releases; lexical_profile_version text; state text; manifest_hash char(64) | index state; immutable memberships sau READY |
+| parent_id uuid? FK corpus_releases; embedding_collection_id uuid FK embedding_collections; ontology_release_id uuid FK ontology_releases (FK thêm ở T005); lexical_profile_version text; state text; manifest_hash char(64)? | index state; immutable memberships sau READY |
 
 ### `corpus_members`
 
@@ -477,7 +485,7 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 
 `book → book_version → page → page_revision → block`; generation chọn revision qua generation_pages, chọn chunk qua generation_chunks. `chunk_spans` nối chunk về revision/block; `evidence_spans` là locator độc lập chunk để re-chunk không làm gãy sources. `corpus_release → corpus_members → generation` là membership immutable. Search query chỉ chunks qua membership này.
 
-Composite integrity triển khai bằng UNIQUE phụ và FK nhiều cột khi có thể: `(id,page_id)` page_revisions; `(id,page_revision_id)` blocks; `(id,book_version_id)` pages/generations; `(id,generation_id)` sections. Triggers kiểm source page thuộc version của generation/evidence, chunk spans thuộc generation version, start/end không vượt text, speaker không bị đổi giữa spans. Service test không thay DB integrity test; concurrent bypass cũng phải bị chặn.
+Composite integrity triển khai bằng UNIQUE phụ và FK nhiều cột khi có thể: `(id,page_id)` page_revisions; `(id,page_revision_id)` blocks; `(id,book_version_id)` pages/generations; `(id,generation_id)` sections. Triggers kiểm source page thuộc version của generation/evidence, chunk spans thuộc generation version, start/end không vượt text, speaker không bị đổi giữa spans. Đã triển khai ở M003: block offsets ≤ độ dài `normalized_text`; span nằm trong block và trong độ dài chunk text, cùng speaker với chunk; chunk chỉ vào generation khi có ≥1 span và mọi span trỏ đúng page revision mà generation chọn qua `generation_pages`; membership của generation/release chỉ đổi khi còn `building`; `active_corpus` chỉ trỏ release `active`, `visibility_epoch` không giảm. Bảng nội dung (pages, page_revisions nội dung, blocks, sections, chunks, chunk_spans, memberships) chỉ insert; cột bất biến bị trigger chặn UPDATE. Service test không thay DB integrity test; concurrent bypass cũng phải bị chặn.
 
 `chat_runs` ↔ messages và analyses ↔ chat_runs có vòng FK: tạo tables trước rồi ALTER FK DEFERRABLE INITIALLY DEFERRED trong migration, create pending IDs trong một transaction. `school_id` trong sections có FK được thêm sau schools. Physical embedding table tên server-generated, vector(D) fixed theo profile, ANN index chỉ tạo khi benchmark đủ lớn. Registry+Alembic quản lý provisioning collection, không cho admin nhập arbitrary table name. Cùng chunk reused có vector một lần mỗi profile; content hash guard chống stale vector.
 

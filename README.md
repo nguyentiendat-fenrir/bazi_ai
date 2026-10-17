@@ -42,6 +42,18 @@ uv run --locked python scripts/scan_secrets.py
 uv run --locked python -m uvicorn backend.app.main:create_app --factory --port 8000
 ```
 
+Migrations và integration tests cần PostgreSQL; bản dev mở cổng loopback 55432:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml -f infra/compose.dev.yaml up -d --wait postgres
+$env:POSTGRES_HOST='127.0.0.1'; $env:POSTGRES_PORT='55432'
+uv run --locked alembic -c backend/alembic.ini upgrade head
+# Test tự tạo/xóa database bazi_test_*, không đụng database bazi:
+$env:BAZI_TEST_DATABASE_URL='host=127.0.0.1 port=55432 dbname=postgres user=bazi password=<POSTGRES_PASSWORD>'
+uv run --locked python -B -m unittest discover -s tests -v
+```
+
+Không đặt `BAZI_TEST_DATABASE_URL` thì schema tests được skip, không tính là đã kiểm.
 API đọc `.env`; config sai thì dừng ngay với tên field, không in giá trị. Kiểm
 `http://127.0.0.1:8000/api/v1/health/live` và `/health/ready` (model chưa cấu hình
 là `degraded`). Log là JSON một dòng, có `request_id` trùng header `X-Request-ID`.

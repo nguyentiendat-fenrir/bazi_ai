@@ -79,6 +79,12 @@ class ConfigTests(unittest.TestCase):
                       session_signing_key=SIGNING, field_encryption_key=ENCRYPTION)
         self.assertNotIn(SIGNING, repr(ok))
 
+    def test_database_url_escapes_and_hides_password(self):
+        url = settings(postgres_password='p@ss:/word', postgres_host='127.0.0.1').database_url
+        self.assertEqual(url.password, 'p@ss:/word')
+        self.assertNotIn('p@ss', str(url))
+        self.assertIn('p%40ss%3A%2Fword', url.render_as_string(hide_password=False))
+
     def test_environment_variables_are_read(self):
         with patch.dict(os.environ, {'APP_ENV': 'test', 'POSTGRES_PORT': '6543'}, clear=True):
             config = load_settings(_env_file=None)

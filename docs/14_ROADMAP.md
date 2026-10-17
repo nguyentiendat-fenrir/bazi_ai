@@ -19,7 +19,9 @@ khác tra tại bảng cuối file này.
 - T003 ✅ backend foundation: app factory, typed config, request ID, JSON log có
   redaction, Problem Details, `/health/live` và `/health/ready` (chạy trên Windows dev;
   chưa có Compose service API).
-- Việc kế tiếp: T004 migrations; smoke T002 trên Ubuntu khi có máy.
+- T004 ✅ migrations M001–M003 (identity, thư viện, tài liệu/chunk/release) với ràng buộc ở
+  DB; 26 integration tests trên PostgreSQL thật.
+- Việc kế tiếp: T005 migrations tri thức/chat/jobs; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -116,7 +118,7 @@ trước khi trình duyệt.
 | T057 | Cấu trúc kho tri thức và kế hoạch RAG | K0 | ✅ |
 | T002 | Khóa toolchain, giấy phép và hạ tầng Compose | K1 | ⏳ smoke Ubuntu |
 | T003 | Backend foundation và logging | K1 | ✅ |
-| T004 | Migrations storage và document schema | K1 | |
+| T004 | Migrations storage và document schema | K1 | ✅ |
 | T005 | Migrations knowledge, chart, chat và jobs | K1 | |
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | |
 | T007 | ObjectStore local và S3 adapters | K1 | |
