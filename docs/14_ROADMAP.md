@@ -45,7 +45,9 @@ khác tra tại bảng cuối file này.
 - T014 ✅ chuẩn hóa + offset UTF-16, vai trò block/heading/lớp người nói, cây section, xác minh
   nhãn trang, review item theo lý do, 9 trang mẫu đối chiếu bằng mắt. Còn chờ: hiệu chỉnh ngưỡng
   bằng trang gán nhãn của chuyên gia (gộp vào T025.1).
-- Việc kế tiếp: T015 chunking; smoke T002 trên Ubuntu khi có máy.
+- T015 ✅ chunking theo section/speaker, bảng/mệnh lệ nguyên khối, overlap, provenance từng ký tự,
+  định danh chunk ổn định, chủ đề đề xuất.
+- Việc kế tiếp: T016 embedding/index; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -155,7 +157,7 @@ trước khi trình duyệt.
 | T012 | OCR sandbox theo trang/vùng | K2 | ✅ |
 | T013 | DOCX extraction và canonical rendering | K2 | ✅ |
 | T014 | Unicode, cấu trúc và quality review | K2 | ✅ (hiệu chỉnh ngưỡng → T025.1) |
-| T015 | Semantic chunking và provenance | K2 | |
+| T015 | Semantic chunking và provenance | K2 | ✅ |
 | T016 | Embedding/index staging và model registry | K2 | |
 | T017 | Sửa OCR incremental và impact | K2 | |
 | T018 | Publication và active corpus release | K2 | |
