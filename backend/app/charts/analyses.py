@@ -17,7 +17,6 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..auth.service import Principal
-from ..core.crypto import FieldCipher
 from ..core.errors import AppError
 from ..knowledge import rulesets
 from ..rules.engine import RuleGraphError, run
@@ -49,11 +48,12 @@ def _ruleset_for(conn: Connection, school_id, method_id, ruleset_id) -> dict:
     return ruleset
 
 
-def run_analysis(conn: Connection, principal: Principal, cipher: FieldCipher, chart_id,
-                 school_id=None, method_id=None, ruleset_id=None, as_of: str | None = None) -> dict:
-    chart = service.get_chart(conn, principal, cipher, chart_id)       # 404 if not the owner's
+def run_analysis(conn: Connection, principal: Principal, chart_id, school_id=None,
+                 method_id=None, ruleset_id=None, as_of: str | None = None,
+                 run_id=None) -> dict:
+    chart_facts, facts_hash = service.chart_facts(conn, chart_id)   # 404 if not the owner's
     ruleset = _ruleset_for(conn, school_id, method_id, ruleset_id)
-    facts = {**chart['facts'], **({'query': {'as_of': as_of}} if as_of else {})}
+    facts = {**chart_facts, **({'query': {'as_of': as_of}} if as_of else {})}
     members = rulesets.members(conn, ruleset['id'])
     try:
         result = run(members, facts)
@@ -62,16 +62,16 @@ def run_analysis(conn: Connection, principal: Principal, cipher: FieldCipher, ch
     conflict_keys = {c['claim_key'] for c in result['conflicts']}
     analysis_id = uuid.uuid4()
     answer = {'kind': 'rules', 'status': result['status'], 'as_of': as_of,
-              'facts_hash': chart['facts_hash'],
+              'facts_hash': facts_hash,
               'ruleset': {k: ruleset[k] for k in ('id', 'version', 'manifest_hash', 'school_key',
                                                   'method_key')},
               'claims': result['claims'], 'conflicts': result['conflicts'],
               'counters': result['counters'], 'narrative': None}
     conn.execute(text(
-        "INSERT INTO chart_analyses (id, owner_id, chart_id, ruleset_id, answer, status)"
-        " VALUES (:id, :o, :c, :r, CAST(:a AS jsonb), 'completed')"),
-        {'id': analysis_id, 'o': principal.user_id, 'c': chart['id'], 'r': ruleset['id'],
-         'a': json.dumps(answer, ensure_ascii=False)})
+        "INSERT INTO chart_analyses (id, owner_id, chart_id, ruleset_id, answer, status, run_id)"
+        " VALUES (:id, :o, :c, :r, CAST(:a AS jsonb), 'completed', :run)"),
+        {'id': analysis_id, 'o': principal.user_id, 'c': chart_id, 'r': ruleset['id'],
+         'a': json.dumps(answer, ensure_ascii=False), 'run': run_id})
     for position, trace in enumerate(result['traces']):
         claims = [c for c in result['claims'] if c['rule_revision_id'] == trace['revision_id']]
         status = TRACE_STATUS[trace['status']]
@@ -89,7 +89,7 @@ def run_analysis(conn: Connection, principal: Principal, cipher: FieldCipher, ch
                               if c['claim_key'] in {x['claim_key'] for x in claims}],
                              ensure_ascii=False)})
     dependencies = [('ruleset', ruleset['id'], ruleset['manifest_hash']),
-                    ('chart', chart['id'], chart['facts_hash'])]
+                    ('chart', str(chart_id), facts_hash)]
     dependencies += [('rule', m.revision_id, None) for m in members]
     for kind, entity, digest in dependencies:
         conn.execute(text('INSERT INTO analysis_dependencies (analysis_id, dependency_kind,'
@@ -136,12 +136,12 @@ def trace(conn: Connection, analysis_id, limit: int, cursor: str | None) -> tupl
     return items, (str(offset + limit) if len(rows) > limit else None)
 
 
-def reevaluate(conn: Connection, principal: Principal, cipher: FieldCipher, analysis_id) -> dict:
+def reevaluate(conn: Connection, principal: Principal, analysis_id) -> dict:
     old = get_analysis(conn, analysis_id)
     ruleset = old['answer']['ruleset']
     school = conn.execute(text('SELECT school_id, method_id FROM rulesets WHERE id = :r'),
                           {'r': ruleset['id']}).one()
-    fresh = run_analysis(conn, principal, cipher, old['chart_id'], school.school_id,
+    fresh = run_analysis(conn, principal, old['chart_id'], school.school_id,
                          school.method_id, None, old['answer'].get('as_of'))
 
     def keyed(answer: dict) -> set[tuple[str, str]]:

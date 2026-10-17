@@ -159,6 +159,8 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 | GET /runs/{id} | O | — | state,final_answer?,error,usage |
 | GET /runs/{id}/events | O | Last-Event-ID | text/event-stream, events theo 09 |
 | POST /runs/{id}/cancel | O | — | 202 or 200 terminal |
+
+Đã triển khai (T040/T041): `GET/POST /conversations` (q tìm tiêu đề + nội dung tin nhắn của mình, `starred`, cursor; context mode/chart/schools/methods/books/as_of được kiểm chủ sở hữu), `GET/PATCH/DELETE /conversations/{id}` (PATCH If-Match revision), `GET /conversations/{id}/messages` (after_seq), `POST /conversations/{id}/messages` (Idempotency-Key; 202 run queued + id hai tin nhắn; 409 `RUN_ACTIVE`, 422 `CHART_REQUIRED`/`SCHOOLS_REQUIRED`), `GET /runs/{id}` (state + answer), `POST /runs/{id}/cancel` (200, idempotent), `GET /runs/{id}/events` (SSE; `Last-Event-ID` hoặc `after_seq`). Sự kiện: run.started, tool.started/completed, retrieval.ready, provider.waiting, answer.claim, answer.completed, run.failed, run.cancelled.
 | POST /feedback | O target | message_id hoặc analysis_id,rating,categories,comment | 201 feedback_id |
 
 POST charts analyses tạo conversation nội bộ gắn analysis để dùng cùng run model; DB giữ conversation_id và privacy, UI không cần hiện thread tự động trong chat list (`context.origin=analysis`). Hoặc triển khai service tạo explicit analysis thread và trả conversation_id; contract response luôn có ID này. Research không chart vẫn có source statements; chart mode không source trả facts và limitations.

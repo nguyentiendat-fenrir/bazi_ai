@@ -83,6 +83,25 @@ services:
       - objects:/data/objects
     networks: [internal]
 
+  # Reasoning runs of chat (docs/09): one at a time, as the run's owner under RLS. Needs
+  # the network of the configured model (llama.cpp on the host or another container).
+  reasoner:
+    profiles: [app]
+    image: bazi-ai-app:local
+    build: *app_build
+    env_file: *app_env_file
+    environment: *app_env
+    depends_on: *app_deps
+    command: ["python", "-m", "backend.app.reasoning.worker"]
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 1g
+    networks: [internal]
+
   watchdog:
     profiles: [app]
     image: bazi-ai-app:local

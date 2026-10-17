@@ -576,6 +576,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Conversations
+         * @description Own conversations, newest first; ``q`` searches titles and message text.
+         */
+        get: operations["list_conversations_api_v1_conversations_get"];
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_api_v1_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_v1_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Conversation */
+        delete: operations["delete_conversation_api_v1_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Conversation
+         * @description Rename, star or change context; a new chart or school set starts a new memory window.
+         */
+        patch: operations["update_conversation_api_v1_conversations__conversation_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Messages */
+        get: operations["list_messages_api_v1_conversations__conversation_id__messages_get"];
+        put?: never;
+        /**
+         * Post Message
+         * @description User message + pending assistant message + queued run, in one transaction.
+         */
+        post: operations["post_message_api_v1_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/corpus-releases": {
         parameters: {
             query?: never;
@@ -1390,6 +1454,60 @@ export interface paths {
          * @description Compare-and-swap; the replaced ruleset retires and its analyses become stale.
          */
         post: operations["activate_ruleset_api_v1_rulesets__ruleset_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_v1_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Run
+         * @description Idempotent; a provider may still bill a call already sent (usage reconciles).
+         */
+        post: operations["cancel_run_api_v1_runs__run_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Events */
+        get: operations["run_events_api_v1_runs__run_id__events_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2590,6 +2708,34 @@ export interface components {
             /** Positions */
             positions: string[];
         };
+        /** ChatContext */
+        ChatContext: {
+            /** As Of */
+            as_of?: string | null;
+            /**
+             * Book Ids
+             * @default []
+             */
+            book_ids: string[];
+            /** Chart Id */
+            chart_id?: string | null;
+            /**
+             * Method Ids
+             * @default []
+             */
+            method_ids: string[];
+            /**
+             * Mode
+             * @default research
+             * @enum {string}
+             */
+            mode: "research" | "chart_analysis" | "comparison";
+            /**
+             * School Ids
+             * @default []
+             */
+            school_ids: string[];
+        };
         /** CheckDTO */
         CheckDTO: {
             /** Code */
@@ -2839,6 +2985,71 @@ export interface components {
             /** Value */
             value: string | number | boolean;
         };
+        /** ConversationDTO */
+        ConversationDTO: {
+            /** Context */
+            context: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Messages Count */
+            messages_count: number;
+            /** Revision */
+            revision: number;
+            /** Starred */
+            starred: boolean;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ConversationDeleted */
+        ConversationDeleted: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Runs Cancelled */
+            runs_cancelled: number;
+        };
+        /** ConversationInput */
+        ConversationInput: {
+            /**
+             * @default {
+             *       "book_ids": [],
+             *       "method_ids": [],
+             *       "mode": "research",
+             *       "school_ids": []
+             *     }
+             */
+            context: components["schemas"]["ChatContext"];
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+        };
+        /** ConversationPatch */
+        ConversationPatch: {
+            context?: components["schemas"]["ChatContext"] | null;
+            /** Starred */
+            starred?: boolean | null;
+            /** Title */
+            title?: string | null;
+        };
         /** CorrectionInput */
         CorrectionInput: {
             /**
@@ -3061,6 +3272,16 @@ export interface components {
             data: components["schemas"]["ConceptDetail"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[ConversationDTO] */
+        Envelope_ConversationDTO_: {
+            data: components["schemas"]["ConversationDTO"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ConversationDeleted] */
+        Envelope_ConversationDeleted_: {
+            data: components["schemas"]["ConversationDeleted"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[CorrectionResult] */
         Envelope_CorrectionResult_: {
             data: components["schemas"]["CorrectionResult"];
@@ -3126,6 +3347,11 @@ export interface components {
             data: components["schemas"]["PolicyCatalog"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[PostedMessage] */
+        Envelope_PostedMessage_: {
+            data: components["schemas"]["PostedMessage"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[ProfileDeleted] */
         Envelope_ProfileDeleted_: {
             data: components["schemas"]["ProfileDeleted"];
@@ -3184,11 +3410,6 @@ export interface components {
         /** Envelope[RulesetDetail] */
         Envelope_RulesetDetail_: {
             data: components["schemas"]["RulesetDetail"];
-            meta: components["schemas"]["Meta"];
-        };
-        /** Envelope[RunDTO] */
-        Envelope_RunDTO_: {
-            data: components["schemas"]["RunDTO"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[SchoolDTO] */
@@ -3271,6 +3492,12 @@ export interface components {
         Envelope_list_Grant__: {
             /** Data */
             data: components["schemas"]["Grant"][];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[list[MessageDTO]] */
+        Envelope_list_MessageDTO__: {
+            /** Data */
+            data: components["schemas"]["MessageDTO"][];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[list[RulesetDTO]] */
@@ -3902,6 +4129,13 @@ export interface components {
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
+        /** ListEnvelope[ConversationDTO] */
+        ListEnvelope_ConversationDTO_: {
+            /** Data */
+            data: components["schemas"]["ConversationDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
         /** ListEnvelope[DatasetDTO] */
         ListEnvelope_DatasetDTO_: {
             /** Data */
@@ -4099,6 +4333,46 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "reviewer" | "reader";
+        };
+        /** MessageDTO */
+        MessageDTO: {
+            /** Answer */
+            answer: {
+                [key: string]: unknown;
+            } | null;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Run Id */
+            run_id: string | null;
+            /** Seq */
+            seq: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "streaming" | "completed" | "failed" | "cancelled";
+        };
+        /** MessageInput */
+        MessageInput: {
+            /** Content */
+            content: string;
+            /** Mode */
+            mode?: ("research" | "chart_analysis" | "comparison") | null;
         };
         /** Meta */
         Meta: {
@@ -4446,6 +4720,20 @@ export interface components {
             };
             /** Time Accuracy */
             time_accuracy: string[];
+        };
+        /** PostedMessage */
+        PostedMessage: {
+            /**
+             * Assistant Message Id
+             * Format: uuid
+             */
+            assistant_message_id: string;
+            run: components["schemas"]["backend__app__api__chat__RunDTO"];
+            /**
+             * User Message Id
+             * Format: uuid
+             */
+            user_message_id: string;
         };
         /** ProcessInput */
         ProcessInput: {
@@ -5209,39 +5497,6 @@ export interface components {
             revision_id: string;
             /** Rule Key */
             rule_key: string;
-        };
-        /** RunDTO */
-        RunDTO: {
-            /** Config */
-            config: {
-                [key: string]: unknown;
-            };
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Dataset Id
-             * Format: uuid
-             */
-            dataset_id: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Metrics
-             * @description means of recall@k, hit@k, ndcg@10, mrr@10; latency
-             */
-            metrics: {
-                [key: string]: unknown;
-            };
-            /** Results */
-            results: components["schemas"]["RunResult"][];
-            /** Status */
-            status: string;
         };
         /** RunInput */
         RunInput: {
@@ -6018,6 +6273,82 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** RunDTO */
+        backend__app__api__chat__RunDTO: {
+            /** Answer */
+            answer: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Assistant Message Id
+             * Format: uuid
+             */
+            assistant_message_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mode */
+            mode: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "queued" | "running" | "waiting_provider" | "completed" | "failed" | "cancelled";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RunDTO */
+        backend__app__api__evaluation__RunDTO: {
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Dataset Id
+             * Format: uuid
+             */
+            dataset_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Metrics
+             * @description means of recall@k, hit@k, ndcg@10, mrr@10; latency
+             */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Results */
+            results: components["schemas"]["RunResult"][];
+            /** Status */
+            status: string;
+        };
         /** RevisionRef */
         backend__app__api__knowledge__RevisionRef: {
             /**
@@ -6236,6 +6567,16 @@ export interface components {
             data: components["schemas"]["backend__app__api__search__ResolveResult"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[RunDTO] */
+        backend__app__api__schemas__Envelope_RunDTO___1: {
+            data: components["schemas"]["backend__app__api__evaluation__RunDTO"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[RunDTO] */
+        backend__app__api__schemas__Envelope_RunDTO___2: {
+            data: components["schemas"]["backend__app__api__chat__RunDTO"];
+            meta: components["schemas"]["Meta"];
+        };
         /**
          * Problem
          * @description application/problem+json (RFC 9457) with a stable ``code``.
@@ -6449,16 +6790,6 @@ export interface operations {
             };
             /** @description Internal Server Error */
             500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
-                    "application/problem+json": unknown;
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9446,16 +9777,6 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
-                    "application/problem+json": unknown;
-                };
-            };
         };
     };
     resolve_citations_api_v1_citations_resolve_post: {
@@ -9820,6 +10141,546 @@ export interface operations {
             };
             /** @description Precondition Failed */
             412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_conversations_api_v1_conversations_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                starred?: boolean | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEnvelope_ConversationDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    create_conversation_api_v1_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ConversationDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_conversation_api_v1_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ConversationDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    delete_conversation_api_v1_conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ConversationDeleted_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    update_conversation_api_v1_conversations__conversation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ConversationDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_messages_api_v1_conversations__conversation_id__messages_get: {
+        parameters: {
+            query?: {
+                after_seq?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_list_MessageDTO__"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    post_message_api_v1_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_PostedMessage_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10371,7 +11232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Envelope_RunDTO_"];
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_RunDTO___1"];
                 };
             };
             /** @description Unauthorized */
@@ -10443,7 +11304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Envelope_RunDTO_"];
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_RunDTO___1"];
                 };
             };
             /** @description Unauthorized */
@@ -13722,6 +14583,234 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_run_api_v1_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_RunDTO___2"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    cancel_run_api_v1_runs__run_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Envelope_RunDTO___2"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    run_events_api_v1_runs__run_id__events_get: {
+        parameters: {
+            query?: {
+                after_seq?: number | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SSE: id {run_id}:{seq}, event, data JSON */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Gone */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -108,7 +108,11 @@ khác tra tại bảng cuối file này.
   `cycle_at` + `query.as_of`, ruleset chụp đóng băng + kích hoạt CAS, analysis lưu trace +
   dependencies, stale khi đổi ruleset/thu hồi rule, đánh giá lại có diff. Rule mệnh lý thật
   vẫn chờ chuyên gia.
-- Việc kế tiếp: T039 suy luận (RAG + rule facts + LLM) cho ba chế độ, rồi T040–T042 chat.
+- T039–T041 ✅ suy luận ba chế độ (orchestrator cố định, validator claim, câu trả lời tất
+  định khi chưa có/lỗi mô hình), hội thoại nhiều lượt (cửa sổ nhớ, tìm, xóa), SSE phát lại
+  + hủy; worker `reasoner` (M014).
+- Việc kế tiếp: T044 UI lá số, T045 UI chat, T047/T048 UI tri thức/đánh giá/cài đặt;
+  T042 hoàn tất client/contract cùng các UI đó.
 
 ## Các giai đoạn
 
@@ -242,9 +246,9 @@ trước khi trình duyệt.
 | T032 | Rule DAG, exceptions và conflict trace | K6 | ✅ |
 | T033 | Rule approval gates và immutable rulesets | K6 | ✅ (rule thật chờ chuyên gia) |
 | T034 | Re-evaluation và stale analysis tracking | K6 | ✅ |
-| T039 | Reasoning orchestration cho ba modes | K6 | |
-| T040 | Multi-turn conversations và search/delete | K6 | |
-| T041 | SSE validated claims và cancellation | K6 | |
+| T039 | Reasoning orchestration cho ba modes | K6 | ✅ |
+| T040 | Multi-turn conversations và search/delete | K6 | ✅ |
+| T041 | SSE validated claims và cancellation | K6 | ✅ |
 | T042 | API integration và generated client hoàn chỉnh | K6 | |
 | T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
 | T044 | Giao diện lập/xem/lưu lá số | K6 | |

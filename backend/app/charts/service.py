@@ -261,6 +261,15 @@ def list_charts(conn: Connection, q: str | None, limit: int, cursor: str | None)
                                                if len(rows) > limit else None)
 
 
+def chart_facts(conn: Connection, chart_id) -> tuple[dict, str]:
+    """(facts without the encrypted input, facts hash) of an own chart; 404 otherwise."""
+    row = conn.execute(text('SELECT facts, facts_hash FROM bazi_charts WHERE id = :id'),
+                       {'id': chart_id}).first()
+    if row is None:
+        raise AppError(404, 'NOT_FOUND', 'Chart not found')
+    return row.facts, row.facts_hash.strip()
+
+
 def get_chart(conn: Connection, principal: Principal, cipher: FieldCipher, chart_id) -> dict:
     row = conn.execute(text(f'{CHART_SELECT} WHERE c.id = :id'), {'id': chart_id}).first()
     if row is None:

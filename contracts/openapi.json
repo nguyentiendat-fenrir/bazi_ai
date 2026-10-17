@@ -2649,6 +2649,77 @@
         "title": "ChartWarning",
         "type": "object"
       },
+      "ChatContext": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "book_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "chart_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Id"
+          },
+          "method_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Method Ids",
+            "type": "array"
+          },
+          "mode": {
+            "default": "research",
+            "enum": [
+              "research",
+              "chart_analysis",
+              "comparison"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "school_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "School Ids",
+            "type": "array"
+          }
+        },
+        "title": "ChatContext",
+        "type": "object"
+      },
       "CheckDTO": {
         "properties": {
           "code": {
@@ -3299,6 +3370,139 @@
         "title": "ConflictValue",
         "type": "object"
       },
+      "ConversationDTO": {
+        "properties": {
+          "context": {
+            "additionalProperties": true,
+            "title": "Context",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "messages_count": {
+            "title": "Messages Count",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "starred": {
+            "title": "Starred",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "starred",
+          "context",
+          "revision",
+          "messages_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ConversationDTO",
+        "type": "object"
+      },
+      "ConversationDeleted": {
+        "properties": {
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "runs_cancelled": {
+            "title": "Runs Cancelled",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "runs_cancelled"
+        ],
+        "title": "ConversationDeleted",
+        "type": "object"
+      },
+      "ConversationInput": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/ChatContext",
+            "default": {
+              "book_ids": [],
+              "method_ids": [],
+              "mode": "research",
+              "school_ids": []
+            }
+          },
+          "title": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "title": "ConversationInput",
+        "type": "object"
+      },
+      "ConversationPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "starred": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starred"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ConversationPatch",
+        "type": "object"
+      },
       "CorrectionInput": {
         "properties": {
           "base_revision_id": {
@@ -3901,6 +4105,38 @@
         "title": "Envelope[ConceptDetail]",
         "type": "object"
       },
+      "Envelope_ConversationDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ConversationDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ConversationDTO]",
+        "type": "object"
+      },
+      "Envelope_ConversationDeleted_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ConversationDeleted"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ConversationDeleted]",
+        "type": "object"
+      },
       "Envelope_CorrectionResult_": {
         "properties": {
           "data": {
@@ -4109,6 +4345,22 @@
         "title": "Envelope[PolicyCatalog]",
         "type": "object"
       },
+      "Envelope_PostedMessage_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostedMessage"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PostedMessage]",
+        "type": "object"
+      },
       "Envelope_ProfileDeleted_": {
         "properties": {
           "data": {
@@ -4299,22 +4551,6 @@
           "meta"
         ],
         "title": "Envelope[RulesetDetail]",
-        "type": "object"
-      },
-      "Envelope_RunDTO_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RunDTO"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/Meta"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
-        ],
-        "title": "Envelope[RunDTO]",
         "type": "object"
       },
       "Envelope_SchoolDTO_": {
@@ -4579,6 +4815,26 @@
           "meta"
         ],
         "title": "Envelope[list[Grant]]",
+        "type": "object"
+      },
+      "Envelope_list_MessageDTO__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MessageDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[list[MessageDTO]]",
         "type": "object"
       },
       "Envelope_list_RulesetDTO__": {
@@ -6103,6 +6359,29 @@
         "title": "ListEnvelope[ConceptDTO]",
         "type": "object"
       },
+      "ListEnvelope_ConversationDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[ConversationDTO]",
+        "type": "object"
+      },
       "ListEnvelope_DatasetDTO_": {
         "properties": {
           "data": {
@@ -6696,6 +6975,115 @@
           "capabilities"
         ],
         "title": "MeDTO",
+        "type": "object"
+      },
+      "MessageDTO": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "streaming",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "role",
+          "content",
+          "status",
+          "run_id",
+          "answer",
+          "created_at"
+        ],
+        "title": "MessageDTO",
+        "type": "object"
+      },
+      "MessageInput": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "research",
+                  "chart_analysis",
+                  "comparison"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "MessageInput",
         "type": "object"
       },
       "Meta": {
@@ -7656,6 +8044,30 @@
           "max_uncertainty_minutes"
         ],
         "title": "PolicyCatalog",
+        "type": "object"
+      },
+      "PostedMessage": {
+        "properties": {
+          "assistant_message_id": {
+            "format": "uuid",
+            "title": "Assistant Message Id",
+            "type": "string"
+          },
+          "run": {
+            "$ref": "#/components/schemas/backend__app__api__chat__RunDTO"
+          },
+          "user_message_id": {
+            "format": "uuid",
+            "title": "User Message Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run",
+          "user_message_id",
+          "assistant_message_id"
+        ],
+        "title": "PostedMessage",
         "type": "object"
       },
       "ProcessInput": {
@@ -9362,58 +9774,6 @@
           "ordinal"
         ],
         "title": "RulesetMember",
-        "type": "object"
-      },
-      "RunDTO": {
-        "properties": {
-          "config": {
-            "additionalProperties": true,
-            "title": "Config",
-            "type": "object"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "dataset_id": {
-            "format": "uuid",
-            "title": "Dataset Id",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "metrics": {
-            "additionalProperties": true,
-            "description": "means of recall@k, hit@k, ndcg@10, mrr@10; latency",
-            "title": "Metrics",
-            "type": "object"
-          },
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/RunResult"
-            },
-            "title": "Results",
-            "type": "array"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "dataset_id",
-          "config",
-          "status",
-          "metrics",
-          "created_at",
-          "results"
-        ],
-        "title": "RunDTO",
         "type": "object"
       },
       "RunInput": {
@@ -11299,6 +11659,140 @@
         "title": "ProfileInput",
         "type": "object"
       },
+      "backend__app__api__chat__RunDTO": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "assistant_message_id": {
+            "format": "uuid",
+            "title": "Assistant Message Id",
+            "type": "string"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "running",
+              "waiting_provider",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversation_id",
+          "mode",
+          "state",
+          "error",
+          "assistant_message_id",
+          "answer",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RunDTO",
+        "type": "object"
+      },
+      "backend__app__api__evaluation__RunDTO": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": true,
+            "description": "means of recall@k, hit@k, ndcg@10, mrr@10; latency",
+            "title": "Metrics",
+            "type": "object"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RunResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "config",
+          "status",
+          "metrics",
+          "created_at",
+          "results"
+        ],
+        "title": "RunDTO",
+        "type": "object"
+      },
       "backend__app__api__knowledge__RevisionRef": {
         "properties": {
           "id": {
@@ -11879,6 +12373,38 @@
         "title": "Envelope[ResolveResult]",
         "type": "object"
       },
+      "backend__app__api__schemas__Envelope_RunDTO___1": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__evaluation__RunDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RunDTO]",
+        "type": "object"
+      },
+      "backend__app__api__schemas__Envelope_RunDTO___2": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__chat__RunDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RunDTO]",
+        "type": "object"
+      },
       "backend__app__api__schemas__Problem": {
         "description": "application/problem+json (RFC 9457) with a stable ``code``.",
         "properties": {
@@ -12211,17 +12737,6 @@
               "application/problem+json": {}
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Reevaluate",
@@ -16153,17 +16668,6 @@
               "application/problem+json": {}
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Analyse Chart",
@@ -16718,6 +17222,738 @@
           "knowledge"
         ],
         "x-permission": "V"
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "description": "Own conversations, newest first; ``q`` searches titles and message text.",
+        "operationId": "list_conversations_api_v1_conversations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "starred",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Starred"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_ConversationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Conversations",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "R/O"
+      },
+      "post": {
+        "operationId": "create_conversation_api_v1_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConversationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Conversation",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "R/O"
+      }
+    },
+    "/api/v1/conversations/{conversation_id}": {
+      "delete": {
+        "operationId": "delete_conversation_api_v1_conversations__conversation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConversationDeleted_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Delete Conversation",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      },
+      "get": {
+        "operationId": "get_conversation_api_v1_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConversationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Conversation",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      },
+      "patch": {
+        "description": "Rename, star or change context; a new chart or school set starts a new memory window.",
+        "operationId": "update_conversation_api_v1_conversations__conversation_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ConversationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Update Conversation",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      }
+    },
+    "/api/v1/conversations/{conversation_id}/messages": {
+      "get": {
+        "operationId": "list_messages_api_v1_conversations__conversation_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_seq",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After Seq",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_MessageDTO__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Messages",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      },
+      "post": {
+        "description": "User message + pending assistant message + queued run, in one transaction.",
+        "operationId": "post_message_api_v1_conversations__conversation_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PostedMessage_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Post Message",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
       }
     },
     "/api/v1/corpus-releases": {
@@ -17390,7 +18626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_RunDTO_"
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_RunDTO___1"
                 }
               }
             },
@@ -17479,7 +18715,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_RunDTO_"
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_RunDTO___1"
                 }
               }
             },
@@ -21932,6 +23168,298 @@
           "rulesets"
         ],
         "x-permission": "V"
+      }
+    },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_RunDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Run",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      }
+    },
+    "/api/v1/runs/{run_id}/cancel": {
+      "post": {
+        "description": "Idempotent; a provider may still bill a call already sent (usage reconciles).",
+        "operationId": "cancel_run_api_v1_runs__run_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_RunDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Cancel Run",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
+      }
+    },
+    "/api/v1/runs/{run_id}/events": {
+      "get": {
+        "operationId": "run_events_api_v1_runs__run_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_seq",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After Seq"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "SSE: id {run_id}:{seq}, event, data JSON"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Run Events",
+        "tags": [
+          "chat"
+        ],
+        "x-permission": "O"
       }
     },
     "/api/v1/schools": {

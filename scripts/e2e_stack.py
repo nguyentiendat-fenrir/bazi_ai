@@ -147,6 +147,7 @@ def run_worker(engine, store, broker: InlineBroker, stop: threading.Event) -> No
     from backend.app.ingestion.ocr_stage import OcrStage
     from backend.app.ingestion.pipeline import handlers_for
     from backend.app.ingestion.worker import run_job
+    from backend.app.reasoning.worker import work_once as answer_once
 
     def no_ocr():
         raise OcrUnavailable('OCR is disabled in the E2E stack')
@@ -163,6 +164,7 @@ def run_worker(engine, store, broker: InlineBroker, stop: threading.Event) -> No
             try:
                 job = broker.jobs.get(timeout=0.3)
             except queue.Empty:
+                answer_once(engine)              # chat runs when no ingestion job waits
                 continue
             run_job(engine, store, uuid.UUID(job), handlers, 'e2e-worker')
         except Exception:  # noqa: BLE001 - keep serving; the test shows the failure

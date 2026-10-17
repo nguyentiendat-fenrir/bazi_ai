@@ -6,13 +6,13 @@ import re
 from typing import Literal
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.engine import Connection
 
 from ..auth.deps import current_principal, db, require_role
 from ..auth.service import Principal
-from ..charts import analyses, service
+from ..charts import analyses
 from ..knowledge import rulesets
 from .health import envelope
 from .schemas import AUTHENTICATED_ERRORS, Envelope, ListEnvelope, permission, problem_responses
@@ -182,15 +182,14 @@ def activate_ruleset(ruleset_id: uuid.UUID, body: ActivateInput,
 
 
 @router.post('/charts/{chart_id}/analyses', status_code=202, response_model=Envelope[AnalysisDTO],
-             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409, 503)},
+             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
              openapi_extra=permission('O'))
-def analyse_chart(chart_id: uuid.UUID, body: AnalysisInput, request: Request,
+def analyse_chart(chart_id: uuid.UUID, body: AnalysisInput,
                   principal: Principal = Depends(current_principal),
                   conn: Connection = Depends(db)) -> dict:
     """Rule evaluation is done when this returns; the model narrative arrives with T039."""
-    return envelope(analyses.run_analysis(
-        conn, principal, service.require_cipher(request.app.state.cipher), chart_id,
-        body.school_id, body.method_id, body.ruleset_id, body.as_of))
+    return envelope(analyses.run_analysis(conn, principal, chart_id, body.school_id,
+                                          body.method_id, body.ruleset_id, body.as_of))
 
 
 @router.get('/charts/{chart_id}/analyses', response_model=Envelope[list[AnalysisDTO]],
@@ -219,12 +218,10 @@ def analysis_trace(analysis_id: uuid.UUID, limit: int = Query(default=100, ge=1,
 
 @router.post('/analyses/{analysis_id}/reevaluate', status_code=201,
              response_model=Envelope[Reevaluation],
-             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409, 503)},
+             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
              openapi_extra=permission('O'))
-def reevaluate(analysis_id: uuid.UUID, request: Request,
+def reevaluate(analysis_id: uuid.UUID,
                principal: Principal = Depends(current_principal),
                conn: Connection = Depends(db)) -> dict:
     """Same chart facts, the active ruleset now; the old analysis stays as history."""
-    return envelope(analyses.reevaluate(conn, principal,
-                                        service.require_cipher(request.app.state.cipher),
-                                        analysis_id))
+    return envelope(analyses.reevaluate(conn, principal, analysis_id))
