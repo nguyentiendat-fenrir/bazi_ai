@@ -40,6 +40,39 @@
         "title": "ActivateInput",
         "type": "object"
       },
+      "ActiveCoverage": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "excluded": {
+            "title": "Excluded",
+            "type": "integer"
+          },
+          "review_required": {
+            "title": "Review Required",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "versions": {
+            "title": "Versions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versions",
+          "total",
+          "accepted",
+          "review_required",
+          "excluded"
+        ],
+        "title": "ActiveCoverage",
+        "type": "object"
+      },
       "ActivePointer": {
         "properties": {
           "release_id": {
@@ -1046,14 +1079,13 @@
           "active_coverage": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/ActiveCoverage"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Active Coverage"
+            "description": "pages of the book's versions in the active corpus release; null if none"
           },
           "authors": {
             "items": {

@@ -2,8 +2,7 @@
 
 ## Thứ tự form quản trị kho
 
-Chưa có frontend ứng dụng. Theo [14](14_ROADMAP.md), UI đầu tiên phục vụ kho tri thức,
-theo thứ tự:
+Theo [14](14_ROADMAP.md), UI đầu tiên phục vụ kho tri thức, theo thứ tự:
 
 1. Nhập sách: file, nhan đề, tác giả/bình chú/dịch giả, edition, school, language,
    rights; checksum/dedupe, unknown metadata, mặc định không tự publish.
@@ -17,6 +16,8 @@ theo thứ tự:
 Subtask T043.1 (shell/library navigation) và T046.1 (library/jobs/review) đi trước
 chart/chat; T043/T046 chỉ done khi đủ integration đầy đủ. Giữ route/DTO bên dưới,
 không dựng màn hình placeholder khi API chưa có.
+
+Đã triển khai (T043.1, `frontend/`): Next.js 16 App Router + React 19 + TypeScript strict, màn hình là client components gọi API cùng origin (dev/E2E: Next rewrite `/api/*` tới FastAPI; container: Caddy gateway). Kiểu API sinh bằng `openapi-typescript` từ `contracts/openapi.json` vào `src/api/schema.d.ts` (`npm run api:gen`; `npm run api:check` báo lỗi khi snapshot đổi mà chưa sinh lại), gọi qua `openapi-fetch`; lỗi Problem Details thành `ApiError` (code, field_errors, request_id, ETag, Retry-After) với thông báo tiếng Việt theo code. Đăng nhập lưu CSRF token của response login trong localStorage (server chỉ giữ hash; cookie phiên vẫn HttpOnly) và gửi `X-CSRF-Token` cho mọi mutation; 401 hoặc `CSRF_FAILED` ở bất kỳ màn hình nào đưa về `/login?next=` (chỉ nhận path cùng origin) kèm lý do. Shell: sidebar 240px thu gọn được (nhớ trong trình duyệt), topbar trạng thái API (admin xem `/health/ready` và tên check suy giảm), menu người dùng; điều hướng chỉ hiện màn hình có API và đúng quyền. Màn hình: `/login`, `/` (reviewer: jobs chạy/chờ, mục cần duyệt, release đang dùng; mọi người: sách), `/books` (tìm không dấu, cursor “Tải thêm”, cột kho tra cứu từ `active_coverage`), `/books/[id]` (thông tin + phiên bản: trạng thái, quyền, xử lý ngoài, trang đạt/tổng, kích thước, SHA-256). Mỗi màn hình có loading (skeleton không số giả), empty có hướng dẫn, error có request id + thử lại, 403/404 riêng. CSP chặn script/kết nối ngoài origin, `frame-ancestors 'none'`; text sách chỉ render dạng text.
 
 ## Bố cục thống nhất
 
@@ -64,5 +65,7 @@ OCR correction hiển thị base revision và affected chunks/cases/rules; save 
 Xóa sách/hồ sơ/hội thoại và restore có confirmation nội dung cụ thể + phạm vi, không popup chung “Are you sure?”. Backup UI có lần khôi phục thử gần nhất; trạng thái “sao lưu thành công” khác “đã kiểm thử khôi phục”. Source viewer render an toàn, không active content hoặc external link tự mở.
 
 ## Frontend verification
+
+Đã triển khai (T043.1): `frontend/e2e` chạy Playwright trên Edge cài sẵn (Linux: `E2E_BROWSER_CHANNEL=` + `npx playwright install chromium`), webServer khởi `scripts/e2e_stack.py` (database `bazi_e2e_*` mới trên server test, runtime login, admin/reviewer/reader, pipeline fixture, PDF tổng hợp, worker chạy job trong process, OCR tắt) và `next build && next start` với rewrite tới API đó. 11 flow: chặn chưa đăng nhập + quay lại trang yêu cầu, sai mật khẩu, reader thư viện rỗng/không thấy panel vận hành, số liệu dashboard reviewer, tìm sách không dấu + trang chi tiết, sách riêng tư → 404 với reader, đăng xuất, phiên hết hạn, API không tới được + thử lại, health admin, không tràn ngang ở 1280x720/1920x1080. Unit test logic thuần chạy `npm test` (node:test).
 
 Playwright flows dùng API thật cùng fixture dataset synthetic; test state empty + loaded + provider unavailable + job failed + 412 race + forbidden citation. Kiểm 1280x720 và 1920x1080; không horizontal overflow trong chat, bảng lá số có responsive labels. Không demo-only endpoints hoặc dữ liệu hardcode ở production. Snapshot visual chỉ bổ sung, không thay assertion hành vi.

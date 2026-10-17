@@ -84,9 +84,12 @@ khác tra tại bảng cuối file này.
 - T038 ✅ adapter LLM `openai_compatible` (timeout, retry jitter, JSON mode, một lượt sửa
   schema) + fixture, giữ chỗ chi phí trước gọi với trần ngày dùng chung (M013), usage/
   model-profiles API. T038.1 smoke Gemma thật chờ máy Ubuntu.
-- K4 xong phần làm được trên máy dev. Việc kế tiếp theo thứ tự: K5 (T043.1 shell + TS
-  client, T046.1 UI thư viện/jobs/review, T052.1/T053.1 backup/restore kho) hoặc K6 lá số;
-  chờ: T002/T036/T038.1 trên Ubuntu, T025.1 gold với chuyên gia.
+- K4 xong phần làm được trên máy dev; chờ: T002/T036/T038.1 trên Ubuntu, T025.1 gold với
+  chuyên gia.
+- T043.1 ✅ `frontend/` Next.js 16 + TS client sinh từ OpenAPI (kiểm lệch snapshot), đăng
+  nhập/CSRF/hết phiên, shell theo quyền, tổng quan, thư viện + chi tiết sách; Compose
+  `api`/`frontend`/`gateway` (Caddy, chỉ loopback); 11 E2E Playwright trên stack thật.
+- Việc kế tiếp: T046.1 upload/jobs/duyệt OCR/publish; rồi T052.1/T053.1 backup/restore kho.
 
 ## Các giai đoạn
 
@@ -224,7 +227,7 @@ trước khi trình duyệt.
 | T040 | Multi-turn conversations và search/delete | K6 | |
 | T041 | SSE validated claims và cancellation | K6 | |
 | T042 | API integration và generated client hoàn chỉnh | K6 | |
-| T043 | Frontend shell, auth, navigation và empty states | K5/K6 | |
+| T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
 | T044 | Giao diện lập/xem/lưu lá số | K6 | |
 | T045 | Chat UI, nguồn và so sánh | K6 | |
 | T046 | Library upload/jobs/OCR review dashboard | K5/K6 | |

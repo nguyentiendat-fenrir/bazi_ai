@@ -1,6 +1,7 @@
 name: bazi-ai
 
 # Application services are added with their implementation and tests.
+# Full app: docker compose --env-file .env -f infra/compose.yaml --profile app up -d
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17-bookworm@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d
@@ -98,8 +99,84 @@ services:
     mem_limit: 512m
     networks: [internal]
 
+  # HTTP API (uvicorn). Same image as the workers; only the gateway reaches it, so the
+  # forwarded client address from the gateway is trusted for login rate limiting.
+  api:
+    profiles: [app]
+    image: bazi-ai-app:local
+    build: *app_build
+    env_file: *app_env_file
+    environment: *app_env
+    depends_on: *app_deps
+    command: ["uvicorn", "backend.app.main:create_app", "--factory", "--host", "0.0.0.0",
+              "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2
+    volumes:
+      - objects:/data/objects
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # Next.js UI (T043.1), standalone server; it never talks to the database.
+  frontend:
+    profiles: [app]
+    image: bazi-ai-frontend:local
+    build:
+      context: ../frontend
+      dockerfile: ../infra/frontend.Dockerfile
+    init: true
+    read_only: true
+    tmpfs: [/tmp, /app/.next/cache]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/login', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # The only published port, loopback by default: /api/* to the API, the rest to the UI.
+  gateway:
+    profiles: [app]
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    depends_on:
+      api: {condition: service_healthy}
+      frontend: {condition: service_healthy}
+    ports: ["127.0.0.1:${GATEWAY_PORT:-3000}:3000"]
+    user: "65534:65534"
+    read_only: true
+    tmpfs: [/data, /config]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks: [internal, edge]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
 networks:
   internal: {internal: true}
+  # Port publishing needs a non-internal network; only the gateway joins it.
+  edge: {}
 
 # Preserve existing persistent volume names; never use down -v to update.
 volumes:

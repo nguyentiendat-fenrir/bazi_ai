@@ -30,6 +30,14 @@ class AuthorRef(BaseModel):
     role: str
 
 
+class ActiveCoverage(BaseModel):
+    versions: int
+    total: int
+    accepted: int
+    review_required: int
+    excluded: int
+
+
 class BookDTO(BaseModel):
     id: uuid.UUID
     title: str
@@ -37,7 +45,8 @@ class BookDTO(BaseModel):
     description: str | None
     authors: list[AuthorRef]
     versions_count: int
-    active_coverage: dict | None
+    active_coverage: ActiveCoverage | None = Field(
+        description="pages of the book's versions in the active corpus release; null if none")
     revision: int
 
 

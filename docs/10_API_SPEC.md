@@ -179,7 +179,7 @@ Restore destructive cần confirmation cụ thể trên UI và fresh preflight, 
 
 ## DTO dùng chung
 
-BookDTO `{id,title,language,authors:[{id,name,role}],versions_count,active_coverage,revision}`. VersionDTO `{id,book_id,edition_label,sha256,size_bytes,status,rights_status,coverage:{total,accepted,excluded,failed},current_generation_id}`. PageDTO `{id,page_id,physical_page_number,page_kind,printed_page_label,text,blocks,quality,render_url}`. JobDTO `{id,state,stage,counters,attempt,retry_at,error:{code,message,retryable}?,generation_id}`. EntityRevisionDTO thêm `{id,key,revision,state,school_id,method_id,evidence_ids,review_history}` theo type. ModelProfileInput chỉ nhận `secret_ref` allowlist đã cấu hình trên server, không env name tùy ý.
+BookDTO `{id,title,language,authors:[{id,name,role}],versions_count,active_coverage,revision}`; `active_coverage` (T043.1) = tổng trang `{versions,total,accepted,review_required,excluded}` của các phiên bản sách nằm trong release đang active, null nếu chưa publish. VersionDTO `{id,book_id,edition_label,sha256,size_bytes,status,rights_status,coverage:{total,accepted,excluded,failed},current_generation_id}`. PageDTO `{id,page_id,physical_page_number,page_kind,printed_page_label,text,blocks,quality,render_url}`. JobDTO `{id,state,stage,counters,attempt,retry_at,error:{code,message,retryable}?,generation_id}`. EntityRevisionDTO thêm `{id,key,revision,state,school_id,method_id,evidence_ids,review_history}` theo type. ModelProfileInput chỉ nhận `secret_ref` allowlist đã cấu hình trên server, không env name tùy ý.
 
 SSE example:
 

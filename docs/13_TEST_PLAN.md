@@ -11,7 +11,7 @@ Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằn
 | Unit | time normalize, Unicode offsets, splitter, RRF, AST types/tri-valued, permissions | Deterministic + cases biên pass |
 | Integration | PostgreSQL thật, pgvector, Redis/Celery, object volume; fault injection | duplicate delivery/kill/restart không nhân bản hoặc mất published data |
 | API/contract | OpenAPI snapshots, generated TS client, malformed input và scopes | statuses/DTO/security nhất quán |
-| Frontend E2E | Playwright qua gateway, real backend+DB, fixture provider | flows empty/loaded/error/cancel/reconnect/forbidden |
+| Frontend E2E | Playwright qua gateway, real backend+DB, fixture provider (`cd frontend && npx playwright test`, cần `BAZI_TEST_DATABASE_URL`) | flows empty/loaded/error/cancel/reconnect/forbidden |
 | Ingestion | native/scan/mixed/malformed/encrypted PDF, DOCX table | source mapping đúng; một file lỗi không chặn batch |
 | Retrieval | gold query→graded spans, scoped release | các ngưỡng ở [07](07_RAG_ENGINE.md#benchmark-retrievalanswer), không leak school/ACL |
 | Citation | exists/hash/page/offset/speaker + human support | 100% ID/page validity, material support ≥95% |

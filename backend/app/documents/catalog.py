@@ -43,11 +43,30 @@ def _authors(conn: Connection, book_ids: list[uuid.UUID]) -> dict[uuid.UUID, lis
     return result
 
 
+def _active_coverage(conn: Connection, book_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
+    """Page coverage summed over each book's versions in the active corpus release."""
+    rows = conn.execute(text(
+        'SELECT v.book_id, g.coverage FROM active_corpus a'
+        ' JOIN corpus_members m ON m.release_id = a.release_id'
+        ' JOIN book_versions v ON v.id = m.book_version_id'
+        " JOIN generations g ON g.id = m.generation_id WHERE a.slot = 'default'"
+        ' AND v.book_id = ANY(:ids)'), {'ids': book_ids}).mappings()
+    result: dict[uuid.UUID, dict] = {}
+    for r in rows:
+        total = result.setdefault(r['book_id'], {'versions': 0, 'total': 0, 'accepted': 0,
+                                                 'review_required': 0, 'excluded': 0})
+        total['versions'] += 1
+        for key in ('total', 'accepted', 'review_required', 'excluded'):
+            total[key] += int((r['coverage'] or {}).get(key) or 0)
+    return result
+
+
 def book_dtos(conn: Connection, rows: list) -> list[dict]:
-    authors = _authors(conn, [r['id'] for r in rows])
+    ids = [r['id'] for r in rows]
+    authors, coverage = _authors(conn, ids), _active_coverage(conn, ids)
     return [{'id': str(r['id']), 'title': r['title'], 'language': r['language'],
              'description': r['description'], 'authors': authors.get(r['id'], []),
-             'versions_count': r['versions_count'], 'active_coverage': None,
+             'versions_count': r['versions_count'], 'active_coverage': coverage.get(r['id']),
              'revision': r['revision']} for r in rows]
 
 

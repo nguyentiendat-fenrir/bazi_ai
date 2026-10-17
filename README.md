@@ -4,9 +4,9 @@
 Dev trên Windows, commit/push Git, Ubuntu 22.04 pull và chạy containers.
 Gemma dùng container `ghcr.io/ggml-org/llama.cpp:server-cuda` đã có trên Ubuntu.
 
-Hiện có công cụ bảo toàn nguồn, kiểm kê PDF/DOCX/Markdown, kiểm tra môi trường,
-tests và PostgreSQL/Redis Compose. **Chưa có web app, OCR worker, index RAG hay
-kết nối Gemma hoạt động.** Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md);
+Hiện có backend kho tri thức (upload, trích xuất native/OCR/DOCX, duyệt nguồn,
+chunk/embed, publish release, tra cứu hybrid có citation, adapter LLM) và web app
+quản trị kho bước đầu (`frontend/`). **Chưa có lá số, chat hay Gemma thật đã smoke.** Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md);
 mục lục tài liệu: [docs/README.md](docs/README.md).
 
 ## Cấu trúc
@@ -18,15 +18,14 @@ mục lục tài liệu: [docs/README.md](docs/README.md).
 | `inputs/books/` | Sách gốc local, không Git; chép riêng sang Ubuntu |
 | `inputs/source/`, `legacy/bazi/` | Archive/mã BaZi gốc bảo toàn, tái dùng khi làm lá số |
 | `backend/` | FastAPI backend (`backend/app`) |
+| `frontend/` | Next.js UI; kiểu API sinh từ `contracts/openapi.json` |
 | `tests/` | Unit, integration, bảo mật đầu vào và regression |
 | `docs/` | Đặc tả, API/schema, lộ trình và ADR — bắt đầu từ [docs/README.md](docs/README.md) |
 | `evidence/` | Manifest và audit dùng để kiểm chứng nguồn |
 | `.tools/`, `.cache/`, `.artifacts/`, `.venv/` | Công cụ/cache/output local đã ignore |
 
-Không tạo module rỗng. `backend/app` mới có foundation (config, log, lỗi, health);
-frontend sẽ xuất hiện cùng chức năng thật.
-Scaffold Next.js/proxy/worker trỏ tới code chưa có đã bỏ; stack dài hạn
-vẫn là FastAPI + Next.js + PostgreSQL/pgvector + Celery.
+Không tạo module rỗng hay màn hình placeholder: UI chỉ có màn hình mà API đã hỗ trợ.
+Stack: FastAPI + Next.js + PostgreSQL/pgvector + Celery.
 
 ## Dev Windows
 
@@ -76,6 +75,16 @@ API đọc `.env`; config sai thì dừng ngay với tên field, không in giá 
 `http://127.0.0.1:8000/api/v1/health/live` và `/health/ready` (model chưa cấu hình
 là `degraded`). Log là JSON một dòng, có `request_id` trùng header `X-Request-ID`.
 
+Giao diện web (Node 22.18+; cài một lần `cd frontend; npm ci --ignore-scripts`):
+
+```powershell
+cd frontend
+$env:NEXT_TELEMETRY_DISABLED='1'
+npm run dev            # http://127.0.0.1:3000, /api chuyển tới API cổng 8000 (BAZI_API_ORIGIN)
+npm run typecheck; npm test; npm run api:check   # api:gen sau khi export-openapi
+npx playwright test    # E2E trên stack tạm, cần BAZI_TEST_DATABASE_URL như integration tests
+```
+
 Inspector chỉ đọc, xuất JSON SHA256/trang/đoạn/bảng/cờ xem lại; không OCR/publish.
 Lưu output local vào `.artifacts/` nếu cần, không Git. `--sample-chars 1000` bật
 trích đoạn local; mặc định không xuất text sách. Terminal Windows cũ có thể đặt
@@ -109,6 +118,10 @@ Cập nhật: Windows chạy tests, xem diff, stage đúng file, commit, `git pu
 Ubuntu chạy `git pull --ff-only`, build lại image và kiểm kê lại. Khi backend có
 migrations mới bổ sung backup/migrate/restart có kiểm thử. Không `reset --hard`,
 không `compose down -v`; giữ volume `bazi-ai_*` qua các lần pull.
+
+Ứng dụng đầy đủ (API, worker, watchdog, UI qua gateway `127.0.0.1:${GATEWAY_PORT:-3000}`)
+sau khi đã migrate, tạo runtime login và admin:
+`docker compose --env-file .env -f infra/compose.yaml --profile app up -d --build`.
 
 Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
 `LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.

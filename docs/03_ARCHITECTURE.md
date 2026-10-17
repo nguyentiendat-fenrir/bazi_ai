@@ -28,7 +28,7 @@ flowchart TD
   W --> AI
 ```
 
-Một repository, một backend package, migrations dùng chung. API process không chạy OCR/model nặng. Worker profiles `ingest`, `ocr`, `ai`, `maintenance`; không tách network service nghiệp vụ. Khi có UI: reverse proxy Caddy/Nginx tại một cổng loopback, `/api/*` đến FastAPI, còn lại Next.js; SSE tắt buffering. Database/Redis/object volume không expose host port mặc định. Dev override được bind loopback riêng, không `0.0.0.0`.
+Một repository, một backend package, migrations dùng chung. API process không chạy OCR/model nặng. Worker profiles `ingest`, `ocr`, `ai`, `maintenance`; không tách network service nghiệp vụ. UI (T043.1): gateway Caddy tại một cổng loopback (`GATEWAY_PORT`, mặc định 3000), `/api/*` đến service `api` (uvicorn), còn lại service `frontend` (Next.js standalone); SSE tắt buffering; chỉ gateway có cổng host. Database/Redis/object volume không expose host port mặc định. Dev override được bind loopback riêng, không `0.0.0.0`.
 
 ## Stack chốt và điều chỉnh
 

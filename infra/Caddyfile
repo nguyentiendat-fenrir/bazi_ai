@@ -1,0 +1,21 @@
+# One loopback port (docs/03): /api/* to FastAPI unbuffered (SSE), everything else to Next.js.
+{
+	admin off
+}
+
+:3000 {
+	@health path /healthz
+	respond @health 200
+
+	handle /api/* {
+		reverse_proxy api:8000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	header -Server
+}

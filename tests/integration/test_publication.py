@@ -176,10 +176,16 @@ class PublicationTests(unittest.TestCase):
         with self.assertRaises(psycopg.errors.RestrictViolation):
             self.sql('DELETE FROM generation_chunks WHERE generation_id = %s', gen)
         before = self.active()
+        book = self.sql('SELECT book_id FROM book_versions WHERE id = %s', version)[0][0]
+        coverage = lambda: self.c.get(f'/api/v1/books/{book}').json()['data']['active_coverage']
+        self.assertIsNone(coverage())
         response = self.publish(gen)
         self.assertEqual(response.status_code, 201, response.text)
         data = response.json()['data']
         release = data['release']['id']
+        self.assertEqual(coverage(), {'versions': 1, 'total': view['coverage']['total'],
+                                      'accepted': view['coverage']['accepted'],
+                                      'review_required': 0, 'excluded': 0})
         self.assertEqual((data['activated'], data['release']['state'], data['release']['parent_id']),
                          (True, 'active', before))
         self.assertEqual(self.active(), release)
