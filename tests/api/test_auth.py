@@ -171,8 +171,9 @@ class AuthTests(unittest.TestCase):
         self.login(member, email)
         user_id = next(u['id'] for u in admin.get('/api/v1/users').json()['data']
                        if u['email'] == email)
-        self.assertEqual(admin.patch(f'/api/v1/users/{user_id}', json={'enabled': False})
-                         .status_code, 200)
+        tag = admin.get(f'/api/v1/users/{user_id}').headers['etag']
+        self.assertEqual(admin.patch(f'/api/v1/users/{user_id}', json={'enabled': False},
+                                     headers={'If-Match': tag}).status_code, 200)
         self.assertEqual(member.get('/api/v1/auth/me').status_code, 401)
 
     def test_last_admin_cannot_demote_itself(self):
@@ -182,7 +183,9 @@ class AuthTests(unittest.TestCase):
             conn.execute("UPDATE users SET enabled = false WHERE role = 'admin' AND email <> %s",
                          (email,))
         me = admin.get('/api/v1/auth/me').json()['data']['id']
-        response = admin.patch(f'/api/v1/users/{me}', json={'role': 'reader'})
+        tag = admin.get(f'/api/v1/users/{me}').headers['etag']
+        response = admin.patch(f'/api/v1/users/{me}', json={'role': 'reader'},
+                               headers={'If-Match': tag})
         self.assertEqual((response.status_code, response.json()['code']), (409, 'LAST_ADMIN'))
 
     def test_readiness_reports_rls_enforced(self):

@@ -27,7 +27,10 @@ khác tra tại bảng cuối file này.
   RLS chạy bằng login runtime (M008), chặn mất admin cuối, CLI bootstrap; tests API + RLS.
 - T007 ✅ ObjectStore local + S3 (boto3), content-addressed, staging atomic, range, chặn
   traversal, xóa có kiểm tham chiếu; contract tests trên local và S3 (moto).
-- Việc kế tiếp: T008 API contracts; smoke T002 trên Ubuntu khi có máy.
+- T008 ✅ API contracts nền: DTO/envelope/problem có kiểu, `x-permission`, snapshot
+  `contracts/openapi.json` có test, If-Match/ETag (users, settings), Idempotency-Key, `/settings`.
+  TS client chuyển sang T043.1 (ADR-21: chưa dựng frontend khi chưa có màn hình thật).
+- Việc kế tiếp: T009 catalog/upload/dedupe; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -87,7 +90,8 @@ Task cha chỉ hoàn thành khi đạt nghiệm thu gốc.
   usage, no-provider) sau T024.
 - **T025.1** soạn ≥70 câu và relevant spans: sau T014. T025 đầy đủ sau T024 và chuyên
   gia duyệt gold.
-- **T043.1** shell/auth/library navigation: sau T006 + T008. T043 đầy đủ sau T042.
+- **T043.1** shell/auth/library navigation + sinh TS client từ `contracts/openapi.json`:
+  sau T006 + T008. T043 đầy đủ sau T042.
 - **T046.1** library/upload/jobs/OCR review: sau T043.1 + T019, test upload → review →
   publish, 412/forbidden. T046 đầy đủ sau T045.
 - **T052.1** backup DB/objects/checksums: sau T019. **T053.1** restore kho trên volumes
@@ -128,7 +132,7 @@ trước khi trình duyệt.
 | T005 | Migrations knowledge, chart, chat và jobs | K1 | ✅ |
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | ✅ |
 | T007 | ObjectStore local và S3 adapters | K1 | ✅ |
-| T008 | API contracts nền và client skeleton | K1 | |
+| T008 | API contracts nền và client skeleton | K1 | ✅ (TS client → T043.1) |
 | T009 | Catalog, upload batch và dedupe | K2 | |
 | T010 | Durable queue, outbox, lease và retry | K2 | |
 | T011 | Inspector và native PDF extraction | K2 | |

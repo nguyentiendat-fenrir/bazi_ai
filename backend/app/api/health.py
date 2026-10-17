@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from ..core.errors import AppError
 from ..core.health import evaluate
 from ..core.logging import request_id_var
+from .schemas import Envelope, LiveStatus, ReadyStatus, permission, problem_responses
 
 router = APIRouter(prefix='/health', tags=['health'])
 # RFC 1918 and IPv6 ULA only: ipaddress.is_private also admits documentation and
@@ -33,13 +34,15 @@ def _is_internal(request: Request) -> bool:
     return address.is_loopback or any(address in net for net in _INTERNAL_NETWORKS)
 
 
-@router.get('/live')
+@router.get('/live', response_model=Envelope[LiveStatus], openapi_extra=permission('public'))
 async def live() -> dict:
     """Process is up. No dependency calls, versions or configuration."""
     return envelope({'status': 'ok'})
 
 
-@router.get('/ready')
+@router.get('/ready', response_model=Envelope[ReadyStatus],
+            responses={503: {'model': Envelope[ReadyStatus]}, **problem_responses(403)},
+            openapi_extra=permission('A or internal'))
 async def ready(request: Request) -> JSONResponse:
     if not _is_internal(request):
         raise AppError(403, 'FORBIDDEN', 'Readiness is available to internal callers only')

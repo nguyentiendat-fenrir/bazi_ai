@@ -2,6 +2,7 @@
 
     python -m backend.app.cli create-runtime-login   # LOGIN role in bazi_runtime
     python -m backend.app.cli bootstrap-admin --email admin@example.test
+    python -m backend.app.cli export-openapi          # contracts/openapi.json snapshot
 
 Passwords come from an environment variable or an interactive prompt, never
 from argv (shell history, process lists).
@@ -10,7 +11,9 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import json
 import os
+from pathlib import Path
 import sys
 
 import psycopg
@@ -77,16 +80,40 @@ def create_runtime_login() -> int:
     return 0
 
 
+OPENAPI_PATH = Path(__file__).resolve().parents[2] / 'contracts' / 'openapi.json'
+
+
+def openapi_document() -> dict:
+    """The contract from default settings only, so the snapshot never depends on .env."""
+    from unittest.mock import patch
+
+    from .main import create_app
+    with patch.dict(os.environ, {}, clear=True):
+        settings = load_settings(_env_file=None)
+    return create_app(settings).openapi()
+
+
+def export_openapi() -> int:
+    OPENAPI_PATH.parent.mkdir(exist_ok=True)
+    text_ = json.dumps(openapi_document(), indent=2, ensure_ascii=False, sort_keys=True) + '\n'
+    OPENAPI_PATH.write_text(text_, encoding='utf-8', newline='\n')
+    print(f'Wrote {OPENAPI_PATH}')
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python -m backend.app.cli')
     commands = parser.add_subparsers(dest='command', required=True)
     admin = commands.add_parser('bootstrap-admin', help='create the first admin account')
     admin.add_argument('--email', required=True)
     commands.add_parser('create-runtime-login', help='create/update the API database login')
+    commands.add_parser('export-openapi', help='write contracts/openapi.json')
     args = parser.parse_args(argv)
     try:
         if args.command == 'bootstrap-admin':
             return bootstrap_admin(args.email)
+        if args.command == 'export-openapi':
+            return export_openapi()
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

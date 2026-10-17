@@ -1,0 +1,124 @@
+"""Shared response contracts (docs/10 · Quy ước): envelopes, problems, common DTOs."""
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Generic, Literal, TypeVar
+import uuid
+
+from pydantic import BaseModel, Field
+
+T = TypeVar('T')
+
+
+class Meta(BaseModel):
+    request_id: str | None
+
+
+class Envelope(BaseModel, Generic[T]):
+    data: T
+    meta: Meta
+
+
+class Page(BaseModel):
+    next_cursor: str | None = None
+    has_more: bool = False
+
+
+class ListEnvelope(BaseModel, Generic[T]):
+    data: list[T]
+    page: Page = Field(default_factory=Page)
+    meta: Meta
+
+
+class FieldError(BaseModel):
+    path: str
+    message: str
+
+
+class Problem(BaseModel):
+    """application/problem+json (RFC 9457) with a stable ``code``."""
+    type: str
+    title: str
+    status: int
+    code: str
+    detail: str | None
+    request_id: str | None
+    field_errors: list[FieldError] = []
+
+
+def problem_responses(*statuses: int) -> dict:
+    return {status: {'model': Problem, 'content': {'application/problem+json': {}}}
+            for status in statuses}
+
+
+# Errors any route can return; routes add their specific ones.
+COMMON_ERRORS = problem_responses(422, 500)
+AUTHENTICATED_ERRORS = problem_responses(401, 403, 422, 500)
+
+
+def permission(level: str) -> dict:
+    """OpenAPI extension documenting docs/10 permission letters (R/V/A/O/public)."""
+    return {'x-permission': level}
+
+
+Role = Literal['admin', 'reviewer', 'reader']
+
+
+class UserDTO(BaseModel):
+    id: uuid.UUID
+    email: str
+    role: Role
+    enabled: bool
+    locale: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class MeDTO(BaseModel):
+    id: uuid.UUID
+    email: str
+    role: Role
+    capabilities: list[str]
+
+
+class LoginResult(BaseModel):
+    user: MeDTO
+    csrf_token: str
+
+
+class LiveStatus(BaseModel):
+    status: Literal['ok']
+
+
+class CheckDTO(BaseModel):
+    name: str
+    essential: bool
+    status: Literal['ok', 'degraded', 'fail']
+    code: str
+
+
+class ReadyStatus(BaseModel):
+    status: Literal['ok', 'degraded', 'fail']
+    checks: list[CheckDTO]
+
+
+class SettingDTO(BaseModel):
+    scope: Literal['system', 'user']
+    key: str
+    value: Any
+    revision: int
+    updated_at: datetime
+
+
+class RuntimeConfigDTO(BaseModel):
+    """Redacted runtime facts: which providers are configured, never their secrets."""
+    app_env: str
+    storage_backend: str
+    llm_provider: str
+    llm_configured: bool
+    embedding_configured: bool
+
+
+class SettingsView(BaseModel):
+    runtime: RuntimeConfigDTO
+    settings: list[SettingDTO]

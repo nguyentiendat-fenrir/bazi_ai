@@ -17,6 +17,8 @@ from ..auth.service import Principal, authenticate, create_session, revoke_sessi
 from ..core.db import transaction
 from ..core.errors import AppError
 from .health import envelope
+from .schemas import (AUTHENTICATED_ERRORS, COMMON_ERRORS, Envelope, LoginResult, MeDTO,
+                      permission, problem_responses)
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 # Shape check only; deliverability is irrelevant for local accounts.
@@ -34,7 +36,9 @@ def user_dto(principal: Principal) -> dict:
             'capabilities': principal.capabilities}
 
 
-@router.post('/login')
+@router.post('/login', response_model=Envelope[LoginResult],
+             responses={**COMMON_ERRORS, **problem_responses(401, 403, 429)},
+             openapi_extra=permission('public + rate limit'))
 def login(body: LoginInput, request: Request, response: Response,
           db_engine: Engine = Depends(engine)) -> dict:
     settings = request.app.state.settings
@@ -60,7 +64,8 @@ def login(body: LoginInput, request: Request, response: Response,
     return envelope({'user': user_dto(session.principal), 'csrf_token': session.csrf_token})
 
 
-@router.post('/logout', status_code=204)
+@router.post('/logout', status_code=204, responses=AUTHENTICATED_ERRORS,
+             openapi_extra=permission('R'))
 def logout(response: Response, principal: Principal = Depends(current_principal),
            db_engine: Engine = Depends(engine)) -> Response:
     with transaction(db_engine, principal.user_id) as conn:
@@ -70,6 +75,7 @@ def logout(response: Response, principal: Principal = Depends(current_principal)
     return response
 
 
-@router.get('/me')
+@router.get('/me', response_model=Envelope[MeDTO], responses=AUTHENTICATED_ERRORS,
+            openapi_extra=permission('R'))
 def me(principal: Principal = Depends(current_principal)) -> dict:
     return envelope(user_dto(principal))
