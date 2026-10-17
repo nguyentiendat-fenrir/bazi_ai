@@ -106,4 +106,4 @@ PERF01 đo empty/startup; PERF02 ingest 10/100/1.000 manifest; PERF03 query 10/1
 
 ## Release Definition of Done
 
-Tất cả core tasks [x], không blocked calculation oracle/rights xử lý external được dùng, E2E-01…08 pass, retrieval gold đạt gate, specialist review signed, no secrets/data leak, restore drill pass, Windows runbook thực chạy, versions locked, code+docs+reports trong git. Nếu gate chưa đạt, ghi trạng thái **release candidate chưa nghiệm thu**, không gọi phần mềm hoàn chỉnh.
+Các chức năng trong phạm vi release đã được kiểm thử, không blocked calculation oracle/rights xử lý external được dùng, E2E-01…08 pass, retrieval gold đạt gate, specialist review signed, no secrets/data leak, restore drill pass, Windows runbook thực chạy, versions locked, code+docs trong git. Nếu gate chưa đạt, ghi trạng thái **release candidate chưa nghiệm thu**, không gọi phần mềm hoàn chỉnh.
