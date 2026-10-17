@@ -111,8 +111,11 @@ khác tra tại bảng cuối file này.
 - T039–T041 ✅ suy luận ba chế độ (orchestrator cố định, validator claim, câu trả lời tất
   định khi chưa có/lỗi mô hình), hội thoại nhiều lượt (cửa sổ nhớ, tìm, xóa), SSE phát lại
   + hủy; worker `reasoner` (M014).
-- Việc kế tiếp: T044 UI lá số, T045 UI chat, T047/T048 UI tri thức/đánh giá/cài đặt;
-  T042 hoàn tất client/contract cùng các UI đó.
+- T044 ✅ UI lá số (`/charts`, `/charts/new`, `/charts/[id]`): lỗi engine đúng ô (giờ không
+  tồn tại/lặp do DST, ngày âm), trụ giờ để trống khi không biết giờ, vận/lưu niên, trace.
+- T045 ✅ UI chat (`/chat`): hội thoại tìm/xóa, ngữ cảnh chế độ/lá số/trường phái/phương pháp
+  (If-Match), SSE hiện tiến độ và claim đã kiểm, hủy, trích dẫn mở trang nguồn; mở từ lá số.
+- Việc kế tiếp: T047/T048 UI tri thức/đánh giá/cài đặt; T042 hoàn tất client/contract.
 
 ## Các giai đoạn
 
@@ -251,8 +254,8 @@ trước khi trình duyệt.
 | T041 | SSE validated claims và cancellation | K6 | ✅ |
 | T042 | API integration và generated client hoàn chỉnh | K6 | |
 | T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
-| T044 | Giao diện lập/xem/lưu lá số | K6 | |
-| T045 | Chat UI, nguồn và so sánh | K6 | |
+| T044 | Giao diện lập/xem/lưu lá số | K6 | ✅ |
+| T045 | Chat UI, nguồn và so sánh | K6 | ✅ |
 | T046 | Library upload/jobs/OCR review dashboard | K5/K6 | T046.1 ✅ |
 | T047 | Knowledge/rules/cases admin UI | K6 | |
 | T048 | Evaluation/settings/dashboard UI | K6 | |

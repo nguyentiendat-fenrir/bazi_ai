@@ -23,6 +23,8 @@ interface NavItem {
 // Only screens backed by a real API appear here (docs/11: no placeholder screens).
 export const NAV: NavItem[] = [
   { href: '/', label: 'Tổng quan', needs: 'library:read' },
+  { href: '/chat', label: 'Hỏi đáp', needs: 'own:data' },
+  { href: '/charts', label: 'Lá số', needs: 'own:data' },
   { href: '/books', label: 'Thư viện sách', needs: 'library:read', match: ['/books', '/versions'],
     except: ['/books/upload'] },
   { href: '/books/upload', label: 'Tải sách lên', needs: 'library:review' },

@@ -6,7 +6,7 @@ import { apiAs, signIn, stack, tag, uploadViaApi, waitForJob } from './support'
 test('a reviewer uploads, follows the job and publishes into the search corpus', async ({ page }) => {
   const title = `Sách mẫu A ${tag()}`
   await signIn(page, 'reviewer')
-  await page.getByRole('link', { name: 'Tải sách lên' }).click()
+  await page.getByRole('navigation').getByRole('link', { name: 'Tải sách lên' }).click()
   await expect(page.getByLabel('Cách xử lý')).toHaveValue(stack().pipeline_profile_id)
   await page.getByLabel('Quyền sử dụng').selectOption('private_reference')
   await page.locator('input[type="file"]').setInputFiles([stack().fixtures.clean_a, stack().fixtures.not_pdf])

@@ -234,3 +234,45 @@ progress { display: block; width: 120px; margin-top: 4px; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .page-view { position: static; max-height: none; }
 }
+
+/* ---- charts: fixed five-element palette, always with a text label ------------------ */
+.el { display: inline-flex; align-items: baseline; gap: 4px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+.el-label { font-size: 11px; font-weight: 500; opacity: 0.85; }
+.el-wood { background: #e3f3e6; color: #1e6b33; }
+.el-fire { background: #fde4e1; color: #a12a1c; }
+.el-earth { background: #f5ead6; color: #7a5413; }
+.el-metal { background: #ececf0; color: #4a4f5c; }
+.el-water { background: #e1ecf8; color: #1d4f8c; }
+.pillars th[scope="row"] { width: 140px; }
+.pillars td { min-width: 120px; }
+.hidden-stems { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.years { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.years li { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; background: var(--surface); }
+.years li.current, tr.current { background: var(--teal-weak); }
+.choices { display: flex; gap: 16px; flex-wrap: wrap; }
+.inline-fields { display: flex; gap: 8px; }
+.inline-fields > * { flex: 1 1 0; }
+fieldset.field { border: none; padding: 0; margin: 0 0 12px; }
+.trace { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; }
+details.panel summary { cursor: pointer; font-weight: 600; }
+
+/* ---- chat ------------------------------------------------------------------------- */
+.chat { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+.chat-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: grid; gap: 10px; position: sticky; top: 64px; }
+.chat-list li { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 2px 4px; border-radius: 4px; }
+.chat-list li.selected { background: var(--teal-weak); }
+.chat-list li a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-main { min-width: 0; display: grid; gap: 12px; }
+.thread { display: grid; gap: 12px; }
+.context-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+.context-bar .field { margin: 0; min-width: 180px; }
+.messages { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.message { border-radius: var(--radius); padding: 10px 14px; border: 1px solid var(--border); background: var(--surface); overflow-wrap: anywhere; }
+.message-user { background: var(--info-weak); border-color: #c4d6ee; justify-self: end; max-width: 80%; white-space: pre-wrap; }
+.answer-summary { font-weight: 500; }
+.claims { padding-left: 20px; display: grid; gap: 10px; }
+.claim-head { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.citations { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 6px; }
+.citations blockquote { margin: 2px 0; padding: 4px 10px; border-left: 3px solid var(--teal); background: var(--surface-2); white-space: pre-wrap; }
+.composer { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; display: grid; gap: 8px; position: sticky; bottom: 0; }
+@media (max-width: 1100px) { .chat { grid-template-columns: minmax(0, 1fr); } .chat-list { position: static; } }
