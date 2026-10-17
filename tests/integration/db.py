@@ -89,5 +89,9 @@ def drop_role(role: str) -> None:
 
 
 def engine_for(conninfo: str):
-    return create_engine('postgresql+psycopg://', poolclass=pool.NullPool,
+    # A small pool like production (core.db.make_engine): a worker run opens thousands of
+    # short transactions, and one TCP connection each exhausts Windows ephemeral ports.
+    # Test databases are dropped WITH (FORCE), so pooled connections never block cleanup.
+    return create_engine('postgresql+psycopg://', poolclass=pool.QueuePool, pool_size=2,
+                         max_overflow=8, pool_pre_ping=True,
                          creator=lambda: psycopg.connect(conninfo))

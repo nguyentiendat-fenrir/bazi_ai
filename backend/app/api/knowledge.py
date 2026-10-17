@@ -161,7 +161,7 @@ class TermInput(BaseModel):
 
 class ReviewInput(BaseModel):
     entity_kind: Literal['method', 'concept', 'term', 'school_scope', 'assertion',
-                         'assertion_relation', 'rule']
+                         'assertion_relation', 'rule', 'case_revision']
     entity_id: uuid.UUID
     decision: Literal['submit', 'return', 'approve', 'reject', 'revoke']
     base_revision: int = Field(ge=1, description='the revision reviewed (1 for terms, scopes,'

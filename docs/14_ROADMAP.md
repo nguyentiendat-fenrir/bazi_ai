@@ -67,8 +67,11 @@ khác tra tại bảng cuối file này.
 - T022 ✅ evidence do reviewer chọn, assertion/relation/rule draft có revision, DSL
   `bazi-rule/1` kiểm schema/kiểu/giới hạn + đánh giá ba trị một rule, fixture bắt buộc
   fired/not_matched/pending trước khi duyệt rule, gate nguồn/method/dependency.
-- Việc kế tiếp: T023 kho mệnh lệ và structured chart từ sách; smoke T002 trên Ubuntu khi có
-  máy.
+- T023 ✅ parser lá số in trong sách (4 dạng, kiểm 60 Giáp Tý, Càn/Khôn tạo, đại vận) thành
+  book case draft có evidence; case người dùng riêng tư; API cases + review. Đo: ~1.220 lá số
+  trong 4 PDF.
+- Việc kế tiếp: T024 ontology releases và dependency impact graph; smoke T002 trên Ubuntu khi
+  có máy.
 
 ## Các giai đoạn
 
@@ -186,7 +189,7 @@ trước khi trình duyệt.
 | T020 | Trường phái, phương pháp, concept và aliases | K3 | ✅ |
 | T021 | Trích xuất candidates từ nguồn | K3 | ✅ |
 | T022 | Duyệt assertions/rules và relations | K3 | ✅ |
-| T023 | Kho mệnh lệ và structured chart từ sách | K3 | |
+| T023 | Kho mệnh lệ và structured chart từ sách | K3 | ✅ |
 | T024 | Ontology releases và dependency impact graph | K3 | |
 | T025 | Tập gold retrieval và chuyên môn | K3 | |
 | T035 | Hybrid candidate retrieval và filters | K4 | |

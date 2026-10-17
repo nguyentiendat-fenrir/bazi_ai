@@ -28,6 +28,7 @@ from sqlalchemy.engine import Connection
 from ..auth.service import Principal
 from ..core.errors import AppError
 from ..rules import dsl as rule_dsl
+from .cases import validate_payload
 from .evidence import sources_usable
 from .rules import _fixtures, coverage_problem, run_fixtures
 
@@ -35,7 +36,7 @@ from .rules import _fixtures, coverage_problem, run_fixtures
 ENTITIES = {'method': ('methods', True), 'concept': ('concepts', True),
             'term': ('terms', False), 'school_scope': ('school_scopes', False),
             'assertion': ('assertions', True), 'assertion_relation': ('assertion_relations', False),
-            'rule': ('knowledge_rules', True)}
+            'rule': ('knowledge_rules', True), 'case_revision': ('case_revisions', True)}
 FLOW = {'submit': {'draft': ['in_review']},
         'return': {'in_review': ['draft']},
         'approve': {'draft': ['in_review', 'approved'], 'in_review': ['approved']},
@@ -109,6 +110,20 @@ def _gate(conn: Connection, kind: str, entity_id) -> str | None:
                             {'i': entity_id}).one()
         return None if _approved(conn, 'assertions', list(ends)) else \
             'both assertions must be approved first'
+    if kind == 'case_revision':
+        row = conn.execute(text(
+            'SELECT r.chart_payload, r.method_id, c.origin FROM case_revisions r'
+            ' JOIN cases c ON c.id = r.case_id WHERE r.id = :i'), {'i': entity_id}).one()
+        problems = validate_payload(row[0])
+        if problems:
+            return '; '.join(problems)
+        if not _approved(conn, 'methods', [row[1]]):
+            return 'the method is not approved'
+        if row[2] == 'book_case':
+            evidence = conn.execute(text('SELECT evidence_id FROM case_sources'
+                                         ' WHERE case_revision_id = :i'), {'i': entity_id}).scalars().all()
+            return sources_usable(conn, evidence)
+        return None
     if kind == 'rule':
         row = conn.execute(text('SELECT dsl, method_id FROM knowledge_rules WHERE id = :i'),
                            {'i': entity_id}).one()

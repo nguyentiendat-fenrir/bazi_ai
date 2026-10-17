@@ -79,6 +79,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T022): `POST /evidence` (V; `page_revision_id`, `start_offset`, `end_offset` trong một block, `origin`) và `GET /evidence/{id}`; `POST /assertions` (≥ 1 `evidence_ids`), `POST /assertions/{id}/revisions` (`base_revision`, lệch → 412), `POST /assertion-relations`; `GET/POST /rules` (`dsl` sai → 422 `RULE_INVALID` với `field_errors` theo đường dẫn trong tài liệu; trùng `rule_key` → 409), `GET /rules/{id}` (sources, requires, fixtures, reviews; reader chỉ thấy rule approved), `POST /rules/{id}/revisions`, `POST /rules/{id}/validate` (`fixtures[]` thay bộ đang lưu khi rule còn draft; trả lỗi tài liệu, kết quả từng fixture, điều còn chặn duyệt). `POST /reviews` nhận thêm `assertion`, `assertion_relation`, `rule`; gate chặn → 409 `APPROVAL_BLOCKED`.
 
+Đã triển khai (T023): `GET /cases` (lọc school_id/state/origin/book_version_id, cursor), `POST /cases` (`user_case` cho mọi người dùng, riêng tư theo chủ; `book_case`/`synthetic_test` chỉ reviewer, book case cần evidence), `GET /cases/{id}` (revision mới nhất, các revision, nguồn có trích dẫn), `POST /cases/{id}/revisions`, `DELETE /cases/{id}` (204, tombstone; case người khác → 404). Payload sai (trụ ngoài 60 Giáp Tý, có `birth_date`) → 422. `POST /reviews` nhận `case_revision`.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ
@@ -108,7 +110,8 @@ Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. A
 | POST /rulesets/{id}/activate | V | expected_current_id | active method setting update atomic |
 | GET /knowledge/impact | V | entity_kind,entity_id | downstream analysis/case/rule revisions |
 | POST /knowledge/reevaluate | V | dependency_kind,id,analysis_ids? | 202 operation, chỉ analyses được phép |
-| GET/POST /cases | R/V hoặc O user case | CaseInput origin,visibility,school_id,chart_payload,narrative,events,evidence_ids |
+| GET/POST /cases | R/V hoặc O user case | CaseInput origin,school_id,method_id?,chart_payload(book-case/1),narrative,claimed_events,evidence_ids |
+| GET /cases/{id}, POST /cases/{id}/revisions | R / V hoặc O | revision mới từ base_revision (lệch → 412) |
 | GET /cases/{id} | R theo visibility | current revision + evidence |
 | POST /cases/{id}/revisions | V/O | base_revision,changes,reason |
 | DELETE /cases/{id} | V/O | reason | 202 tombstone và impact, rights check |

@@ -1,4 +1,10 @@
-"""``extract_candidates`` stage: draft assertions with exact evidence (docs/05, docs/06).
+"""``extract_candidates`` stage: draft assertions and book cases with exact evidence.
+
+Book cases (T023): every chart :func:`cases.parse_charts` finds on the page
+becomes a draft ``book_case`` revision (school from the scope), citing the chart
+rows and the prose after it, with a ``CANDIDATE_CASE`` review item.
+
+Assertions (T021, docs/05, docs/06):
 
 Deterministic proposals, no model and no approval: a sentence becomes a draft
 assertion when it reads like a general rule (a condition, a consequence and at
@@ -25,8 +31,9 @@ from sqlalchemy.engine import Connection
 
 from ..documents.text import fold
 from ..ingestion.worker import JobContext, Unit
+from .cases import book_case_key, parse_charts
 
-EXTRACTOR_VERSION = 'heuristic-2'
+EXTRACTOR_VERSION = 'heuristic-3'
 MAX_PER_PAGE = 4
 # Matching is on lower-case NFC text with diacritics: folding would merge "ắt" (then)
 # with the stem "Ất", "tài" (wealth) with "tại" (at), "thể" with "thế".
@@ -157,11 +164,24 @@ class ExtractCandidatesStage:
     def compute(self, ctx: JobContext, unit: Unit) -> dict:
         _, kind, number, revision, school = unit.key.split(':')
         with ctx.engine.connect() as conn:
-            blocks = conn.execute(text(
-                "SELECT id, ordinal, start_offset, text, speaker_layer FROM blocks"
-                " WHERE page_revision_id = :r AND kind = 'paragraph'"
-                " AND NOT (attributes ? 'role') AND NOT coalesce((attributes->>'chart_row')::boolean,"
-                ' false) ORDER BY ordinal'), {'r': revision}).mappings().all()
+            page_blocks = conn.execute(text(
+                "SELECT id, ordinal, kind, start_offset, end_offset, text, speaker_layer,"
+                " coalesce((attributes->>'chart_row')::boolean, false) AS chart_row FROM blocks"
+                " WHERE page_revision_id = :r AND NOT (attributes ? 'role') ORDER BY ordinal"),
+                {'r': revision}).mappings().all()
+        blocks = [b for b in page_blocks if b['kind'] == 'paragraph' and not b['chart_row']]
+        by_ordinal = {b['ordinal']: b for b in page_blocks}
+        charts = []
+        for chart in parse_charts([dict(b) for b in page_blocks]):
+            cited = chart.block_ordinals + chart.narrative_ordinals
+            charts.append({'key': book_case_key(ctx.book_version_id, chart),
+                           'payload': chart.payload(),
+                           'narrative': ' '.join(chart.narrative_lines)[:4000],
+                           'blocks': [{'id': str(by_ordinal[o]['id']),
+                                       'start': by_ordinal[o]['start_offset'],
+                                       'end': by_ordinal[o]['end_offset'],
+                                       'speaker': by_ordinal[o]['speaker_layer']}
+                                      for o in cited]})
         vocabulary = ctx.state['candidate_vocab'][school]
         proposals = []
         for block in blocks:
@@ -171,7 +191,7 @@ class ExtractCandidatesStage:
                                   'speaker': block['speaker_layer']})
         proposals.sort(key=lambda p: -p['score'])
         return {'revision_id': revision, 'school_id': school, 'page': int(number),
-                'candidates': proposals[:MAX_PER_PAGE]}
+                'candidates': proposals[:MAX_PER_PAGE], 'cases': charts}
 
     def persist(self, conn: Connection, ctx: JobContext, unit: Unit, result: dict) -> dict:
         author = conn.execute(text('SELECT requested_by FROM ingestion_jobs WHERE id = :j'),
@@ -205,8 +225,44 @@ class ExtractCandidatesStage:
                                   'score': cand['score'], 'extractor': EXTRACTOR_VERSION,
                                   'page': result['page']})})
             created += 1
+        cases = sum(self._case(conn, ctx, result, case, author) for case in result['cases'])
         conn.execute(text(
             'UPDATE ingestion_jobs SET counters = counters || jsonb_build_object('
-            " 'candidates', coalesce((counters->>'candidates')::int, 0) + :n) WHERE id = :j"),
-            {'j': ctx.job_id, 'n': created})
-        return {'created': created, 'proposed': len(result['candidates'])}
+            " 'candidates', coalesce((counters->>'candidates')::int, 0) + :n,"
+            " 'case_candidates', coalesce((counters->>'case_candidates')::int, 0) + :c)"
+            ' WHERE id = :j'), {'j': ctx.job_id, 'n': created, 'c': cases})
+        return {'created': created, 'proposed': len(result['candidates']), 'cases': cases}
+
+    def _case(self, conn: Connection, ctx: JobContext, result: dict, case: dict, author) -> int:
+        case_id = conn.execute(text(
+            "INSERT INTO cases (case_key, origin, visibility) VALUES (:k, 'book_case', 'library')"
+            ' ON CONFLICT (case_key) DO NOTHING RETURNING id'), {'k': case['key']}).scalar()
+        if case_id is None:
+            return 0                          # found before (rerun, rebuild, same page)
+        revision = conn.execute(text(
+            'INSERT INTO case_revisions (case_id, revision, school_id, chart_payload, narrative,'
+            ' quality) VALUES (:c, 1, :s, CAST(:p AS jsonb), :n, CAST(:q AS jsonb)) RETURNING id'),
+            {'c': case_id, 's': result['school_id'],
+             'p': json.dumps(case['payload'], ensure_ascii=False), 'n': case['narrative'],
+             'q': json.dumps({'parser': EXTRACTOR_VERSION, 'page': result['page'],
+                              'narrative_blocks': len(case['blocks']) - 1})}).scalar_one()
+        for block in case['blocks']:
+            evidence = conn.execute(text(
+                'INSERT INTO evidence_spans (book_version_id, page_revision_id, block_id,'
+                ' start_offset, end_offset, quote_hash, speaker_layer, origin)'
+                ' SELECT :v, :r, :b, :s, :e, bazi_sha256_text(substr(normalized_text, :s + 1,'
+                " :e - :s)), :sp, 'source_explicit' FROM page_revisions WHERE id = :r"
+                ' RETURNING id'),
+                {'v': ctx.book_version_id, 'r': result['revision_id'], 'b': block['id'],
+                 's': block['start'], 'e': block['end'], 'sp': block['speaker']}).scalar_one()
+            conn.execute(text('INSERT INTO case_sources (case_revision_id, evidence_id)'
+                              ' VALUES (:c, :e) ON CONFLICT DO NOTHING'),
+                         {'c': revision, 'e': evidence})
+        conn.execute(text(
+            'INSERT INTO review_items (generation_id, page_revision_id, entity_kind, entity_id,'
+            " reason_code, severity, resolution) VALUES (:g, :r, 'case_revision', :c,"
+            " 'CANDIDATE_CASE', 'info', CAST(:d AS jsonb))"),
+            {'g': ctx.generation_id, 'r': result['revision_id'], 'c': revision,
+             'd': json.dumps({'page': result['page'], 'extractor': EXTRACTOR_VERSION,
+                              'pillars': case['payload']['source_text']}, ensure_ascii=False)})
+        return 1
