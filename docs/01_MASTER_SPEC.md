@@ -1,5 +1,12 @@
 # 01 · Master specification
 
+## Điều chỉnh triển khai — 17/10/2026, ADR-21
+
+Ưu tiên kho tri thức/RAG; dev Windows native, runtime OCR Ubuntu 22.04 cùng host
+với Gemma llama.cpp. Yêu cầu WSL2 máy dev và thứ tự tuần tự cũ được thay bằng
+TASKS/docs/14. R01–R11 vẫn là mục tiêu release đầy đủ; T057 không phải bàn giao
+ứng dụng. Không thay schema/API/facts engine.
+
 ## Sản phẩm và phạm vi bàn giao
 
 BAZI AI là nền tảng nghiên cứu và diễn giải Bát Tự chạy local Windows qua WSL2/Docker, chuyển được lên Linux bằng cùng containers. Tính toán lịch là deterministic; diễn giải mệnh lý là tri thức truyền thống có trường phái, không tuyên bố là dự báo khoa học. Không có public hosting, mobile native, thanh toán hay multi-tenant trong release này.

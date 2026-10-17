@@ -1,3 +1,6 @@
 *
 !pyproject.toml
 !uv.lock
+!scripts/
+scripts/*
+!scripts/inspect_corpus.py

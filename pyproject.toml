@@ -15,7 +15,13 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8,<10"]
+corpus = [
+    "pypdf>=6.21.0",
+]
+dev = [
+    "pytest>=8,<10",
+    "rarfile==4.2",
+]
 
 [tool.uv]
 package = false

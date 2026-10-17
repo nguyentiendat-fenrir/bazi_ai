@@ -1,5 +1,17 @@
 # 03 · Kiến trúc và ranh giới module
 
+## Phạm vi hiện hành — ADR-21
+
+Windows là máy dev; Ubuntu 22.04 chạy OCR/storage/retrieval cùng host với Gemma
+llama.cpp đã có. Topology bên dưới là đích dài hạn. Compose hiện chỉ triển khai
+PostgreSQL, Redis và `corpus-inspect` chạy một lần; không tham chiếu module chưa có.
+Image mang code, sách mount read-only, DB/objects/checkpoints ngoài Git.
+
+Ưu tiên library → jobs → review → search/evaluation; calculation/DSL/chat sau.
+Subtask/dependencies hiện hành ở TASKS/docs/14. Gemma ngoài Compose dự án,
+provider `openai_compatible`; OCR không dùng LLM sửa chữ âm thầm, mọi đề xuất là
+draft cần nguồn và reviewer. Không thay business schema/REST contracts.
+
 ## Topology
 
 ```mermaid

@@ -1,5 +1,52 @@
 # 07 · Hybrid RAG
 
+## Kế hoạch theo corpus thực — T057 / ADR-21
+
+Kiểm kê ngày 17/10/2026: quét text tất cả 815 trang PDF bằng pypdf 6.21.0, đọc
+mở đầu/mục lục và cấu trúc DOCX/Markdown. Chưa thẩm định từng luận điểm, chưa OCR
+hoặc benchmark RAG. Số ký tự pypdf không thay số đo PyMuPDF audit cũ.
+
+| Nguồn | Đo thực tế | Cách dùng |
+|---|---|---|
+| Manh phái sơ cấp lý pháp | 292 trang; 286.986 ký tự | Pilot trước: Khách–Chủ, Thể–Dụng, Tố Công; giữ bảng trụ/mệnh lệ |
+| Manh phái cao cấp — Đoàn Kiến Nghiệp | 181 trang; 195.516 ký tự | Ứng kỳ/Tượng pháp; review tr.5 ít chữ, ảnh tr.30 theo audit |
+| Tử Bình Chân Thuyên bình chú | 140 trang; 449.136 ký tự | School riêng, nguyên tác Thẩm Hiếu Chiêm/bình chú Từ Nhạc Ngô; review màu và ảnh tr.77 |
+| Trích Thiên tuỷ bình chú — Nhậm Thiết Tiều | 202 trang; 583.731 ký tự | Đối chiếu cổ thư; xác nhận author layers/edition, không tự gộp quan điểm |
+| Tên Sách Chưa Đặt.docx | 1.773 đoạn XML; 80 bảng; 130.687 ký tự | Bản biên soạn Manh phái có bình chú cá nhân; draft chờ metadata/source layers |
+| CASE_01_TAN_KIM_1992.md | 59.481 ký tự | Hồ sơ giả định, ứng viên case/evaluation; không nguồn sách/oracle |
+| CASE_02_AT_MOC_1997.md | 62.479 ký tự | Kiểm tàng/thấu, thiếu căn, điều kiện chế Sát/tòng; giữ ngoài corpus chuẩn |
+
+CASE nhắc `validate_cases.py` nhưng repo không có file đó. Các tuyên bố “đã kiểm”
+trong CASE chưa được tái lập ở đây; cần đối chiếu trang PDF và nguồn liên kết.
+Không giả nội dung web chưa nhập là nguồn có trong kho. Không dùng câu trả lời
+mẫu vừa làm context vừa làm gold chấm chính nó.
+
+### Các đợt nhập và gate
+
+1. **Pilot:** 30–60 trang gán nhãn bằng mắt text/bảng/mixed, gồm sơ cấp tr.16–22,
+   30–31, cao cấp tr.5/30, Tử Bình tr.26–34/77 và mẫu Trích Thiên Tủy. Thêm fixture
+   scan/rotation; native extraction tốt không chứng minh OCR scan tốt.
+2. **Nguồn:** native trước, OCR vùng cần thiết. Lưu raw/blocks/bbox/normalized map;
+   edition/SHA, school/method, section và speaker. Bảng trụ/case liền mạch, kinh
+   văn/bình chú tách nhưng liên kết; lớp chưa biết là unknown/review_required.
+3. **DOCX:** review 80 bảng, metadata và đoạn dịch/bình chú; locator XML rồi
+   canonical PDF bằng renderer/fonts pin. Không giả số trang Word ổn định.
+4. **Chunk/index:** thử section-aware 350–700 tokens, overlap 60–100 theo tokenizer
+   thật; giữ điều kiện/ngoại lệ, case và bảng. Parent-child cho đoạn lớn, mọi child
+   có source spans. FTS simple/unaccent/trgm trước, vector theo profile/version;
+   tham số cần benchmark, không coi là chất lượng đã đạt.
+5. **Retrieval:** quyền/scope/release → lexical/vector → RRF → rerank → evidence
+   có locator → Gemma llama.cpp → citation validation. Kiểm search độc lập trước
+   LLM. Embedding riêng theo ADR-16, CPU/batch nếu VRAM đang dùng hết.
+6. **Gold:** giữ ≥60 câu gốc (20 sơ cấp, 15 cao cấp, 15 Tử Bình, 10 no-answer /
+   cross-school), thêm 10 Trích Thiên Tủy thành ≥70. DOCX có tập riêng sau duyệt.
+   Split theo section/case; CASE là adversarial candidate cần reviewer, không
+   gold mặc định. So lexical/vector/hybrid/rerank trên cùng release; gates bên dưới.
+
+Gemma sinh câu trả lời/đề xuất candidates sau khi search và citation có kiểm thử.
+Sách là untrusted evidence, không system instructions hoặc quyền approve. Chưa
+chọn model/context/chunk cuối cùng khi chưa đo recall và tài nguyên Ubuntu.
+
 ## Request và bộ lọc
 
 `QuerySpec`: query (1–4.000 ký tự), mode, school_ids, method_ids, book_version_ids, author_ids, topic_ids, concept_ids, rule_revision_ids, case_ids, section_ids, physical_page_range, top_k (1–30, mặc định 8). Caller principal và active corpus release do server gán; không tin release/quyền do LLM gửi. API cho `book_ids` và resolve thành versions published trong release. Filter được intersect, không union tùy tiện khi user chọn một nguồn cụ thể. Khi filter không có dữ liệu, báo empty_filters, không mở rộng sang sách khác mà không thông báo.

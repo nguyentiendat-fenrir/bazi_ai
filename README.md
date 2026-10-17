@@ -1,90 +1,79 @@
-# BAZI AI — Bộ đặc tả bàn giao Codex
+# BAZI AI — Kho tri thức Bát Tự
 
-**Phiên bản thiết kế 1.0 · hoàn tất 11/10/2026 · tiếng Việt.** Đây là bộ thiết kế để triển khai phần mềm đầy đủ, chưa phải ứng dụng đã xây xong. Các kiểm tra đã chạy trong phiên Work chỉ áp dụng cho đầu vào/audit và tính nhất quán tài liệu; không đồng nghĩa hệ thống tương lai đã vượt nghiệm thu.
+Ưu tiên: **sách → trích xuất/OCR → kiểm duyệt → kho nguồn → RAG có dẫn chứng**.
+Dev trên Windows, commit/push Git, Ubuntu 22.04 pull và chạy containers.
+Gemma dùng container `ghcr.io/ggml-org/llama.cpp:server-cuda` đã có trên Ubuntu.
 
-## Bắt đầu trong VS Code trên Windows
+Hiện có công cụ bảo toàn nguồn, kiểm kê PDF/DOCX/Markdown, kiểm tra môi trường,
+tests và PostgreSQL/Redis Compose. **Chưa có web app, OCR worker, index RAG hay
+kết nối Gemma hoạt động.** Xem [roadmap](docs/14_IMPLEMENTATION_ROADMAP.md),
+[kế hoạch từ sách thật](docs/07_RAG_ENGINE.md) và [báo cáo T057](reports/tasks/T057.md).
 
-1. Giải nén `BAZI_AI_CODEX_SPEC.zip`; mở đúng thư mục `BAZI-AI` trong VS Code. Không mở mỗi file ZIP.
-2. Cài/bật WSL2, một bản Ubuntu còn hỗ trợ, Docker Desktop với WSL integration; mở thư mục bằng VS Code **WSL: Open Folder in WSL**. Đặt repository trong `~/projects/BAZI-AI`, tránh đặt data PostgreSQL trên `/mnt/c`. Chưa cần GPU, tên miền hoặc VPS.
-3. Chép `bazi.rar` vào `inputs/source/bazi.rar`; chép ba PDF vào `inputs/books/` khi chạy kiểm thử tích hợp. Tài liệu đã audit các tệp đó nhưng không nhúng lại sách và môi trường `.venv` vào ZIP. Có thể xây các module khi thư mục sách rỗng.
-4. Đọc `AGENTS.md`, sau đó gửi nguyên văn `CODEX_START_PROMPT.md` cho Codex. Nhiệm vụ đầu là T001; Codex phải kiểm tra trạng thái repository trước khi làm.
-5. Chạy tuần tự T001–T056 theo `TASKS.md`. Mỗi task có phụ thuộc, contract, test và nghiệm thu. Không đánh dấu toàn bộ phần mềm hoàn thành sau khi chỉ có UI hay vài API.
+## Cấu trúc
 
-Các lệnh dưới đây là **contract vận hành phải được Codex tạo**, chưa tồn tại trong gói đặc tả:
-
-```bash
-cp .env.example .env
-# Điền mật khẩu và secrets cục bộ; không commit .env
-./scripts/dev doctor
-./scripts/dev build
-./scripts/dev migrate
-./scripts/dev bootstrap-admin
-./scripts/dev up
-./scripts/dev test smoke
-```
-
-`doctor` phải kiểm tra Docker Compose, WSL, RAM/disk trống, cổng 3000, biến môi trường, quyền volume và khả năng tải dependencies. Không tự xóa môi trường WSL cũ. Thành phẩm mở ở `http://localhost:3000`; chỉ bind cổng này vào `127.0.0.1`. Local chart và quản trị hoạt động không có LLM key. Khi chưa cấu hình model, chat báo rõ và không giả vờ đang gọi AI.
-
-## Danh mục tài liệu
-
-| File | Nội dung có thẩm quyền |
+| Đường dẫn | Vai trò |
 |---|---|
-| `AGENTS.md` | Quy tắc Codex, thay đổi contract, Definition of Done |
-| `TASKS.md` | 56 nhiệm vụ triển khai, phụ thuộc và checklist |
-| `CODEX_START_PROMPT.md` | Prompt bắt đầu/tiếp tục triển khai |
-| `docs/01_MASTER_SPEC.md` | Phạm vi, invariants, yêu cầu và nghiệm thu |
-| `docs/02_SOURCE_CODE_AUDIT.md` | Audit mã/PDF, kết quả thực chạy và giới hạn |
-| `docs/03_ARCHITECTURE.md` | Module boundaries, runtime, luồng giao dịch |
-| `docs/04_DATABASE_SCHEMA.md` | Bảng, kiểu dữ liệu, khóa, index và migrations |
-| `docs/05_DOCUMENT_PIPELINE.md` | Nhập sách, OCR, chunk, job, version, publish |
-| `docs/06_KNOWLEDGE_MODEL.md` | Thuật ngữ/trường phái/quy tắc/mệnh lệ và duyệt |
-| `docs/07_RAG_ENGINE.md` | Tìm kiếm hybrid, tiếng Việt, nguồn và benchmark |
-| `docs/08_BAZI_ENGINE.md` | Calculation contract, lịch và Rule DSL |
-| `docs/09_AI_REASONING.md` | Ba chế độ chat, tools, claims và streaming |
-| `docs/10_API_SPEC.md` | REST, DTO, lỗi, quyền và SSE |
-| `docs/11_FRONTEND_UX.md` | Màn hình, luồng thao tác, trạng thái và accessibility |
-| `docs/12_SECURITY_OPERATIONS.md` | Secrets, quyền, vận hành, backup/restore |
-| `docs/13_TEST_PLAN.md` | Test matrix, 8 kịch bản cuối, release gates |
-| `docs/14_IMPLEMENTATION_ROADMAP.md` | Thứ tự triển khai, milestone và xử lý blocker |
-| `docs/15_ARCHITECTURE_DECISIONS.md` | ADR, thông số cần benchmark, nguồn kỹ thuật |
+| `scripts/` | Công cụ vận hành, preflight sách, kiểm nguồn/secrets |
+| `infra/` | Image Linux và Compose cho thành phần đã chạy được |
+| `inputs/books/` | Sách gốc local, không Git; chép riêng sang Ubuntu |
+| `inputs/source/`, `legacy/bazi/` | Archive/mã BaZi gốc bảo toàn, tái dùng khi làm lá số |
+| `tests/` | Unit, integration, bảo mật đầu vào và regression |
+| `docs/`, `TASKS.md` | Contracts, ADR và thứ tự triển khai hiện hành |
+| `reports/tasks/`, `evidence/` | Báo cáo task và bằng chứng lịch sử phải giữ |
+| `.tools/`, `.cache/`, `.artifacts/`, `.venv/` | Công cụ/cache/output local đã ignore |
 
-`evidence/` có 2 script audit tái lập và các manifest/kết quả kiểm tra, không phải mã ứng dụng. `evidence/` chứa số liệu kiểm tra đầu vào, kết quả probe, mã probe tái lập và báo cáo kiểm tra gói. Không chứa sách, thông tin đăng nhập hoặc hồ sơ sinh người dùng. Ngày sinh trong probe là dữ liệu tổng hợp phục vụ kiểm tra.
+Không tạo module rỗng. `backend/` và frontend sẽ xuất hiện cùng chức năng thật.
+Scaffold Next.js/proxy/worker trỏ tới code chưa có đã bỏ ở T057; stack dài hạn
+vẫn là FastAPI + Next.js + PostgreSQL/pgvector + Celery.
 
-## Những quyết định cốt lõi
+## Dev Windows
 
-- Modular monolith: Next.js/TypeScript, FastAPI/Python, PostgreSQL + pgvector, Redis/Celery. Worker là process chạy cùng codebase, không phải microservice nghiệp vụ.
-- Tái sử dụng `backend/bazi.py` qua adapter sau các sửa lỗi được kiểm thử. Không dùng kết quả LLM để tính Tứ Trụ.
-- Local filesystem object store có giao diện S3 adapter, thay vì bắt buộc MinIO Community đã bị archive. S3 adapter và kiểm thử của nó vẫn thuộc phạm vi bàn giao.
-- Document store và structured knowledge là hai lớp riêng. Chỉ quy tắc đã duyệt được thực thi. Trường phái và lớp tác giả/bình chú được lưu rõ.
-- Mọi câu trả lời ghim phiên bản lá số, rule set và nguồn; cập nhật sách không làm mất nguồn của hội thoại cũ.
-
-## Những điểm chưa thể coi là đã kiểm chứng
-
-Chưa có bộ oracle chuyên môn độc lập cho toàn bộ lịch/Đại Vận/Cung Mệnh; chưa benchmark model hoặc 1.000 sách; chưa chạy ứng dụng FastAPI/Next.js/Docker hoàn chỉnh; chưa xác minh quyền khai thác thương mại sách. Các việc này có task và release gate rõ ràng, không bị đẩy ra ngoài phạm vi.
-
-## Kiểm tra đầu vào T001
-
-Đã có công cụ `python scripts/verify_inputs.py --check`: đối chiếu input và legacy
-với docs/02 cùng evidence; chỉ đọc, xuất JSON ra stdout, exit 1 khi bị chặn.
-`--extract` chỉ bảo toàn source đã xác thực vào `legacy/bazi/`, không chạy script
-trong archive và không ghi đè cây legacy có sẵn. Lưu JSON stdout vào báo cáo để giữ
-manifest kiểm kê; không chỉnh các manifest audit gốc.
-
-Đọc RAR cần môi trường công cụ riêng với `scripts/requirements-t001.txt` và UnRAR
-cài trên máy, có trong PATH. Không dùng `.venv` trong RAR. Trên máy hiện tại:
+Cần Git và uv; uv dùng Python 3.12 theo lock. WSL/Docker không bắt buộc cho sửa
+code, kiểm kê và unit tests. Docker cần khi kiểm thử containers.
 
 ```powershell
-python -m venv .tools/t001
-./.tools/t001/Scripts/python.exe -m pip install -r scripts/requirements-t001.txt
-$env:PATH = 'C:\Program Files\WinRAR;' + $env:PATH
-./.tools/t001/Scripts/python.exe scripts/verify_inputs.py --check
-# Chỉ chạy sau khi đủ input và đã giải quyết chênh lệch đặc tả:
-./.tools/t001/Scripts/python.exe scripts/verify_inputs.py --extract
-./.tools/t001/Scripts/python.exe -B -m unittest discover -s tests -v
-python scripts/scan_secrets.py
+uv sync --locked --group corpus
+uv run --locked --group corpus python scripts/dev doctor --target dev
+uv run --locked --group corpus python scripts/dev inspect-books
+uv run --locked --group corpus python -B -m unittest discover -s tests -v
+uv run --locked python scripts/scan_secrets.py
 ```
 
-Trạng thái và bằng chứng thực tế nằm ở [báo cáo T001](reports/tasks/T001.md),
-diễn biến các issue ở [issues T001](reports/tasks/T001/issues.md). T001 đã qua
-nghiệm thu đầu vào, source và test; T002 chưa triển khai. Lệnh `scripts/dev`
-phía trên vẫn là contract cho các task sau.
+Inspector chỉ đọc, xuất JSON SHA256/trang/đoạn/bảng/cờ xem lại; không OCR/publish.
+Lưu output local vào `.artifacts/` nếu cần, không Git. `--sample-chars 1000` bật
+trích đoạn local; mặc định không xuất text sách. Terminal Windows cũ có thể đặt
+`$env:PYTHONIOENCODING='utf-8'`. T001 dùng `python scripts/verify_inputs.py --check`
+với UnRAR trong PATH để kiểm archive/ba PDF audit/legacy. RAR5 integration cần
+WinRAR trên Windows; không nhầm test skip là đã kiểm. Không chạy venv trong RAR.
+
+## Ubuntu 22.04
+
+Cài Docker Engine và Compose plugin theo [hướng dẫn chính thức](https://docs.docker.com/engine/install/ubuntu/).
+Clone vào filesystem Linux. Không chép `.venv`, secrets, DB hoặc model qua Git.
+
+```bash
+git clone https://github.com/nguyentiendat-fenrir/bazi_ai.git
+cd bazi_ai
+cp .env.example .env
+# Điền POSTGRES_PASSWORD; BOOKS_DIR là đường dẫn tuyệt đối tới sách trên Ubuntu.
+# Chép sách riêng bằng scp/rsync, giữ nguyên bytes/tên, không git add -f inputs.
+docker compose --env-file .env -f infra/compose.yaml config --quiet
+docker compose --env-file .env -f infra/compose.yaml build corpus-inspect
+docker compose --env-file .env -f infra/compose.yaml run --rm --no-deps corpus-inspect
+docker compose --env-file .env -f infra/compose.yaml up -d --wait postgres redis
+python3 scripts/dev doctor --target deploy
+```
+
+Python hệ thống Ubuntu chỉ chạy doctor; image dùng Python 3.12. Inspector không
+mạng, mount sách read-only, không cần DB. Compose vẫn cần POSTGRES_PASSWORD để
+resolve cấu hình. DB/Redis không publish cổng host. Doctor pass chỉ là preflight.
+
+Cập nhật: Windows chạy tests, xem diff, stage đúng file, commit, `git push origin main`.
+Ubuntu chạy `git pull --ff-only`, build lại image và kiểm kê lại. Khi backend có
+migrations mới bổ sung backup/migrate/restart có kiểm thử. Không `reset --hard`,
+không `compose down -v`; giữ volume `bazi-ai_*` qua các lần pull.
+
+Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
+`LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.
+Chưa biết URL/model/VRAM nên để trống, không khởi Gemma thứ hai. Embedding dùng
+model/profile riêng. Xem [kết nối llama.cpp](docs/12_SECURITY_OPERATIONS.md).

@@ -14,13 +14,23 @@ dev = SourceFileLoader('bazi_dev', str(ROOT / 'scripts/dev')).load_module()
 
 
 class DoctorTests(unittest.TestCase):
-    def test_docker_desktop_internal_distro_is_not_a_user_wsl_distro(self):
-        output = 'docker-desktop\n'.encode('utf-16-le')
-        with patch.object(dev.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output, b'')):
-            self.assertFalse(dev.wsl_distribution_available())
-        output = 'docker-desktop\nUbuntu\n'.encode('utf-16-le')
-        with patch.object(dev.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output, b'')):
-            self.assertTrue(dev.wsl_distribution_available())
+    def test_windows_development_does_not_require_wsl_docker_or_secrets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'infra').mkdir()
+            for name in ('.env.example', 'uv.lock', 'infra/compose.yaml'):
+                (root / name).touch()
+            with patch.object(dev.platform, 'system', return_value='Windows'), \
+                 patch.object(dev.sys, 'version_info', (3, 12)), \
+                 patch.object(dev, 'docker_executable', return_value=None), \
+                 patch.object(dev, 'dependency_reachable', return_value=False):
+                result = dev.doctor(root, target='dev')
+                server = dev.doctor(root, target='deploy')
+            self.assertEqual(result['status'], 'READY')
+            self.assertEqual(server['status'], 'BLOCKED')
+            self.assertIn('linux_environment', server['essential_failures'])
+            self.assertIn('docker_cli', server['essential_failures'])
+            self.assertIn('env_postgres_password', server['essential_failures'])
 
     def test_missing_prerequisites_block_without_leaking_env_values(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -28,10 +38,9 @@ class DoctorTests(unittest.TestCase):
             (root / '.env.example').write_text('POSTGRES_PASSWORD=\n', encoding='utf-8')
             (root / '.env').write_text('POSTGRES_PASSWORD="DO_NOT_PRINT_THIS_SECRET"\n', encoding='utf-8')
             with patch.object(dev, 'dependency_reachable', return_value=False), \
-                 patch.object(dev, 'port_available', return_value=True), \
                  patch.object(dev, 'memory_bytes', return_value=32 * 1024**3), \
                  patch.object(dev, 'docker_executable', return_value=None):
-                result = dev.doctor(root)
+                result = dev.doctor(root, target='deploy')
             self.assertEqual(result['status'], 'BLOCKED')
             self.assertIn('docker_cli', result['essential_failures'])
             self.assertIn('network_pypi_org', result['degraded'])

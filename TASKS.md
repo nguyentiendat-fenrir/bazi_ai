@@ -1,12 +1,30 @@
 # TASKS · Triển khai tuần tự cho Codex
 
-**Trạng thái ban đầu: 0/56 task triển khai đã hoàn thành.** Đây là kế hoạch xây ứng dụng sau khi nhận ZIP; audit Work không làm các task application tự thành hoàn tất. Thứ tự số là một topological order hợp lệ. Có thể thực hiện T026 sau T008 nếu cần mở nhánh tính lá số, nhưng mặc định cứ chạy T001→T056 để đơn giản. Không tự chạy nhiều agent hoặc các migration song song.
+**Hiện trạng:** T001 đã nghiệm thu; T002 còn gate runtime Ubuntu. ADR-21/T057
+chuyển sang kho tri thức trước, Windows dev/Ubuntu runtime. Thứ tự hiện hành ở
+docs/14: T002–T025 → T035–T038 → calculation/rules/chat, cùng subtask library UI
+và backup có dependencies riêng. Không tự chạy nhiều agent hoặc migrations song
+song. Số task/graph gốc giữ để truy vết, không là thứ tự chạy mặc định.
 
 Mỗi task chỉ được `[x]` khi test chỉ định đã thực chạy pass và có `reports/tasks/Txxx.md` gồm commit, command, exit code, fixtures, giới hạn. Các lệnh test paths dưới đây là contract để Codex tạo, không tuyên bố đã có sẵn trong ZIP. Nếu task quá lớn, chia subtask Txxx.1…n trong cùng task, giữ dependencies và nghiệm thu cha; không cắt bỏ phạm vi.
 
 Các task T016/T021 có thể dùng local embedding và fixture provider theo interface đã đặc tả; integration provider API thật/cost reservation hoàn thiện ở T038. Candidate extraction bằng model thật chỉ bật sau gate đó; không coi mock là kết quả đã nghiên cứu sách.
 
+## T057 · Cấu trúc kho tri thức và kế hoạch RAG
+
+- Dependencies: T001; yêu cầu chủ dự án, ADR-21.
+- Scope: dọn scaffold, bảo toàn nguồn/evidence/specs, kiểm kê inputs/books,
+  Windows dev/Ubuntu deploy, container preflight, roadmap và Gemma llama.cpp.
+- Acceptance: regression/preflight pass; đủ 7 file/815 trang; dev không bắt buộc
+  WSL; Linux image chạy inspector read-only; Compose không gọi module chưa có;
+  docs/ADR/report thống nhất, không secrets. Không làm UI trong task này.
+- Worker OCR, published corpus, benchmark RAG, Gemma live/Ubuntu host, full app
+  vẫn thuộc acceptance tasks tương ứng; T057 không thay các gate đó.
+- Report: reports/tasks/T057.md.
+
 ## Checklist
+
+- [x] T057 — Tái cấu trúc kho tri thức và kế hoạch RAG — 48 tests pass, Linux inspector 7 file/815 trang; [báo cáo](reports/tasks/T057.md)
 
 - [x] T001 — Bảo toàn đầu vào và kiểm tra repository — pass 34 tests, hash RAR/PDF và 10 source files; commit `f046ee6d34c359b2aef2595bf47ec12eddefd9b7`; xem [báo cáo](reports/tasks/T001.md)
 - [ ] T002 — Khóa toolchain, giấy phép và hạ tầng Compose
@@ -61,7 +79,7 @@ Các task T016/T021 có thể dùng local embedding và fixture provider theo in
 - [ ] T051 — Benchmark throughput, storage và observability
 - [ ] T052 — Backup service và CLI
 - [ ] T053 — Restore drill và disaster recovery
-- [ ] T054 — Windows/WSL runbook và update/migration checks
+- [ ] T054 — Windows dev/Ubuntu deployment runbook và update/migration checks
 - [ ] T055 — Tích hợp hồi phục và test bảo mật cuối
 - [ ] T056 — Nghiệm thu tám kịch bản và bàn giao đầy đủ
 
@@ -650,9 +668,9 @@ Các task T016/T021 có thể dùng local embedding và fixture provider theo in
 - **Tiêu chí nghiệm thu:** Wrong key/corrupt dump không switch live; intact backup restore được chart/chat/citations và queues.
 - **Điều kiện hoàn thành:** Tiêu chí trên đạt; tests pass có log, cập nhật contract nếu có thay đổi đã được duyệt; báo cáo `reports/tasks/T053.md`, commit và checkbox. Test chưa chạy hoặc oracle chưa có → BLOCKED, không `[x]`.
 
-### T054 · Windows/WSL runbook và update/migration checks
+### T054 · Windows dev/Ubuntu deployment runbook và update/migration checks
 
-- **Mục tiêu:** Windows/WSL runbook và update/migration checks.
+- **Mục tiêu:** Windows dev/Ubuntu deployment runbook và update/migration checks.
 - **Dependencies:** T053.
 - **File/module:** `scripts/dev; scripts/dev.ps1; docs/LOCAL_RUNBOOK.md; tests/operations`.
 - **Công việc cụ thể:** Validate clean Windows setup/WSL Docker, migrations from prior schema, persisted volumes across update, no destructive default; license/SBOM/dependency locks final.

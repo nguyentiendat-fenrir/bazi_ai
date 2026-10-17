@@ -1,5 +1,38 @@
 # 14 · Lộ trình từ repository đặc tả tới sản phẩm đầy đủ
 
+## Lộ trình hiện hành — ADR-21, 17/10/2026
+
+Thay thứ tự tuần tự mặc định; giữ yêu cầu release đầy đủ và dependencies task cha.
+T057 chỉ cấu trúc/preflight/roadmap, không làm UI ngay theo xác nhận chủ dự án.
+
+| Mốc | Tasks | Kết quả/gate |
+|---|---|---|
+| K0 Cấu trúc + corpus | T057; T001 đã pass | Windows dev, inspector Linux, 7 file/815 trang, bảo toàn nguồn |
+| K1 Foundation Ubuntu | T002 → T003–T008 | Runtime/migrations/auth/storage/API thật; không gate WSL máy dev |
+| K2 Kho tài liệu | T009–T019 | Native/OCR, DOCX, review, chunk/embed/publish; pilot rồi mở rộng |
+| K3 Tri thức | T020–T025 | Author/school layers, review, ontology/cases/gold; không autoapprove |
+| K4 RAG | T035–T038 | Hybrid/rerank/citations, Gemma llama.cpp adapter; measured evaluation |
+| K5 UI kho/vận hành | Subtasks dưới; T047/T048 theo deps gốc | Library/jobs/review; backup/restore và security trước sử dụng lâu dài |
+| K6 Lá số/luận giải | T026–T034, T039–T045 và UI còn lại | Oracle/calendar/DSL/chat; không bỏ phạm vi gốc |
+| K7 Release đầy đủ | T049–T056 | Security/recovery/scale và tám kịch bản cuối |
+
+Subtasks tách để không phải chờ full chart/chat (task cha chỉ done khi đủ nghiệm
+thu gốc):
+
+- T043.1 shell/auth/library navigation: sau T006 + T008; T043.2 tích hợp đầy đủ
+  vẫn sau T042.
+- T046.1 library/upload/jobs/OCR review: sau T043.1 + T019, endpoints thật, test
+  upload→review→publish, 412/forbidden; T046.2 full UI vẫn sau T045.
+- T038.1 llama.cpp/config/timeout/model ID: sau T008; T038 đầy đủ giữ T008 + T024
+  cùng budgets/mocks/usage và no-provider gates.
+- T025.1 soạn ≥70 câu/relevant spans: sau T014; T025 đầy đủ sau T024 và duyệt gold.
+- T052.1 backup DB/objects/checksums: sau T019; T053.1 restore kho trên volumes mới:
+  sau T052.1. Làm trước dùng kho thật lâu dài; T052/T053 đầy đủ vẫn giữ deps/gates.
+
+Security test theo module bắt buộc ngay, không chờ T049. `evidence/task_graph.json`
+là graph bàn giao lịch sử, không scheduler hiện hành. Phần dưới giữ để truy vết
+phạm vi full release, không còn là thứ tự chạy mặc định.
+
 ## Thứ tự mặc định
 
 Chạy T001→T056. TASKS.md là nguồn phụ thuộc chính; các mốc dưới đây nhóm công việc, không thay dependency graph. Chưa ước tính số ngày chính xác khi chưa biết tốc độ Codex, môi trường và chuyên gia thẩm định. Chốt thời gian sau milestone hạ tầng đầu và benchmark.

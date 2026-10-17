@@ -1,5 +1,26 @@
 # 15 · Architecture Decision Records
 
+## ADR-21 — Kho tri thức trước; Windows dev / Ubuntu runtime
+
+**ACCEPTED 17/10/2026 theo yêu cầu chủ dự án, T057.** Thay thứ tự T001→T056 và
+gate bắt buộc WSL trên máy dev. Giữ schema/API, source preservation và release gates.
+
+- Windows native chạy code/tests; Ubuntu 22.04 chạy Docker Engine/Compose. Image
+  mang code/lock, dữ liệu ngoài Git. Doctor tách `dev` và `deploy`.
+- Giữ FastAPI, Next.js khi có UI thật, PostgreSQL/pgvector/FTS, Redis/Celery,
+  immutable sources, human review và citation. Kho nguồn/tra cứu đi trước lá số.
+- Người dùng xác nhận Gemma qua `ghcr.io/ggml-org/llama.cpp:server-cuda`; chọn
+  adapter `openai_compatible`, không cài model thứ hai. Endpoint/model/VRAM chưa biết.
+- pypdf thuộc dependency group `corpus` chỉ để preflight, không thay Docling
+  layout parser/OCR production ADR-11/12; không có publish hoặc HTTP API mới.
+- Bỏ scaffold frontend/proxy và service command trỏ module vắng mặt. Thêm lại
+  cùng implementation/tests. Giữ backend lock cho foundation kế tiếp.
+- Giữ sách, legacy, audit/evidence và contracts đã duyệt; bỏ phần AGENTS lặp nguyên văn.
+
+Phương án loại: ép WSL; OCR mọi trang; dùng Gemma chat làm embedding mặc định;
+CASE tự thành nguồn chuẩn; xóa evidence để ít file. Rollback bằng revert commit
+T057, không chạm input/volumes. Không migration/DTO mới. Kết quả ở reports/tasks/T057.md.
+
 Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi cần ADR diff; `EXPERIMENT` là tham số phải đo, không phải lý do bỏ module. Ngày đối chiếu nguồn kỹ thuật 10–11/10/2026. Patch versions xác minh lại ở T002.
 
 | ADR | Trạng thái | Quyết định và lý do | Phương án loại / hệ quả |

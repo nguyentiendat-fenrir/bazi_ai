@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local operations entry point. T002 currently implements `doctor` only.
+"""Windows development / Ubuntu deployment preflight and corpus inspection.
 
 No service is started and no secret value is printed. Later task commands are
 added only with their implementation and tests, not as success-shaped stubs.
@@ -21,7 +21,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_SECRETS = ('POSTGRES_PASSWORD', 'SESSION_SIGNING_KEY', 'FIELD_ENCRYPTION_KEY')
-DEPENDENCY_HOSTS = ('pypi.org', 'registry.npmjs.org', 'registry-1.docker.io')
+DEPENDENCY_HOSTS = ('pypi.org', 'registry-1.docker.io')
 
 
 def command_ok(*args: str) -> bool:
@@ -31,22 +31,6 @@ def command_ok(*args: str) -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
-
-
-def wsl_distribution_available() -> bool:
-    try:
-        result = subprocess.run(('wsl.exe', '--list', '--quiet'), capture_output=True,
-                                timeout=8, check=False)
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-    if result.returncode != 0:
-        return False
-    output = result.stdout
-    names = (output.decode('utf-16-le', errors='replace') if b'\x00' in output
-             else output.decode('utf-8-sig', errors='replace'))
-    return any(name.strip('\ufeff\x00 \t\r\n') and
-               not name.strip('\ufeff\x00 \t\r\n').lower().startswith('docker-desktop')
-               for name in names.splitlines())
 
 
 def docker_executable() -> str | None:
@@ -83,15 +67,6 @@ def memory_bytes() -> int | None:
     return None
 
 
-def port_available() -> bool:
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-            probe.bind(('127.0.0.1', 3000))
-        return True
-    except OSError:
-        return False
-
-
 def read_env_presence(path: Path) -> dict[str, bool]:
     values: dict[str, str] = {}
     try:
@@ -115,53 +90,55 @@ def dependency_reachable(host: str) -> bool:
         return False
 
 
-def doctor(root: Path = ROOT) -> dict:
+def doctor(root: Path = ROOT, target: str = 'dev') -> dict:
+    if target not in ('dev', 'deploy'):
+        raise ValueError('Unknown doctor target')
     checks: dict[str, dict] = {}
+    deploy = target == 'deploy'
 
     def add(name: str, ok: bool, detail: str, essential: bool = True) -> None:
         checks[name] = {'ok': ok, 'essential': essential, 'detail': detail}
 
     is_windows = platform.system() == 'Windows'
-    wsl = wsl_distribution_available() if is_windows else True
-    add('linux_environment', wsl, 'WSL distro available' if is_windows else 'native Linux')
+    add('linux_environment', platform.system() == 'Linux',
+        'Linux required on deployment host; Windows supported for development', essential=deploy)
     on_mounted_windows_drive = (not is_windows and
                                 len(root.resolve().parts) >= 3 and
                                 root.resolve().parts[1] == 'mnt' and
                                 len(root.resolve().parts[2]) == 1)
     add('linux_filesystem', not is_windows and not on_mounted_windows_drive,
-        'repository must be on a Linux filesystem (not /mnt/c or another Windows drive)')
+        'deployment repository must be on a Linux filesystem', essential=deploy)
+    add('python_version', sys.version_info[:2] == (3, 12),
+        'Python 3.12 required for local development; deployment uses the pinned container', essential=not deploy)
 
     docker = docker_executable()
-    add('docker_cli', bool(docker), 'Docker executable found' if docker else 'Docker executable missing')
+    add('docker_cli', bool(docker), 'Docker executable found' if docker else 'Docker executable missing', essential=deploy)
     add('docker_compose', bool(docker and command_ok(docker, 'compose', 'version')),
-        'Docker Compose plugin required')
+        'Docker Compose plugin required', essential=deploy)
     add('docker_daemon', bool(docker and command_ok(docker, 'info')),
-        'Docker daemon must answer docker info')
+        'Docker daemon must answer docker info', essential=deploy)
 
     mem = memory_bytes()
     add('memory', mem is not None and mem >= 16 * 1024**3,
-        f'{round(mem / 1024**3, 1)} GiB detected; 16 GiB minimum' if mem else 'physical memory unavailable')
+        f'{round(mem / 1024**3, 1)} GiB detected; 16 GiB baseline excluding Gemma' if mem else 'physical memory unavailable', essential=deploy)
     disk = shutil.disk_usage(root)
     minimum = max(10 * 1024**3, int(disk.total * 0.15))
     add('disk', disk.free >= minimum,
-        f'{round(disk.free / 1024**3, 1)} GiB free; {round(minimum / 1024**3, 1)} GiB required')
-    add('port_3000', port_available(), '127.0.0.1:3000 must be available')
+        f'{round(disk.free / 1024**3, 1)} GiB free; {round(minimum / 1024**3, 1)} GiB required', essential=deploy)
 
     template = root / '.env.example'
     env = root / '.env'
     add('env_template', template.is_file(), '.env.example must exist')
-    add('env_file', env.is_file(), '.env must be created locally and ignored by Git')
+    add('env_file', env.is_file(), '.env must be created locally and ignored by Git', essential=deploy)
     for key, present in read_env_presence(env).items():
-        add('env_' + key.lower(), present, key + ' must be set locally; value never printed')
+        add('env_' + key.lower(), present, key + ' must be set locally; value never printed', essential=deploy and key == 'POSTGRES_PASSWORD')
 
     add('compose_file', (root / 'infra/compose.yaml').is_file(), 'infra/compose.yaml must exist')
     add('python_lock', (root / 'uv.lock').is_file(), 'uv.lock must exist')
-    add('frontend_lock', (root / 'frontend/package-lock.json').is_file(),
-        'frontend/package-lock.json must exist')
 
     tools_dir = root / '.tools'
-    tools_dir.mkdir(exist_ok=True)
     try:
+        tools_dir.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='doctor-', dir=tools_dir):
             volume_write = True
     except OSError:
@@ -175,19 +152,28 @@ def doctor(root: Path = ROOT) -> dict:
                                 if item['essential'] and not item['ok'])
     degraded = sorted(name for name, item in checks.items()
                       if not item['essential'] and not item['ok'])
-    return {'status': 'READY' if not essential_failures else 'BLOCKED',
+    return {'status': 'READY' if not essential_failures else 'BLOCKED', 'target': target,
+            'scope': 'preflight only; not application or Gemma readiness',
             'essential_failures': essential_failures, 'degraded': degraded,
             'checks': checks}
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('doctor',))
+    commands = parser.add_subparsers(dest='command', required=True)
+    check = commands.add_parser('doctor')
+    check.add_argument('--target', choices=('dev', 'deploy'), default='dev')
+    inspect = commands.add_parser('inspect-books')
+    inspect.add_argument('directory', nargs='?', type=Path, default=ROOT / 'inputs/books')
+    inspect.add_argument('--sample-chars', type=int, choices=range(0, 2001), default=0, metavar='0..2000')
     args = parser.parse_args(argv)
     if args.command == 'doctor':
-        result = doctor()
+        result = doctor(target=args.target)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result['status'] == 'READY' else 1
+    if args.command == 'inspect-books':
+        from inspect_corpus import main as inspect_main
+        return inspect_main([str(args.directory), '--sample-chars', str(args.sample_chars)])
     return 2
 
 

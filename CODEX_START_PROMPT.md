@@ -1,13 +1,14 @@
-# Prompt gửi cho Codex trong VS Code
+# Tiếp tục phát triển BAZI-AI
 
-Bạn đang triển khai BAZI-AI theo bộ đặc tả đã chốt trong repository này. Hãy thực hiện công việc, không chỉ trả lời kế hoạch.
-
-1. Đọc AGENTS.md, README.md, TASKS.md, docs/01_MASTER_SPEC.md, docs/02_SOURCE_CODE_AUDIT.md, docs/03_ARCHITECTURE.md, docs/14_IMPLEMENTATION_ROADMAP.md và docs/15_ARCHITECTURE_DECISIONS.md. Đọc thêm 04/10 và contract tương ứng trước khi tạo schema/API.
-2. Kiểm tra thư mục hiện tại, git status, code đã có, môi trường Windows/WSL2/Docker, tài nguyên và đầu vào. Không ghi đè công việc hiện có. Gói này là đặc tả, không giả định application code hoặc scripts vận hành đã tồn tại.
-3. Nếu là lần đầu, thực hiện **T001**: lập inventory, xác thực checksum bazi.rar, giải nén an toàn bản legacy để bảo toàn; lập kế hoạch triển khai theo dependencies. Không cài/chạy `.venv` trong RAR. Nếu thiếu RAR, ghi chính xác đường dẫn cần bổ sung, đánh dấu phần bảo toàn bị chặn và tiếp tục phần setup không phụ thuộc; không tự viết lại engine.
-4. Nếu đã có tiến độ, xác minh task đã đánh dấu hoàn thành bằng commit/test log và chọn task chưa hoàn thành đầu tiên có đủ dependencies. Không làm lại phần đã pass.
-5. Triển khai task, chạy đúng tests, ghi reports/tasks/Txxx.md. Chỉ đánh dấu xong khi tiêu chí nghiệm thu đạt. Báo kết quả cụ thể và task tiếp theo.
-6. Không tự thay stack/schema/API/chính sách tính lịch; muốn đổi contract phải đưa ADR diff cụ thể. Các việc triển khai đúng thiết kế, sửa lỗi đã xác minh và tạo test là công việc đã được ủy quyền.
-7. Không bỏ ingestion, structured knowledge, Rule Engine, hybrid retrieval, citations, backup hay evaluation để thay bằng prompt LLM hoặc UI giả. Không cần sách mới để bổ sung module. Không gọi LLM có phí nếu chưa cấu hình ngân sách; có fixture/provider giả cho test.
-
-Bắt đầu kiểm tra repository và thực hiện nhiệm vụ đầu tiên ngay.
+1. Đọc AGENTS, README, TASKS, docs/14 và ADR-21 ở docs/15; kiểm git status/diff,
+   reports và code hiện có. Đọc schema/API contract trước khi đổi module liên quan.
+2. Ưu tiên kho tri thức: nguồn → native/OCR → review → chunk/index → citations.
+   Dev Windows native; runtime Ubuntu 22.04 cùng host với Gemma llama.cpp có sẵn.
+3. T001 đã pass; không làm lại/sửa nguồn gốc. T002 cần nghiệm thu Ubuntu thật;
+   T057 là cấu trúc/preflight/roadmap, không full app. Không ép WSL máy dev.
+4. Theo subtask/dependencies hiện hành trong TASKS/docs/14, đưa library trước
+   chart/chat. Không tự chạy nhiều agent hoặc migrations song song.
+5. Tạo chức năng cùng tests, chạy thực, cập nhật một reports/tasks/Txxx.md và
+   commit đúng scope. Không gọi mock là đã OCR, kết nối Gemma hoặc đạt benchmark.
+6. Không commit sách/secrets/output OCR/DB/models/cache; không xóa legacy,
+   migrations, approved specs hoặc evidence. Thay contract phải có ADR diff.

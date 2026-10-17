@@ -1,5 +1,36 @@
 # 12 · Bảo mật, vận hành và khôi phục
 
+## Windows → Git → Ubuntu 22.04 — ADR-21
+
+Runbook README thay gate WSL máy dev trong baseline bên dưới. Windows dùng
+Python 3.12/tests; Ubuntu Docker Engine/Compose và repo filesystem Linux.
+Sách, .env, models, text/index/DB/checkpoints ngoài Git; chuyển sách riêng và
+đối chiếu SHA256. Giữ project/volume names; không `down -v` khi update.
+
+Người dùng xác nhận `ghcr.io/ggml-org/llama.cpp:server-cuda`. T038 dùng
+`openai_compatible`, base URL kết thúc `/v1`; lấy model ID/alias, context limit,
+timeout, JSON capability và GPU/VRAM thực trước smoke. Không chạy thêm Gemma.
+Ưu tiên API/AI worker cùng external Docker network riêng với container model,
+DNS/cổng thực; thêm cấu hình đó khi biết network và có adapter test. OCR/parser
+không nối mạng model; DB/Redis giữ internal network. Không đổi Gemma hiện tại.
+
+Nếu dùng đường host: localhost trong container là container đó; host-gateway
+không tự làm dịch vụ chỉ bind loopback truy cập được. Kiểm bind/firewall ở host,
+không mở Gemma ra Internet. Inspector hiện network=none, read-only root/input,
+non-root, drop capabilities, no-new-privileges, 2 GiB RAM/64 PIDs. Đây là preflight
+sách local tin cậy, không thay sandbox ingestion có timeout/retry của T011–T014.
+OCR khởi đầu concurrency=1; benchmark chia CPU/RAM/VRAM với Gemma trên máy thật.
+Embedding riêng, chạy batch; không giả GPU còn rảnh.
+
+Trên Ubuntu, xem tên/image/cổng bằng `docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'`.
+Xem network container đã chọn bằng `docker inspect --format '{{json .NetworkSettings.Networks}}' <container>`.
+Không gửi toàn bộ inspect/env vì có thể chứa secrets. Adapter kiểm `/health`,
+`/v1/models`, chat smoke nhỏ qua `/v1/chat/completions` theo auth server thực.
+
+Nguồn: [llama.cpp server](https://github.com/ggml-org/llama.cpp/tree/master/tools/server),
+[llama.cpp Docker](https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md),
+[Docker networking](https://docs.docker.com/engine/network/).
+
 ## Local deployment
 
 Compose services: gateway, frontend, api, postgres(pgvector), redis, worker-ingest, worker-ocr, worker-ai, dispatcher/watchdog; tất cả worker dùng cùng backend image với command khác. Profiles cho OCR/model local/S3 test optional. Volumes: pgdata, objects, model_cache, staging; encrypted backup ở đường dẫn ngoài các volumes này. Redis state không là nguồn duy nhất cần restore.

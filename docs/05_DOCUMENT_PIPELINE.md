@@ -1,5 +1,18 @@
 # 05 · Document Processing Engine
 
+## Corpus hiện tại và preflight T057
+
+Hiện có 4 PDF/815 trang, 1 DOCX và 2 Markdown, vượt ba PDF/613 trang audit cũ.
+`scripts/inspect_corpus.py` quét text/page count bằng pypdf và thống kê DOCX/MD
+chỉ đọc. Đây không phải parser layout/OCR hoặc gate accepted/publish. Cờ <100
+ký tự/U+FFFD chỉ để xem lại; đủ chữ vẫn có thể sai bảng/ảnh/reading order.
+Audit cũ chỉ ra cao cấp tr.30, Tử Bình tr.77 cần xem ảnh.
+
+DOCX có 1.773 đoạn XML, 80 bảng và tự mô tả lược dịch/biên soạn có bình chú;
+cần metadata và author layers trước nhập. CASE Markdown là nguồn dẫn xuất,
+chỉ ứng viên case/evaluation, không mở rộng API upload PDF/DOCX. Kế hoạch theo
+nguồn thật nằm ở docs/07; không đổi số liệu audit lịch sử.
+
 ## Đơn vị dữ liệu và trạng thái chuẩn
 
 `book` là tác phẩm; `book_version` là một ấn bản/tệp cụ thể; `object` là bytes; `page_revision` là text/layout bất biến; `generation` là lần xử lý với parser/chunker/model config; `corpus_release` là tập generation chatbot nhìn thấy. Đổi parser không tự tạo ấn bản sách mới. Đổi nội dung file tạo version mới. SHA256 giống hệt chỉ tái dùng object; không tự gộp hai record có metadata/rights khác nhau.

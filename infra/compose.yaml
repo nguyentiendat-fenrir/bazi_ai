@@ -1,20 +1,6 @@
 name: bazi-ai
 
-x-backend: &backend
-  image: bazi-ai-backend:dev
-  build:
-    context: ..
-    dockerfile: infra/backend.Dockerfile
-  init: true
-  user: "10001:10001"
-  env_file: ../.env
-  networks: [internal]
-  volumes:
-    - ../backend:/app/backend:ro
-    - objects:/data/objects
-    - staging:/data/staging
-    - model_cache:/data/models
-
+# Add application/OCR services with their implementation and smoke tests.
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17-bookworm@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d
@@ -41,106 +27,37 @@ services:
       timeout: 3s
       retries: 12
 
-  api:
-    <<: *backend
-    profiles: [app]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-  frontend:
-    image: bazi-ai-frontend:dev
+  corpus-inspect:
+    profiles: [tools]
+    image: bazi-ai-corpus:local
     build:
-      context: ../frontend
-      dockerfile: ../infra/frontend.Dockerfile
-    profiles: [app]
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+      target: corpus
     init: true
-    user: "node"
-    networks: [internal]
-    volumes:
-      - ../frontend:/app:ro
-      - frontend_modules:/app/node_modules
-      - frontend_build:/app/.next
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-  gateway:
-    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
-    profiles: [app]
-    ports: ["127.0.0.1:3000:3000"]
-    networks: [internal]
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    depends_on:
-      api: {condition: service_healthy}
-      frontend: {condition: service_healthy}
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/healthz"]
-      interval: 10s
-      timeout: 3s
-      retries: 12
-
-  worker-ingest:
-    <<: *backend
-    profiles: [ingest]
-    command: ["celery", "-A", "backend.app.worker", "worker", "-Q", "ingest", "--concurrency=2", "--prefetch-multiplier=1"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    cpus: 2
+    user: "10001:10001"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
     mem_limit: 2g
-
-  worker-ocr:
-    <<: *backend
-    profiles: [ocr]
-    command: ["celery", "-A", "backend.app.worker", "worker", "-Q", "ocr", "--concurrency=1", "--prefetch-multiplier=1"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    cpus: 1
-    mem_limit: 3g
-
-  worker-ai:
-    <<: *backend
-    profiles: [ai]
-    command: ["celery", "-A", "backend.app.worker", "worker", "-Q", "ai", "--concurrency=1", "--prefetch-multiplier=1"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
     cpus: 2
-    mem_limit: 4g
-
-  dispatcher:
-    <<: *backend
-    profiles: [maintenance]
-    command: ["python", "-m", "backend.app.operations.dispatcher"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
-
-  watchdog:
-    <<: *backend
-    profiles: [maintenance]
-    command: ["python", "-m", "backend.app.operations.watchdog"]
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis: {condition: service_healthy}
+    volumes:
+      - type: bind
+        source: ${BOOKS_DIR:-../inputs/books}
+        target: /inputs/books
+        read_only: true
+        bind:
+          create_host_path: false
+    command: ["python", "scripts/inspect_corpus.py", "/inputs/books"]
 
 networks:
   internal: {internal: true}
 
+# Preserve existing persistent volume names; never use down -v to update.
 volumes:
   pgdata:
   objects:
   staging:
   model_cache:
-  frontend_modules:
-  frontend_build:
