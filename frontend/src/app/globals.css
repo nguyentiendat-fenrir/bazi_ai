@@ -289,3 +289,9 @@ pre.code { background: var(--surface-2); padding: 10px; border-radius: 4px; over
 .inline-form .field { margin: 0; }
 .review-history { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
 td.wrap { white-space: normal; min-width: 280px; }
+
+/* ---- settings / evaluation ------------------------------------------------------------- */
+.setting-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.setting-row:last-child { border-bottom: 0; }
+.setting-row .actions { padding-top: 22px; }
+tr.selected td { background: var(--teal-weak); }

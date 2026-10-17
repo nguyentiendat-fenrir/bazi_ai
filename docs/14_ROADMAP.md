@@ -118,7 +118,10 @@ khác tra tại bảng cuối file này.
 - T047 ✅ UI quản trị tri thức (`/knowledge/terms|concepts|assertions|rules|rulesets`, `/cases`):
   tạo/sửa thành bản nháp mới có lý do, duyệt tách khỏi lưu (checklist cho luận điểm/quy tắc/ca),
   thu hồi xem trước ảnh hưởng, kiểm DSL + fixture, dựng/kích hoạt bộ quy tắc CAS.
-- Việc kế tiếp: T048 UI đánh giá/cài đặt/dashboard; T042 hoàn tất client/contract.
+- T048 ✅ UI đánh giá (`/evaluation`: bộ dữ liệu, câu hỏi, duyệt bộ, chạy, câu trượt, so sánh
+  lần chạy; nhãn fixture), cài đặt (`/settings`: cá nhân, mô hình thử/dùng, hệ thống + ngân
+  sách, người dùng, bản kho/ontology) và panel quản trị trên tổng quan.
+- Việc kế tiếp: T042 hoàn tất client/contract; K7 (T049–T056).
 
 ## Các giai đoạn
 
@@ -261,7 +264,7 @@ trước khi trình duyệt.
 | T045 | Chat UI, nguồn và so sánh | K6 | ✅ |
 | T046 | Library upload/jobs/OCR review dashboard | K5/K6 | T046.1 ✅ |
 | T047 | Knowledge/rules/cases admin UI | K6 | ✅ |
-| T048 | Evaluation/settings/dashboard UI | K6 | |
+| T048 | Evaluation/settings/dashboard UI | K6 | ✅ |
 | T049 | Security hardening và privacy deletion | K7 | |
 | T050 | Evaluation harness và quality regression | K7 | |
 | T051 | Benchmark throughput, storage và observability | K7 | |

@@ -110,6 +110,30 @@ function OperationsPanels() {
   )
 }
 
+function AdminPanel() {
+  const view = useQuery('dashboard:settings', () => call(api.GET('/api/v1/settings')))
+  const usage = useQuery('dashboard:usage', () => call(api.GET('/api/v1/usage')))
+  const runtime = view.data?.data.runtime
+  const over = usage.data?.data.budgets.filter((b) => b.daily_budget > 0 && b.spent_today >= 0.8 * b.daily_budget) ?? []
+  return (
+    <section className="panel" aria-labelledby="admin-heading">
+      <div className="panel-head">
+        <h2 id="admin-heading">Mô hình &amp; ngân sách</h2>
+        <Link href="/settings/system">Mở cài đặt</Link>
+      </div>
+      {view.error ? <ErrorState error={view.error} retry={view.reload} />
+        : !runtime ? <Loading rows={2} />
+        : (
+          <p>
+            Mô hình ngôn ngữ: {runtime.llm_configured ? <strong>{runtime.llm_provider}</strong> : <span className="muted">chưa cấu hình (trả lời bằng nguồn trích)</span>}
+            <br />Embedding: {runtime.embedding_configured ? 'đã cấu hình' : <span className="muted">chưa cấu hình</span>}
+            {usage.data && <><br />{over.length === 0 ? 'Chi phí hôm nay trong ngân sách.' : <strong>{over.length} profile đã dùng ≥ 80% ngân sách ngày.</strong>}</>}
+          </p>
+        )}
+    </section>
+  )
+}
+
 export default function DashboardPage() {
   const { user, can } = useSession()
   return (
@@ -117,6 +141,7 @@ export default function DashboardPage() {
       <title>Tổng quan · Kho Bát Tự</title>
       <PageHeader title="Tổng quan" description={`Xin chào ${user?.email ?? ''}`} />
       {can('library:review') && <OperationsPanels />}
+      {can('system:admin') && <AdminPanel />}
       <LibraryPanel canUpload={can('library:review')} />
     </>
   )
