@@ -90,6 +90,8 @@ Tri-valued T/F/U. Thiếu hour → phép so trên hour là U; `not U=U`, `all` c
 
 Validate DAG khi approve/ruleset build, reject cycles và references khác school nếu không có bridge được duyệt. Topological order + revision ID làm tie-break đảm bảo deterministic. Priority chỉ ordering, không cho rule tùy tiện đè kết luận. Limits mặc định depth≤16, nodes≤256/rule, ≤5.000 rules/run, ≤100.000 node evals/run, timeout CPU 2s cần benchmark; exceeded trả `resource_limit`, giữ partial trace nhưng không tuyên bố full analysis.
 
+Đã triển khai (T022, `backend/app/rules/`): `facts.py` là registry `chart-facts/1` (stem/branch/stem_element/ten_god/growth_stage/na_yin/void của bốn trụ, `cycles.direction`; enum ID ASCII, `wu` stem ≠ `wu` branch) và bảng thập thần thuần; `dsl.py` kiểm schema (khóa bắt buộc, không khóa lạ, school/method là key registry), AST (literal/fact/op/call, toán tử và hàm trong allowlist, đúng số đối), kiểu (literal mang kiểu của vế kia và phải thuộc enum đó; không so stem với branch, chuỗi với số; gt/lt chỉ cho số), giới hạn ≤ 256 node, sâu ≤ 16; đánh giá ba trị đúng semantics trên cho một rule trên một facts snapshot (`count_branch` là U khi còn trụ chưa biết, `rule_fired` là U khi không có ngữ cảnh). `cycle_at` chưa có (cần cycles của engine lịch, T026–T030). Chạy cả ruleset, trace, DAG toàn cục và giới hạn mỗi run là T031.
+
 Trace mỗi rule: revision_id, status (`fired/not_matched/pending/blocked_exception/dependency_blocked`), evaluated predicates với fact values, exception results, dependencies, source evidence, emitted claim keys, runtime counters. Trace là bằng chứng kiểm tra điều kiện, không yêu cầu lưu chain-of-thought riêng tư của LLM.
 
 ### Conflict và hybrid interpretation

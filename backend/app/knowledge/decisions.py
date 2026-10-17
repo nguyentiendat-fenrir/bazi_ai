@@ -9,6 +9,13 @@ reviewed: a newer one answers 412, so two reviewers never decide on different
 content. Approving a concept revision approves its canonical label and the
 aliases it carried over unchanged from an approved earlier revision; approving
 or revoking a school scope rebuilds the version so classifications follow.
+
+Approval gates (docs/06): an assertion needs usable sources (accepted pages,
+active versions with usable rights) and approved method/concept if it names
+them; a relation needs both assertions approved; a rule needs a valid
+``bazi-rule/1`` document, an approved method, usable sources, approved
+dependencies and passing positive, negative and missing-fact fixtures. A
+decision on a machine candidate closes its review item.
 """
 from __future__ import annotations
 
@@ -20,10 +27,15 @@ from sqlalchemy.engine import Connection
 
 from ..auth.service import Principal
 from ..core.errors import AppError
+from ..rules import dsl as rule_dsl
+from .evidence import sources_usable
+from .rules import _fixtures, coverage_problem, run_fixtures
 
 # kind -> (table, has a revision column)
 ENTITIES = {'method': ('methods', True), 'concept': ('concepts', True),
-            'term': ('terms', False), 'school_scope': ('school_scopes', False)}
+            'term': ('terms', False), 'school_scope': ('school_scopes', False),
+            'assertion': ('assertions', True), 'assertion_relation': ('assertion_relations', False),
+            'rule': ('knowledge_rules', True)}
 FLOW = {'submit': {'draft': ['in_review']},
         'return': {'in_review': ['draft']},
         'approve': {'draft': ['in_review', 'approved'], 'in_review': ['approved']},
@@ -75,6 +87,48 @@ def _rebuild(conn: Connection, principal: Principal, scope_id) -> dict:
     return {'rebuild': 'queued', 'job_id': job['id']}
 
 
+def _approved(conn: Connection, table: str, ids: list) -> bool:
+    ids = [str(i) for i in ids if i is not None]
+    return not ids or conn.execute(text(
+        f"SELECT count(*) FROM {table} WHERE id = ANY(CAST(:ids AS uuid[]))"
+        " AND state = 'approved'"), {'ids': ids}).scalar_one() == len(set(ids))
+
+
+def _gate(conn: Connection, kind: str, entity_id) -> str | None:
+    """Why ``entity_id`` cannot be approved yet, or ``None``."""
+    if kind == 'assertion':
+        row = conn.execute(text('SELECT method_id, concept_id FROM assertions WHERE id = :i'),
+                           {'i': entity_id}).one()
+        evidence = conn.execute(text('SELECT evidence_id FROM assertion_sources'
+                                     ' WHERE assertion_id = :i'), {'i': entity_id}).scalars().all()
+        if not _approved(conn, 'methods', [row[0]]) or not _approved(conn, 'concepts', [row[1]]):
+            return 'the method or concept it names is not approved'
+        return sources_usable(conn, evidence)
+    if kind == 'assertion_relation':
+        ends = conn.execute(text('SELECT from_id, to_id FROM assertion_relations WHERE id = :i'),
+                            {'i': entity_id}).one()
+        return None if _approved(conn, 'assertions', list(ends)) else \
+            'both assertions must be approved first'
+    if kind == 'rule':
+        row = conn.execute(text('SELECT dsl, method_id FROM knowledge_rules WHERE id = :i'),
+                           {'i': entity_id}).one()
+        if rule_dsl.validate(row[0]):
+            return 'the rule document is not valid bazi-rule/1'
+        if not _approved(conn, 'methods', [row[1]]):
+            return 'the method is not approved'
+        evidence = conn.execute(text('SELECT evidence_id FROM rule_sources WHERE rule_id = :i'),
+                                {'i': entity_id}).scalars().all()
+        problem = sources_usable(conn, evidence)
+        if problem:
+            return problem
+        requires = conn.execute(text('SELECT requires_id FROM rule_dependencies WHERE rule_id = :i'),
+                                {'i': entity_id}).scalars().all()
+        if not _approved(conn, 'knowledge_rules', requires):
+            return 'a required rule is not approved'
+        return coverage_problem(run_fixtures(row[0], _fixtures(conn, entity_id)))
+    return None
+
+
 def decide(conn: Connection, principal: Principal, kind: str, entity_id: uuid.UUID,
            decision: str, base_revision: int, reason: str, request_id: str | None) -> dict:
     if kind not in ENTITIES:
@@ -91,6 +145,10 @@ def decide(conn: Connection, principal: Principal, kind: str, entity_id: uuid.UU
     steps = FLOW[decision].get(row['state'])
     if steps is None:
         raise AppError(409, 'INVALID_TRANSITION', f"{kind} is {row['state']}; cannot {decision}")
+    if decision == 'approve':
+        problem = _gate(conn, kind, entity_id)
+        if problem:
+            raise AppError(409, 'APPROVAL_BLOCKED', f'cannot approve {kind}: {problem}')
     review_id = (_record(conn, principal, kind, entity_id, decision, reason, current)
                  if decision in RECORDED else None)
     for state in steps:
@@ -101,6 +159,15 @@ def decide(conn: Connection, principal: Principal, kind: str, entity_id: uuid.UU
         effects['terms_approved'] = _carried_terms(conn, principal, entity_id, current)
     if kind == 'school_scope' and decision in ('approve', 'revoke'):
         effects.update(_rebuild(conn, principal, entity_id))
+    if decision in ('approve', 'reject'):
+        # A decision on a machine candidate settles its review item.
+        conn.execute(text(
+            "UPDATE review_items SET state = :s, resolution = coalesce(resolution, '{}'::jsonb)"
+            " || CAST(:o AS jsonb) WHERE entity_kind = :k AND entity_id = :i"
+            " AND reason_code LIKE 'CANDIDATE%' AND state IN ('open', 'in_progress')"),
+            {'s': 'resolved' if decision == 'approve' else 'dismissed', 'k': kind,
+             'i': entity_id, 'o': json.dumps({'outcome': {'decision': decision,
+                                                          'by': str(principal.user_id)}})})
     conn.execute(text(
         "INSERT INTO audit_logs (actor_id, action, target_kind, target_id, trace_id,"
         " redacted_diff, outcome) VALUES (:a, 'knowledge.review', :k, :i, :t, CAST(:d AS jsonb),"

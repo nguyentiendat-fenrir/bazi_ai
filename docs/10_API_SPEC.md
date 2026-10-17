@@ -77,6 +77,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T021): `GET /assertions` (lọc state/school_id/book_version_id/q không dấu, cursor) và `GET /assertions/{id}` (sources với trích dẫn lấy từ revision bất biến, số trang, speaker, relations). Reader chỉ thấy assertion `approved` và trích dẫn từ sách mình được đọc; draft/candidate chỉ reviewer thấy (404 với reader). Ghi/duyệt assertion ở T022.
 
+Đã triển khai (T022): `POST /evidence` (V; `page_revision_id`, `start_offset`, `end_offset` trong một block, `origin`) và `GET /evidence/{id}`; `POST /assertions` (≥ 1 `evidence_ids`), `POST /assertions/{id}/revisions` (`base_revision`, lệch → 412), `POST /assertion-relations`; `GET/POST /rules` (`dsl` sai → 422 `RULE_INVALID` với `field_errors` theo đường dẫn trong tài liệu; trùng `rule_key` → 409), `GET /rules/{id}` (sources, requires, fixtures, reviews; reader chỉ thấy rule approved), `POST /rules/{id}/revisions`, `POST /rules/{id}/validate` (`fixtures[]` thay bộ đang lưu khi rule còn draft; trả lỗi tài liệu, kết quả từng fixture, điều còn chặn duyệt). `POST /reviews` nhận thêm `assertion`, `assertion_relation`, `rule`; gate chặn → 409 `APPROVAL_BLOCKED`.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ

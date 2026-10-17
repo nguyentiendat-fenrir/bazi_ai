@@ -311,6 +311,216 @@
         "title": "AssertionDetail",
         "type": "object"
       },
+      "AssertionInput": {
+        "properties": {
+          "applicability": {
+            "additionalProperties": true,
+            "title": "Applicability",
+            "type": "object"
+          },
+          "assertion_key": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assertion Key"
+          },
+          "concept_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Id"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "exception_text": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exception Text"
+          },
+          "method_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Id"
+          },
+          "origin": {
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "statement": {
+            "maxLength": 5000,
+            "minLength": 3,
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "school_id",
+          "statement",
+          "origin",
+          "evidence_ids"
+        ],
+        "title": "AssertionInput",
+        "type": "object"
+      },
+      "AssertionRevisionInput": {
+        "properties": {
+          "applicability": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicability"
+          },
+          "base_revision": {
+            "minimum": 1.0,
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "concept_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Id"
+          },
+          "evidence_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ids"
+          },
+          "exception_text": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exception Text"
+          },
+          "method_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Id"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "enum": [
+                  "source_explicit",
+                  "editor_interpretation",
+                  "ai_inferred"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "statement": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statement"
+          }
+        },
+        "required": [
+          "base_revision",
+          "reason"
+        ],
+        "title": "AssertionRevisionInput",
+        "type": "object"
+      },
       "AuthorInput": {
         "properties": {
           "name": {
@@ -1406,6 +1616,24 @@
         "title": "Coverage",
         "type": "object"
       },
+      "DslProblem": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "message"
+        ],
+        "title": "DslProblem",
+        "type": "object"
+      },
       "Envelope_AssertionDetail_": {
         "properties": {
           "data": {
@@ -1484,6 +1712,22 @@
           "meta"
         ],
         "title": "Envelope[CorrectionResult]",
+        "type": "object"
+      },
+      "Envelope_EvidenceDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EvidenceDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[EvidenceDTO]",
         "type": "object"
       },
       "Envelope_GenerationDTO_": {
@@ -1646,6 +1890,22 @@
         "title": "Envelope[ReadyStatus]",
         "type": "object"
       },
+      "Envelope_RelationDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RelationDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RelationDTO]",
+        "type": "object"
+      },
       "Envelope_ReleaseDTO_": {
         "properties": {
           "data": {
@@ -1708,6 +1968,22 @@
           "meta"
         ],
         "title": "Envelope[ReviewResult]",
+        "type": "object"
+      },
+      "Envelope_RuleDetail_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RuleDetail"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RuleDetail]",
         "type": "object"
       },
       "Envelope_SchoolDTO_": {
@@ -1838,6 +2114,22 @@
         "title": "Envelope[UserDTO]",
         "type": "object"
       },
+      "Envelope_ValidationResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ValidationResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ValidationResult]",
+        "type": "object"
+      },
       "Envelope_VersionDTO_": {
         "properties": {
           "data": {
@@ -1890,6 +2182,122 @@
         "title": "Envelope[list[Grant]]",
         "type": "object"
       },
+      "EvidenceDTO": {
+        "properties": {
+          "block_id": {
+            "format": "uuid",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "origin": {
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "speaker_layer": {
+            "enum": [
+              "original_author",
+              "commentator",
+              "translator",
+              "editor",
+              "unknown"
+            ],
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "book_version_id",
+          "page_revision_id",
+          "page_id",
+          "physical_page_number",
+          "block_id",
+          "start_offset",
+          "end_offset",
+          "speaker_layer",
+          "origin",
+          "quote"
+        ],
+        "title": "EvidenceDTO",
+        "type": "object"
+      },
+      "EvidenceInput": {
+        "properties": {
+          "end_offset": {
+            "minimum": 1.0,
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "origin": {
+            "default": "source_explicit",
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "start_offset": {
+            "minimum": 0.0,
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_revision_id",
+          "start_offset",
+          "end_offset"
+        ],
+        "title": "EvidenceInput",
+        "type": "object"
+      },
       "FieldError": {
         "properties": {
           "message": {
@@ -1906,6 +2314,97 @@
           "message"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "Fixture": {
+        "properties": {
+          "expect": {
+            "enum": [
+              "fired",
+              "not_matched",
+              "pending",
+              "blocked_exception",
+              "dependency_blocked"
+            ],
+            "title": "Expect",
+            "type": "string"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "title": "Facts",
+            "type": "object"
+          },
+          "fired_rules": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fired Rules"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "facts",
+          "expect"
+        ],
+        "title": "Fixture",
+        "type": "object"
+      },
+      "FixtureResult": {
+        "properties": {
+          "expect": {
+            "enum": [
+              "fired",
+              "not_matched",
+              "pending",
+              "blocked_exception",
+              "dependency_blocked"
+            ],
+            "title": "Expect",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "fired",
+              "not_matched",
+              "pending",
+              "blocked_exception",
+              "dependency_blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "expect",
+          "status",
+          "passed"
+        ],
+        "title": "FixtureResult",
         "type": "object"
       },
       "GenerationDTO": {
@@ -2787,6 +3286,29 @@
         "title": "ListEnvelope[ReviewItemDTO]",
         "type": "object"
       },
+      "ListEnvelope_RuleDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/RuleDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[RuleDTO]",
+        "type": "object"
+      },
       "ListEnvelope_SchoolDTO_": {
         "properties": {
           "data": {
@@ -3661,6 +4183,38 @@
         "title": "RelationDTO",
         "type": "object"
       },
+      "RelationInput": {
+        "properties": {
+          "from_id": {
+            "format": "uuid",
+            "title": "From Id",
+            "type": "string"
+          },
+          "relation": {
+            "enum": [
+              "supports",
+              "disputes",
+              "qualifies",
+              "exception_to",
+              "derives_from"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "to_id": {
+            "format": "uuid",
+            "title": "To Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_id",
+          "to_id",
+          "relation"
+        ],
+        "title": "RelationInput",
+        "type": "object"
+      },
       "ReleaseDTO": {
         "properties": {
           "active": {
@@ -3988,7 +4542,7 @@
       "ReviewInput": {
         "properties": {
           "base_revision": {
-            "description": "the revision reviewed (1 for terms, scopes)",
+            "description": "the revision reviewed (1 for terms, scopes, relations)",
             "minimum": 1.0,
             "title": "Base Revision",
             "type": "integer"
@@ -4014,7 +4568,10 @@
               "method",
               "concept",
               "term",
-              "school_scope"
+              "school_scope",
+              "assertion",
+              "assertion_relation",
+              "rule"
             ],
             "title": "Entity Kind",
             "type": "string"
@@ -4302,6 +4859,367 @@
           "review_id"
         ],
         "title": "ReviewResult",
+        "type": "object"
+      },
+      "RuleDTO": {
+        "properties": {
+          "assertion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assertion Id"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dsl": {
+            "additionalProperties": true,
+            "title": "Dsl",
+            "type": "object"
+          },
+          "dsl_hash": {
+            "title": "Dsl Hash",
+            "type": "string"
+          },
+          "fact_schema_version": {
+            "title": "Fact Schema Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "method_key": {
+            "title": "Method Key",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "rejected",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rule_key",
+          "revision",
+          "school_id",
+          "school_key",
+          "method_id",
+          "method_key",
+          "assertion_id",
+          "dsl",
+          "dsl_hash",
+          "fact_schema_version",
+          "state",
+          "author_id",
+          "created_at"
+        ],
+        "title": "RuleDTO",
+        "type": "object"
+      },
+      "RuleDetail": {
+        "properties": {
+          "assertion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assertion Id"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dsl": {
+            "additionalProperties": true,
+            "title": "Dsl",
+            "type": "object"
+          },
+          "dsl_hash": {
+            "title": "Dsl Hash",
+            "type": "string"
+          },
+          "fact_schema_version": {
+            "title": "Fact Schema Version",
+            "type": "string"
+          },
+          "fixtures": {
+            "items": {
+              "$ref": "#/components/schemas/Fixture"
+            },
+            "title": "Fixtures",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method_id": {
+            "format": "uuid",
+            "title": "Method Id",
+            "type": "string"
+          },
+          "method_key": {
+            "title": "Method Key",
+            "type": "string"
+          },
+          "requires": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Requires",
+            "type": "array"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/RuleReview"
+            },
+            "title": "Reviews",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "rule_key": {
+            "title": "Rule Key",
+            "type": "string"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RuleSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "rejected",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rule_key",
+          "revision",
+          "school_id",
+          "school_key",
+          "method_id",
+          "method_key",
+          "assertion_id",
+          "dsl",
+          "dsl_hash",
+          "fact_schema_version",
+          "state",
+          "author_id",
+          "created_at",
+          "sources",
+          "requires",
+          "fixtures",
+          "reviews"
+        ],
+        "title": "RuleDetail",
+        "type": "object"
+      },
+      "RuleInput": {
+        "properties": {
+          "assertion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assertion Id"
+          },
+          "dsl": {
+            "additionalProperties": true,
+            "description": "a bazi-rule/1 document (docs/08)",
+            "title": "Dsl",
+            "type": "object"
+          }
+        },
+        "required": [
+          "dsl"
+        ],
+        "title": "RuleInput",
+        "type": "object"
+      },
+      "RuleReview": {
+        "properties": {
+          "base_revision": {
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "reject",
+              "revoke"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "reviewer_id": {
+            "format": "uuid",
+            "title": "Reviewer Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "base_revision",
+          "reviewer_id",
+          "created_at"
+        ],
+        "title": "RuleReview",
+        "type": "object"
+      },
+      "RuleRevisionInput": {
+        "properties": {
+          "base_revision": {
+            "minimum": 1.0,
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "dsl": {
+            "additionalProperties": true,
+            "title": "Dsl",
+            "type": "object"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_revision",
+          "dsl",
+          "reason"
+        ],
+        "title": "RuleRevisionInput",
+        "type": "object"
+      },
+      "RuleSource": {
+        "properties": {
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "physical_page_number",
+          "book_version_id",
+          "page_revision_id",
+          "quote"
+        ],
+        "title": "RuleSource",
         "type": "object"
       },
       "RuntimeConfigDTO": {
@@ -5271,6 +6189,75 @@
         "title": "UserPatch",
         "type": "object"
       },
+      "ValidateInput": {
+        "properties": {
+          "fixtures": {
+            "default": [],
+            "description": "replaces the stored fixtures of a draft",
+            "items": {
+              "$ref": "#/components/schemas/Fixture"
+            },
+            "maxItems": 100,
+            "title": "Fixtures",
+            "type": "array"
+          }
+        },
+        "title": "ValidateInput",
+        "type": "object"
+      },
+      "ValidationResult": {
+        "properties": {
+          "approvable_fixtures": {
+            "title": "Approvable Fixtures",
+            "type": "boolean"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/DslProblem"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "what still blocks approval, if anything",
+            "title": "Problem"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/FixtureResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "rule_id": {
+            "format": "uuid",
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "rule_id",
+          "valid",
+          "errors",
+          "results",
+          "approvable_fixtures",
+          "problem"
+        ],
+        "title": "ValidationResult",
+        "type": "object"
+      },
       "VersionDTO": {
         "properties": {
           "book_id": {
@@ -5482,6 +6469,93 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/assertion-relations": {
+      "post": {
+        "operationId": "create_relation_api_v1_assertion_relations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RelationDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Relation",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
     "/api/v1/assertions": {
       "get": {
         "operationId": "list_assertions_api_v1_assertions_get",
@@ -5650,6 +6724,91 @@
           "knowledge"
         ],
         "x-permission": "R"
+      },
+      "post": {
+        "operationId": "create_assertion_api_v1_assertions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssertionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AssertionDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Assertion",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
       }
     },
     "/api/v1/assertions/{assertion_id}": {
@@ -5739,6 +6898,116 @@
           "knowledge"
         ],
         "x-permission": "R"
+      }
+    },
+    "/api/v1/assertions/{assertion_id}/revisions": {
+      "post": {
+        "operationId": "revise_assertion_api_v1_assertions__assertion_id__revisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assertion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assertion Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssertionRevisionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AssertionDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Revise Assertion",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
       }
     },
     "/api/v1/auth/login": {
@@ -8001,6 +9270,182 @@
         "x-permission": "A"
       }
     },
+    "/api/v1/evidence": {
+      "post": {
+        "operationId": "create_evidence_api_v1_evidence_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_EvidenceDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Evidence",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/evidence/{evidence_id}": {
+      "get": {
+        "operationId": "get_evidence_api_v1_evidence__evidence_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_EvidenceDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Evidence",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      }
+    },
     "/api/v1/generations/{generation_id}": {
       "get": {
         "operationId": "get_generation_api_v1_generations__generation_id__get",
@@ -10158,6 +11603,553 @@
           }
         },
         "summary": "Review",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/rules": {
+      "get": {
+        "operationId": "list_rules_api_v1_rules_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "in_review",
+                    "approved",
+                    "rejected",
+                    "revoked"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "school_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "method_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Method Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_RuleDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Rules",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      },
+      "post": {
+        "operationId": "create_rule_api_v1_rules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RuleDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Rule",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/rules/{rule_id}": {
+      "get": {
+        "operationId": "get_rule_api_v1_rules__rule_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RuleDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Rule",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/rules/{rule_id}/revisions": {
+      "post": {
+        "operationId": "revise_rule_api_v1_rules__rule_id__revisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleRevisionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RuleDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Revise Rule",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/rules/{rule_id}/validate": {
+      "post": {
+        "operationId": "validate_rule_api_v1_rules__rule_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ValidationResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Validate Rule",
         "tags": [
           "knowledge"
         ],
