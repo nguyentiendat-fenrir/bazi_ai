@@ -27,6 +27,8 @@ class SearchInput(BaseModel):
     topic_ids: list[uuid.UUID] = Field(default=[], max_length=20)
     page_from: int | None = Field(default=None, ge=1)
     page_to: int | None = Field(default=None, ge=1)
+    rerank: bool = Field(default=True, description='order the top 40 with the active reranker')
+    pack: bool = Field(default=False, description='also return the packed evidence bundle')
 
     @model_validator(mode='after')
     def page_range(self) -> 'SearchInput':
@@ -78,6 +80,45 @@ class Hit(BaseModel):
     school_key: str | None
     pages: list[int]
     spans: list[HitSpan]
+    ordinal: int
+    rerank_score: float | None = None
+
+
+class BundleSpan(BaseModel):
+    page_revision_id: uuid.UUID
+    block_id: uuid.UUID
+    start_offset: int
+    end_offset: int
+    physical_page_number: int
+
+
+class EvidenceGroup(BaseModel):
+    evidence_id: str = Field(description='opaque handle a model cites (E1, E2, …)')
+    chunk_ids: list[uuid.UUID]
+    book_id: uuid.UUID
+    book_title: str
+    book_version_id: uuid.UUID
+    edition_label: str
+    school_key: str | None
+    speaker_layer: str
+    section_title: str
+    section_path: str
+    pages: list[int]
+    printed_pages: list[str]
+    spans: list[BundleSpan]
+    excerpt: str
+    tokens: int
+    score: float
+    rerank_score: float | None
+    kinds: list[str]
+    merged: bool
+
+
+class Bundle(BaseModel):
+    groups: list[EvidenceGroup]
+    tokens: int
+    omitted: int
+    truncated: bool
 
 
 class SearchResult(BaseModel):
@@ -89,6 +130,7 @@ class SearchResult(BaseModel):
     degraded: list[str]
     counts: dict[str, int] = Field(default_factory=dict)
     took_ms: float | None = None
+    bundle: Bundle | None = None
 
 
 @router.post('/search', response_model=Envelope[SearchResult], responses=AUTHENTICATED_ERRORS,
@@ -97,7 +139,9 @@ def run_search(body: SearchInput, request: Request,
                principal: Principal = Depends(current_principal),
                conn: Connection = Depends(db)) -> dict:
     spec = Spec(body.query, body.top_k, body.school_ids, body.book_ids, body.book_version_ids,
-                body.topic_ids, (body.page_from, body.page_to) if body.page_from else None)
-    settings = request.app.state.settings
-    transport = getattr(request.app.state, 'embedding_transport', None)
-    return envelope(search(conn, principal, spec, settings.app_env, transport))
+                body.topic_ids, (body.page_from, body.page_to) if body.page_from else None,
+                body.rerank, body.pack)
+    state = request.app.state
+    return envelope(search(conn, principal, spec, state.settings.app_env,
+                           getattr(state, 'embedding_transport', None),
+                           getattr(state, 'rerank_transport', None)))

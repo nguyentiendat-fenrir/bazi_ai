@@ -36,6 +36,8 @@ from ..documents.text import fold, nfc
 from .embedding import EmbeddingError, build_embedder, checked
 from .indexer import LEXICAL_VERSION, _vector_literal
 from .models import load_profile
+from .packing import pack
+from .rerank import MAX_CANDIDATES as RERANK_CANDIDATES, rerank_hits
 
 CANDIDATES = 80
 FIXTURE_MAX_DISTANCE = 0.6
@@ -61,6 +63,8 @@ class Spec:
     book_version_ids: list = field(default_factory=list)
     topic_ids: list = field(default_factory=list)
     page_range: tuple[int, int] | None = None
+    rerank: bool = True
+    pack: bool = False
 
     @property
     def filtered(self) -> bool:
@@ -156,7 +160,8 @@ def _scope(principal: Principal, spec: Spec, release_id) -> tuple[str, dict]:
     cte = ('WITH members AS (SELECT m.generation_id, m.book_version_id FROM corpus_members m'
            ' JOIN book_versions v ON v.id = m.book_version_id JOIN books b ON b.id = v.book_id'
            f" WHERE {' AND '.join(member)}),"
-           ' scope AS (SELECT gc.chunk_id, gc.generation_id, gc.section_id, mm.book_version_id'
+           ' scope AS (SELECT gc.chunk_id, gc.generation_id, gc.section_id, gc.ordinal,'
+           ' mm.book_version_id'
            ' FROM generation_chunks gc JOIN members mm ON mm.generation_id = gc.generation_id'
            f" JOIN chunks c ON c.id = gc.chunk_id WHERE {' AND '.join(chunk)})")
     return cte, params
@@ -277,7 +282,8 @@ def _details(conn: Connection, hits: list[dict]) -> list[dict]:
 
 def _meta(conn: Connection, cte: str, params: dict, ids: list[str]) -> dict[str, dict]:
     rows = conn.execute(text(
-        f'{cte} SELECT s.chunk_id, s.book_version_id, s.generation_id, b.id AS book_id, b.title,'
+        f'{cte} SELECT s.chunk_id, s.book_version_id, s.generation_id, s.ordinal,'
+        ' b.id AS book_id, b.title,'
         ' v.edition_label, sec.title AS section_title, sec.path AS section_path,'
         ' (SELECT sch.key FROM chunk_classifications cc JOIN schools sch ON sch.id = cc.school_id'
         "  WHERE cc.generation_id = s.generation_id AND cc.chunk_id = s.chunk_id"
@@ -289,13 +295,14 @@ def _meta(conn: Connection, cte: str, params: dict, ids: list[str]) -> dict[str,
                                  'book_version_id': str(r['book_version_id']),
                                  'edition_label': r['edition_label'],
                                  'generation_id': str(r['generation_id']),
+                                 'ordinal': r['ordinal'],
                                  'section_title': r['section_title'],
                                  'section_path': r['section_path'],
                                  'school_key': r['school_key']} for r in rows}
 
 
 def search(conn: Connection, principal: Principal, spec: Spec, app_env: str = 'dev',
-           transport=None) -> dict:
+           transport=None, rerank_transport=None) -> dict:
     started = time.perf_counter()
     normalized = ' '.join(nfc(spec.query).split())
     folded = fold(normalized)
@@ -320,14 +327,23 @@ def search(conn: Connection, principal: Principal, spec: Spec, app_env: str = 'd
         base['degraded'].append(problem)
     else:
         lists['vector'] = vector
-    fused = fuse(lists)[:spec.top_k]
+    fused = fuse(lists)[:max(spec.top_k, RERANK_CANDIDATES if spec.rerank or spec.pack else 0)]
     meta = _meta(conn, cte, params, [h['chunk_id'] for h in fused])
     for hit in fused:
         hit['meta'] = meta[hit['chunk_id']]
-    hits = _details(conn, fused)
-    for hit in hits:
+    candidates = _details(conn, fused)
+    for hit in candidates:
         hit.pop('meta', None)
-    return {**base, 'status': 'ok' if hits else 'no_match', 'hits': hits,
-            'query': {**base['query'], 'expansions': found},
-            'counts': {'scope': in_scope, **{k: len(v) for k, v in lists.items()}},
-            'took_ms': round((time.perf_counter() - started) * 1000, 1)}
+    if spec.rerank:
+        candidates, problem = rerank_hits(conn, normalized, candidates, app_env, rerank_transport)
+        if problem:
+            base['degraded'].append(problem)
+    hits = candidates[:spec.top_k]
+    result = {**base, 'status': 'ok' if hits else 'no_match', 'hits': hits,
+              'query': {**base['query'], 'expansions': found},
+              'counts': {'scope': in_scope, **{k: len(v) for k, v in lists.items()}}}
+    if spec.pack:
+        result['bundle'] = pack(candidates, book_filtered=bool(spec.book_ids
+                                                               or spec.book_version_ids))
+    result['took_ms'] = round((time.perf_counter() - started) * 1000, 1)
+    return result

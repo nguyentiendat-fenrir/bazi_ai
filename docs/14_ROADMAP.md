@@ -76,8 +76,11 @@ khác tra tại bảng cuối file này.
 - T035 ✅ `POST /search`: phạm vi theo quyền/release, lọc trường phái/sách/topic/trang ngay
   trong truy vấn, lexical + vector + tiêu đề section trộn RRF, mở rộng alias có dấu; smoke 10
   câu seed: Recall@5 9/10, Recall@10 10/10.
-- Việc kế tiếp: T036 benchmark embedding/reranker + đóng gói context (cần model thật trên
-  Ubuntu), T037 citation; T025.1 gold cần chuyên gia; smoke T002 khi có máy.
+- T036 ⏳ adapter reranker + fallback + chặn gửi ngoài, đóng gói evidence bundle, dataset/run
+  đánh giá (recall/hit/nDCG/MRR/latency); baseline seed: hit@10 1,0, recall@20 0,87, MRR 0,70.
+  Còn chờ: chọn model embedding/reranker thật trên Ubuntu với gold đã duyệt.
+- Việc kế tiếp: T037 citation resolver/validator; T025.1 gold cần chuyên gia; smoke T002
+  khi có máy.
 
 ## Các giai đoạn
 
@@ -199,7 +202,7 @@ trước khi trình duyệt.
 | T024 | Ontology releases và dependency impact graph | K3 | ✅ |
 | T025 | Tập gold retrieval và chuyên môn | K3 | |
 | T035 | Hybrid candidate retrieval và filters | K4 | ✅ |
-| T036 | Embedding/reranker benchmark và context packing | K4 | |
+| T036 | Embedding/reranker benchmark và context packing | K4 | ⏳ |
 | T037 | Citation resolver và validator | K4 | |
 | T038 | LLM adapters, cost reservation và mocks | K4 | |
 | T026 | Adapter Calculation Engine và schema facts | K6 | |

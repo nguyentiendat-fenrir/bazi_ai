@@ -83,6 +83,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T024): các route ontology release và `GET /knowledge/impact` ở bảng trên; `POST /reviews` với `revoke` trả `analyses_stale`. `POST /knowledge/reevaluate` chờ engine luận giải (K6).
 
+Đã triển khai (T036): `POST /search` nhận `rerank` (mặc định bật) và `pack` (trả `bundle` gồm nhóm evidence `E1…`); các route evaluation ở bảng dưới.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ
@@ -155,9 +157,10 @@ POST charts analyses tạo conversation nội bộ gắn analysis để dùng c�
 
 | Method/path | Quyền | Request / response |
 |---|---|---|
-| GET/POST /evaluation-datasets | V | version/split/rights + items qua upload JSON schema; list/201 |
+| GET/POST /evaluation-datasets | V | name, version, rights, items[key, kind retrieval/no_answer, input.query+filters, expected.relevant[version,pages,grade]/no_answer, split]; 201 |
+| POST /evaluation-datasets/{id}/approve | V | chuyên gia ký: reviewer cho mọi item, dataset approved; đã duyệt → 409 |
 | GET /evaluation-datasets/{id}/items | V | paginated expected/verified sources |
-| POST /evaluation-runs | V | dataset_id,config,mode offline/live,budget_limit →202 |
+| POST /evaluation-runs | V | dataset_id, top_k, rerank, split? → 201 run đồng bộ (≤ 500 item) với metrics + kết quả từng item |
 | GET /evaluation-runs/{id} | V | status,metrics,per-item results/report |
 | GET /dashboard | R | allowed counters, no private user aggregates |
 | GET /operations/metrics | A | queue health, disk, errors, latency, cost |

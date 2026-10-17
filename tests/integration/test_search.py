@@ -69,7 +69,7 @@ class SearchTests(PipelineTestCase):
         top = both['hits'][0]
         self.assertTrue(top['spans'] and top['pages'] == [1])
         self.assertTrue({'lexical', 'vector'} <= set(top['ranks']), top['ranks'])
-        self.assertEqual(both['degraded'], [])
+        self.assertEqual(both['degraded'], ['reranker_not_configured'])
         folded = self.search(query='thuc than sinh tai')               # no accents typed
         self.assertEqual([h['chunk_id'] for h in folded['hits'][:2]],
                          [h['chunk_id'] for h in both['hits'][:2]])

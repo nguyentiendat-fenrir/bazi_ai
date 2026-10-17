@@ -1193,6 +1193,72 @@
         "title": "BookPatch",
         "type": "object"
       },
+      "Bundle": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "omitted": {
+            "title": "Omitted",
+            "type": "integer"
+          },
+          "tokens": {
+            "title": "Tokens",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "groups",
+          "tokens",
+          "omitted",
+          "truncated"
+        ],
+        "title": "Bundle",
+        "type": "object"
+      },
+      "BundleSpan": {
+        "properties": {
+          "block_id": {
+            "format": "uuid",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_revision_id",
+          "block_id",
+          "start_offset",
+          "end_offset",
+          "physical_page_number"
+        ],
+        "title": "BundleSpan",
+        "type": "object"
+      },
       "CaseDTO": {
         "properties": {
           "case_key": {
@@ -2161,6 +2227,148 @@
         "title": "Coverage",
         "type": "object"
       },
+      "DatasetDTO": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "title": "Items",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rights": {
+            "additionalProperties": true,
+            "title": "Rights",
+            "type": "object"
+          },
+          "split_manifest": {
+            "additionalProperties": true,
+            "title": "Split Manifest",
+            "type": "object"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "approved",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version",
+          "state",
+          "rights",
+          "split_manifest",
+          "items",
+          "created_at"
+        ],
+        "title": "DatasetDTO",
+        "type": "object"
+      },
+      "DatasetInput": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetItem"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rights": {
+            "additionalProperties": true,
+            "title": "Rights",
+            "type": "object"
+          },
+          "version": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "items"
+        ],
+        "title": "DatasetInput",
+        "type": "object"
+      },
+      "DatasetItem": {
+        "properties": {
+          "expected": {
+            "$ref": "#/components/schemas/ItemExpected"
+          },
+          "input": {
+            "$ref": "#/components/schemas/ItemInput"
+          },
+          "key": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "retrieval",
+              "no_answer"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_manifest": {
+            "additionalProperties": true,
+            "title": "Source Manifest",
+            "type": "object"
+          },
+          "split": {
+            "default": "dev",
+            "enum": [
+              "dev",
+              "test",
+              "holdout"
+            ],
+            "title": "Split",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "input",
+          "expected"
+        ],
+        "title": "DatasetItem",
+        "type": "object"
+      },
       "Dependents": {
         "properties": {
           "analyses": {
@@ -2291,6 +2499,22 @@
           "meta"
         ],
         "title": "Envelope[CorrectionResult]",
+        "type": "object"
+      },
+      "Envelope_DatasetDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DatasetDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[DatasetDTO]",
         "type": "object"
       },
       "Envelope_EvidenceDTO_": {
@@ -2597,6 +2821,22 @@
         "title": "Envelope[RuleDetail]",
         "type": "object"
       },
+      "Envelope_RunDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RunDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[RunDTO]",
+        "type": "object"
+      },
       "Envelope_SchoolDTO_": {
         "properties": {
           "data": {
@@ -2887,6 +3127,142 @@
           "quote"
         ],
         "title": "EvidenceDTO",
+        "type": "object"
+      },
+      "EvidenceGroup": {
+        "properties": {
+          "book_id": {
+            "format": "uuid",
+            "title": "Book Id",
+            "type": "string"
+          },
+          "book_title": {
+            "title": "Book Title",
+            "type": "string"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "chunk_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Chunk Ids",
+            "type": "array"
+          },
+          "edition_label": {
+            "title": "Edition Label",
+            "type": "string"
+          },
+          "evidence_id": {
+            "description": "opaque handle a model cites (E1, E2, …)",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "kinds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Kinds",
+            "type": "array"
+          },
+          "merged": {
+            "title": "Merged",
+            "type": "boolean"
+          },
+          "pages": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "printed_pages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Printed Pages",
+            "type": "array"
+          },
+          "rerank_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Score"
+          },
+          "school_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Key"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "section_path": {
+            "title": "Section Path",
+            "type": "string"
+          },
+          "section_title": {
+            "title": "Section Title",
+            "type": "string"
+          },
+          "spans": {
+            "items": {
+              "$ref": "#/components/schemas/BundleSpan"
+            },
+            "title": "Spans",
+            "type": "array"
+          },
+          "speaker_layer": {
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "tokens": {
+            "title": "Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "chunk_ids",
+          "book_id",
+          "book_title",
+          "book_version_id",
+          "edition_label",
+          "school_key",
+          "speaker_layer",
+          "section_title",
+          "section_path",
+          "pages",
+          "printed_pages",
+          "spans",
+          "excerpt",
+          "tokens",
+          "score",
+          "rerank_score",
+          "kinds",
+          "merged"
+        ],
+        "title": "EvidenceGroup",
         "type": "object"
       },
       "EvidenceInput": {
@@ -3248,6 +3624,10 @@
             "title": "Kind",
             "type": "string"
           },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
           "pages": {
             "items": {
               "type": "integer"
@@ -3262,6 +3642,17 @@
             "description": "rank in each candidate list (lexical, vector)",
             "title": "Ranks",
             "type": "object"
+          },
+          "rerank_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Score"
           },
           "school_key": {
             "anyOf": [
@@ -3320,7 +3711,8 @@
           "section_path",
           "school_key",
           "pages",
-          "spans"
+          "spans",
+          "ordinal"
         ],
         "title": "Hit",
         "type": "object"
@@ -3438,6 +3830,148 @@
           "case_revision"
         ],
         "title": "ImpactCounts",
+        "type": "object"
+      },
+      "ItemDTO": {
+        "properties": {
+          "expected": {
+            "additionalProperties": true,
+            "title": "Expected",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input": {
+            "additionalProperties": true,
+            "title": "Input",
+            "type": "object"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "split": {
+            "enum": [
+              "dev",
+              "test",
+              "holdout"
+            ],
+            "title": "Split",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "kind",
+          "input",
+          "expected",
+          "split",
+          "reviewer_id"
+        ],
+        "title": "ItemDTO",
+        "type": "object"
+      },
+      "ItemExpected": {
+        "properties": {
+          "no_answer": {
+            "default": false,
+            "title": "No Answer",
+            "type": "boolean"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "relevant": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RelevantPages"
+            },
+            "maxItems": 50,
+            "title": "Relevant",
+            "type": "array"
+          }
+        },
+        "title": "ItemExpected",
+        "type": "object"
+      },
+      "ItemInput": {
+        "properties": {
+          "book_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Book Ids",
+            "type": "array"
+          },
+          "book_version_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Book Version Ids",
+            "type": "array"
+          },
+          "query": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "school_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "School Ids",
+            "type": "array"
+          },
+          "topic_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Topic Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "ItemInput",
         "type": "object"
       },
       "JobDTO": {
@@ -3932,6 +4466,52 @@
           "meta"
         ],
         "title": "ListEnvelope[ConceptDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_DatasetDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[DatasetDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_ItemDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ItemDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[ItemDTO]",
         "type": "object"
       },
       "ListEnvelope_JobDTO_": {
@@ -5419,6 +5999,39 @@
         "title": "ReleasesView",
         "type": "object"
       },
+      "RelevantPages": {
+        "properties": {
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "grade": {
+            "default": 1,
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Grade",
+            "type": "integer"
+          },
+          "pages": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Pages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "book_version_id",
+          "pages"
+        ],
+        "title": "RelevantPages",
+        "type": "object"
+      },
       "ResolveInput": {
         "properties": {
           "action": {
@@ -6209,6 +6822,141 @@
         "title": "RuleSource",
         "type": "object"
       },
+      "RunDTO": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": true,
+            "description": "means of recall@k, hit@k, ndcg@10, mrr@10; latency",
+            "title": "Metrics",
+            "type": "object"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RunResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "config",
+          "status",
+          "metrics",
+          "created_at",
+          "results"
+        ],
+        "title": "RunDTO",
+        "type": "object"
+      },
+      "RunInput": {
+        "properties": {
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "rerank": {
+            "default": true,
+            "title": "Rerank",
+            "type": "boolean"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dev",
+                  "test",
+                  "holdout"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Split"
+          },
+          "top_k": {
+            "default": 20,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "title": "RunInput",
+        "type": "object"
+      },
+      "RunResult": {
+        "properties": {
+          "actual": {
+            "additionalProperties": true,
+            "title": "Actual",
+            "type": "object"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "scores": {
+            "additionalProperties": true,
+            "title": "Scores",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "error",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "status",
+          "scores",
+          "actual",
+          "duration_ms"
+        ],
+        "title": "RunResult",
+        "type": "object"
+      },
       "RuntimeConfigDTO": {
         "description": "Redacted runtime facts: which providers are configured, never their secrets.",
         "properties": {
@@ -6486,6 +7234,12 @@
             "title": "Mode",
             "type": "string"
           },
+          "pack": {
+            "default": false,
+            "description": "also return the packed evidence bundle",
+            "title": "Pack",
+            "type": "boolean"
+          },
           "page_from": {
             "anyOf": [
               {
@@ -6515,6 +7269,12 @@
             "minLength": 1,
             "title": "Query",
             "type": "string"
+          },
+          "rerank": {
+            "default": true,
+            "description": "order the top 40 with the active reranker",
+            "title": "Rerank",
+            "type": "boolean"
           },
           "school_ids": {
             "default": [],
@@ -6552,6 +7312,16 @@
       },
       "SearchResult": {
         "properties": {
+          "bundle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Bundle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "counts": {
             "additionalProperties": {
               "type": "integer"
@@ -11138,6 +11908,539 @@
           "releases"
         ],
         "x-permission": "A"
+      }
+    },
+    "/api/v1/evaluation-datasets": {
+      "get": {
+        "operationId": "list_datasets_api_v1_evaluation_datasets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_DatasetDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Datasets",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      },
+      "post": {
+        "operationId": "create_dataset_api_v1_evaluation_datasets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DatasetDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Dataset",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/evaluation-datasets/{dataset_id}/approve": {
+      "post": {
+        "operationId": "approve_dataset_api_v1_evaluation_datasets__dataset_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_DatasetDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Approve Dataset",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/evaluation-datasets/{dataset_id}/items": {
+      "get": {
+        "operationId": "list_items_api_v1_evaluation_datasets__dataset_id__items_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_ItemDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Items",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/evaluation-runs": {
+      "post": {
+        "operationId": "create_run_api_v1_evaluation_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RunDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Run",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/evaluation-runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_v1_evaluation_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_RunDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Run",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
       }
     },
     "/api/v1/evidence": {
