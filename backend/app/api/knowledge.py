@@ -177,6 +177,7 @@ class ReviewResult(BaseModel):
     terms_approved: int | None = None
     rebuild: str | None = Field(default=None, description='school scopes: queued or why not')
     job_id: uuid.UUID | None = None
+    analyses_stale: int | None = Field(default=None, description='revoke: answers marked stale')
 
 
 class ScopeDTO(BaseModel):

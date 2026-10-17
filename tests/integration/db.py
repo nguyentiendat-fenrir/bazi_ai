@@ -43,6 +43,9 @@ def create_database() -> str:
 
 
 def drop_database(name: str) -> None:
+    for conninfo in list(_ENGINES):
+        if psycopg.conninfo.conninfo_to_dict(conninfo).get('dbname') == name:
+            _ENGINES.pop(conninfo).dispose()
     with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
         admin.execute(sql.SQL('DROP DATABASE IF EXISTS {} WITH (FORCE)')
                       .format(sql.Identifier(name)))
@@ -88,10 +91,17 @@ def drop_role(role: str) -> None:
         admin.execute(sql.SQL('DROP ROLE IF EXISTS {}').format(sql.Identifier(role)))
 
 
+_ENGINES: dict = {}
+
+
 def engine_for(conninfo: str):
-    # A small pool like production (core.db.make_engine): a worker run opens thousands of
-    # short transactions, and one TCP connection each exhausts Windows ephemeral ports.
-    # Test databases are dropped WITH (FORCE), so pooled connections never block cleanup.
-    return create_engine('postgresql+psycopg://', poolclass=pool.QueuePool, pool_size=2,
-                         max_overflow=8, pool_pre_ping=True,
-                         creator=lambda: psycopg.connect(conninfo))
+    """One pooled engine per conninfo, disposed when its database is dropped.
+
+    A small pool like production (core.db.make_engine): a worker run opens thousands of
+    short transactions, and one TCP connection each exhausts Windows ephemeral ports.
+    """
+    if conninfo not in _ENGINES:
+        _ENGINES[conninfo] = create_engine('postgresql+psycopg://', poolclass=pool.QueuePool,
+                                           pool_size=2, max_overflow=8, pool_pre_ping=True,
+                                           creator=lambda: psycopg.connect(conninfo))
+    return _ENGINES[conninfo]

@@ -28,6 +28,7 @@ from sqlalchemy.engine import Connection
 from ..auth.service import Principal
 from ..core.errors import AppError
 from ..rules import dsl as rule_dsl
+from . import impact
 from .cases import validate_payload
 from .evidence import sources_usable
 from .rules import _fixtures, coverage_problem, run_fixtures
@@ -174,6 +175,11 @@ def decide(conn: Connection, principal: Principal, kind: str, entity_id: uuid.UU
         effects['terms_approved'] = _carried_terms(conn, principal, entity_id, current)
     if kind == 'school_scope' and decision in ('approve', 'revoke'):
         effects.update(_rebuild(conn, principal, entity_id))
+    if decision == 'revoke':
+        # Answers that relied on it, directly or downstream, are marked stale (docs/06).
+        reached = (impact.downstream(conn, kind, entity_id) if kind in impact.ROOTS
+                   else {kind: {str(entity_id)}})
+        effects['analyses_stale'] = impact.mark_stale(conn, reached, f'{kind} revoked: {reason}')
     if decision in ('approve', 'reject'):
         # A decision on a machine candidate settles its review item.
         conn.execute(text(

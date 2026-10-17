@@ -70,8 +70,11 @@ khác tra tại bảng cuối file này.
 - T023 ✅ parser lá số in trong sách (4 dạng, kiểm 60 Giáp Tý, Càn/Khôn tạo, đại vận) thành
   book case draft có evidence; case người dùng riêng tư; API cases + review. Đo: ~1.220 lá số
   trong 4 PDF.
-- Việc kế tiếp: T024 ontology releases và dependency impact graph; smoke T002 trên Ubuntu khi
-  có máy.
+- T024 ✅ ontology release từ concept/alias đã duyệt, publish ghim qua corpus release mới
+  (không xử lý lại tài liệu), đồ thị impact xuôi, revoke đánh dấu stale analyses phụ thuộc
+  (M011, chỉ số đếm qua RLS).
+- Việc kế tiếp: T025.1 bộ câu hỏi gold (cần chuyên gia) rồi K4 — T035 hybrid retrieval;
+  smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -190,7 +193,7 @@ trước khi trình duyệt.
 | T021 | Trích xuất candidates từ nguồn | K3 | ✅ |
 | T022 | Duyệt assertions/rules và relations | K3 | ✅ |
 | T023 | Kho mệnh lệ và structured chart từ sách | K3 | ✅ |
-| T024 | Ontology releases và dependency impact graph | K3 | |
+| T024 | Ontology releases và dependency impact graph | K3 | ✅ |
 | T025 | Tập gold retrieval và chuyên môn | K3 | |
 | T035 | Hybrid candidate retrieval và filters | K4 | |
 | T036 | Embedding/reranker benchmark và context packing | K4 | |

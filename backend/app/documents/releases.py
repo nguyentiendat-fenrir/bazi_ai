@@ -187,9 +187,10 @@ def _derive_release(conn: Connection, parent, collection_id, ontology, version_i
             ' SELECT :r, m.book_version_id, m.generation_id FROM corpus_members m'
             ' JOIN generations g ON g.id = m.generation_id'
             ' JOIN book_versions v ON v.id = m.book_version_id'
-            " WHERE m.release_id = :parent AND m.book_version_id <> :v"
+            ' WHERE m.release_id = :parent'
+            ' AND (CAST(:v AS uuid) IS NULL OR m.book_version_id <> CAST(:v AS uuid))'
             " AND g.state IN ('ready', 'published') AND v.status = 'active'"),
-            {'r': release_id, 'parent': parent, 'v': version_id})
+            {'r': release_id, 'parent': parent, 'v': str(version_id) if version_id else None})
     if generation_id is not None:
         conn.execute(text('INSERT INTO corpus_members (release_id, book_version_id,'
                           ' generation_id) VALUES (:r, :v, :g)'),
@@ -247,6 +248,22 @@ def withdraw_version(conn: Connection, actor_id, version_id, reason: str,
     return {'book_version_id': str(version_id), 'status': 'withdrawn',
             'active_release_id': str(pointer[0]) if pointer else None,
             'visibility_epoch': pointer[1] if pointer else None}
+
+
+def repin_ontology(conn: Connection, actor_id, ontology_release_id,
+                   request_id: str | None = None) -> str | None:
+    """Pin a new ontology release: same generations, new release, activated atomically."""
+    lock_corpus(conn)
+    active = conn.execute(text(
+        'SELECT a.release_id, r.embedding_collection_id FROM active_corpus a'
+        ' JOIN corpus_releases r ON r.id = a.release_id WHERE a.slot = :s FOR UPDATE OF a'),
+        {'s': SLOT}).mappings().first()
+    if active is None:
+        return None                       # the first publication pins the current ontology
+    release_id = _derive_release(conn, active['release_id'], active['embedding_collection_id'],
+                                 ontology_release_id, None)
+    activate_release(conn, actor_id, release_id, active['release_id'], request_id)
+    return str(release_id)
 
 
 def activate_release(conn: Connection, actor_id, release_id, expected_active_id,

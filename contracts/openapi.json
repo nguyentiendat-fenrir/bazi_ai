@@ -1709,6 +1709,35 @@
         "title": "CaseSource",
         "type": "object"
       },
+      "Changes": {
+        "properties": {
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "removed",
+          "total"
+        ],
+        "title": "Changes",
+        "type": "object"
+      },
       "CheckDTO": {
         "properties": {
           "code": {
@@ -2132,6 +2161,24 @@
         "title": "Coverage",
         "type": "object"
       },
+      "Dependents": {
+        "properties": {
+          "analyses": {
+            "title": "Analyses",
+            "type": "integer"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "analyses",
+          "runs"
+        ],
+        "title": "Dependents",
+        "type": "object"
+      },
       "DslProblem": {
         "properties": {
           "message": {
@@ -2278,22 +2325,6 @@
         "title": "Envelope[GenerationDTO]",
         "type": "object"
       },
-      "Envelope_ImpactDTO_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ImpactDTO"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/Meta"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
-        ],
-        "title": "Envelope[ImpactDTO]",
-        "type": "object"
-      },
       "Envelope_JobDetail_": {
         "properties": {
           "data": {
@@ -2374,6 +2405,38 @@
         "title": "Envelope[MethodDTO]",
         "type": "object"
       },
+      "Envelope_OntologyDiff_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OntologyDiff"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[OntologyDiff]",
+        "type": "object"
+      },
+      "Envelope_OntologyReleaseDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OntologyReleaseDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[OntologyReleaseDTO]",
+        "type": "object"
+      },
       "Envelope_PageRevisionDTO_": {
         "properties": {
           "data": {
@@ -2388,6 +2451,22 @@
           "meta"
         ],
         "title": "Envelope[PageRevisionDTO]",
+        "type": "object"
+      },
+      "Envelope_PublishOntologyResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PublishOntologyResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[PublishOntologyResult]",
         "type": "object"
       },
       "Envelope_PublishResult_": {
@@ -3142,96 +3221,6 @@
         "title": "ImpactCounts",
         "type": "object"
       },
-      "ImpactDTO": {
-        "properties": {
-          "base_generation_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Generation Id"
-          },
-          "counts": {
-            "$ref": "#/components/schemas/ImpactCounts"
-          },
-          "generation_id": {
-            "format": "uuid",
-            "title": "Generation Id",
-            "type": "string"
-          },
-          "ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Ids",
-            "type": "array"
-          },
-          "job": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/JobRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "kind": {
-            "anyOf": [
-              {
-                "enum": [
-                  "page",
-                  "chunk_added",
-                  "chunk_removed",
-                  "evidence",
-                  "rule",
-                  "assertion",
-                  "case_revision"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kind"
-          },
-          "next_cursor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "cursor for the next page of ids of kind",
-            "title": "Next Cursor"
-          },
-          "state": {
-            "title": "State",
-            "type": "string"
-          }
-        },
-        "required": [
-          "generation_id",
-          "base_generation_id",
-          "state",
-          "job",
-          "counts",
-          "kind",
-          "ids",
-          "next_cursor"
-        ],
-        "title": "ImpactDTO",
-        "type": "object"
-      },
       "JobDTO": {
         "properties": {
           "attempt": {
@@ -3795,6 +3784,29 @@
         "title": "ListEnvelope[MethodDTO]",
         "type": "object"
       },
+      "ListEnvelope_OntologyReleaseDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyReleaseDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[OntologyReleaseDTO]",
+        "type": "object"
+      },
       "ListEnvelope_PageSummaryDTO_": {
         "properties": {
           "data": {
@@ -4226,6 +4238,119 @@
         "title": "MethodRevisionInput",
         "type": "object"
       },
+      "OntologyDiff": {
+        "properties": {
+          "base_release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Release Id"
+          },
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "concepts": {
+            "$ref": "#/components/schemas/Changes"
+          },
+          "manifest_hash": {
+            "title": "Manifest Hash",
+            "type": "string"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/Changes"
+          }
+        },
+        "required": [
+          "base_release_id",
+          "base_version",
+          "manifest_hash",
+          "changed",
+          "concepts",
+          "terms"
+        ],
+        "title": "OntologyDiff",
+        "type": "object"
+      },
+      "OntologyReleaseDTO": {
+        "properties": {
+          "concepts": {
+            "title": "Concepts",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Hash"
+          },
+          "pinned_by_active_corpus": {
+            "title": "Pinned By Active Corpus",
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "building",
+              "published",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "terms": {
+            "title": "Terms",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "state",
+          "manifest_hash",
+          "created_at",
+          "concepts",
+          "terms",
+          "pinned_by_active_corpus"
+        ],
+        "title": "OntologyReleaseDTO",
+        "type": "object"
+      },
       "Page": {
         "properties": {
           "has_more": {
@@ -4646,6 +4771,55 @@
           }
         },
         "title": "PublishInput",
+        "type": "object"
+      },
+      "PublishOntologyInput": {
+        "properties": {
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "defaults to onto-YYYYMMDD-N",
+            "title": "Version"
+          }
+        },
+        "title": "PublishOntologyInput",
+        "type": "object"
+      },
+      "PublishOntologyResult": {
+        "properties": {
+          "corpus_release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the corpus release that now pins it (none while the corpus is empty)",
+            "title": "Corpus Release Id"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/OntologyDiff"
+          },
+          "release": {
+            "$ref": "#/components/schemas/OntologyReleaseDTO"
+          }
+        },
+        "required": [
+          "release",
+          "diff",
+          "corpus_release_id"
+        ],
+        "title": "PublishOntologyResult",
         "type": "object"
       },
       "PublishResult": {
@@ -5340,6 +5514,18 @@
       },
       "ReviewResult": {
         "properties": {
+          "analyses_stale": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "revoke: answers marked stale",
+            "title": "Analyses Stale"
+          },
           "entity_id": {
             "format": "uuid",
             "title": "Entity Id",
@@ -6986,6 +7172,141 @@
         "title": "RevisionRef",
         "type": "object"
       },
+      "backend__app__api__ontology__ImpactDTO": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "dependents": {
+            "$ref": "#/components/schemas/Dependents",
+            "description": "owner-private answers counted, never listed"
+          },
+          "entity_id": {
+            "format": "uuid",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_kind": {
+            "title": "Entity Kind",
+            "type": "string"
+          },
+          "ids": {
+            "additionalProperties": {
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "first 100 per kind",
+            "title": "Ids",
+            "type": "object"
+          }
+        },
+        "required": [
+          "entity_kind",
+          "entity_id",
+          "counts",
+          "ids",
+          "dependents"
+        ],
+        "title": "ImpactDTO",
+        "type": "object"
+      },
+      "backend__app__api__pages__ImpactDTO": {
+        "properties": {
+          "base_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Generation Id"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ImpactCounts"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "page",
+                  "chunk_added",
+                  "chunk_removed",
+                  "evidence",
+                  "rule",
+                  "assertion",
+                  "case_revision"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "cursor for the next page of ids of kind",
+            "title": "Next Cursor"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generation_id",
+          "base_generation_id",
+          "state",
+          "job",
+          "counts",
+          "kind",
+          "ids",
+          "next_cursor"
+        ],
+        "title": "ImpactDTO",
+        "type": "object"
+      },
       "backend__app__api__pages__RevisionRef": {
         "properties": {
           "base_revision_id": {
@@ -7015,6 +7336,38 @@
           "base_revision_id"
         ],
         "title": "RevisionRef",
+        "type": "object"
+      },
+      "backend__app__api__schemas__Envelope_ImpactDTO___1": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__pages__ImpactDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ImpactDTO]",
+        "type": "object"
+      },
+      "backend__app__api__schemas__Envelope_ImpactDTO___2": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/backend__app__api__ontology__ImpactDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ImpactDTO]",
         "type": "object"
       }
     }
@@ -10702,7 +11055,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_ImpactDTO_"
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ImpactDTO___1"
                 }
               }
             },
@@ -11679,6 +12032,104 @@
         "x-permission": "V"
       }
     },
+    "/api/v1/knowledge/impact": {
+      "get": {
+        "operationId": "knowledge_impact_api_v1_knowledge_impact_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "entity_kind",
+            "required": true,
+            "schema": {
+              "title": "Entity Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entity Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Envelope_ImpactDTO___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Knowledge Impact",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
     "/api/v1/methods": {
       "get": {
         "operationId": "list_methods_api_v1_methods_get",
@@ -12080,6 +12531,312 @@
           "knowledge"
         ],
         "x-permission": "V"
+      }
+    },
+    "/api/v1/ontology-releases": {
+      "get": {
+        "operationId": "list_releases_api_v1_ontology_releases_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_OntologyReleaseDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Releases",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      },
+      "post": {
+        "operationId": "publish_api_v1_ontology_releases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishOntologyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PublishOntologyResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Publish",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/ontology-releases/preview": {
+      "get": {
+        "operationId": "preview_api_v1_ontology_releases_preview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_OntologyDiff_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Preview",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/ontology-releases/{release_id}": {
+      "get": {
+        "operationId": "get_release_api_v1_ontology_releases__release_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_OntologyReleaseDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Release",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
       }
     },
     "/api/v1/page-revisions/{revision_id}": {

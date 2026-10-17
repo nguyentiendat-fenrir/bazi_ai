@@ -81,6 +81,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T023): `GET /cases` (lọc school_id/state/origin/book_version_id, cursor), `POST /cases` (`user_case` cho mọi người dùng, riêng tư theo chủ; `book_case`/`synthetic_test` chỉ reviewer, book case cần evidence), `GET /cases/{id}` (revision mới nhất, các revision, nguồn có trích dẫn), `POST /cases/{id}/revisions`, `DELETE /cases/{id}` (204, tombstone; case người khác → 404). Payload sai (trụ ngoài 60 Giáp Tý, có `birth_date`) → 422. `POST /reviews` nhận `case_revision`.
 
+Đã triển khai (T024): các route ontology release và `GET /knowledge/impact` ở bảng trên; `POST /reviews` với `revoke` trả `analyses_stale`. `POST /knowledge/reevaluate` chờ engine luận giải (K6).
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ
@@ -108,7 +110,9 @@ Các list hỗ trợ scope school_id/method_id/topic_id/book_id, q và cursor. A
 | POST /reviews | V | entity_kind,entity_id,base_revision,decision submit/return/approve/reject/revoke,reason; Idempotency-Key | guarded transition, review row cùng transaction, audit |
 | GET/POST /rulesets | R/V | school_id,method_id,rule_revision_ids | snapshot validate + ready, không lấy draft |
 | POST /rulesets/{id}/activate | V | expected_current_id | active method setting update atomic |
-| GET /knowledge/impact | V | entity_kind,entity_id | downstream analysis/case/rule revisions |
+| GET /knowledge/impact | V | entity_kind,entity_id | counts + ID (≤100/kind) phía dưới; analyses/runs chỉ có số đếm |
+| GET /ontology-releases, GET /ontology-releases/{id} | R | — | releases, số concept/alias, có được corpus active ghim |
+| GET /ontology-releases/preview, POST /ontology-releases | V | version?; Idempotency-Key | diff; 201 release + corpus release ghim nó |
 | POST /knowledge/reevaluate | V | dependency_kind,id,analysis_ids? | 202 operation, chỉ analyses được phép |
 | GET/POST /cases | R/V hoặc O user case | CaseInput origin,school_id,method_id?,chart_payload(book-case/1),narrative,claimed_events,evidence_ids |
 | GET /cases/{id}, POST /cases/{id}/revisions | R / V hoặc O | revision mới từ base_revision (lệch → 412) |
