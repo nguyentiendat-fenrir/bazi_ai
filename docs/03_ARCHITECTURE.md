@@ -2,8 +2,9 @@
 
 ## Hiện trạng và đích
 
-Đang chạy: Compose có PostgreSQL, Redis và `corpus-inspect` chạy một lần; chưa có
-backend/frontend ứng dụng. Topology dưới đây là **đích dài hạn**; service chỉ được
+Đang chạy: Compose có PostgreSQL, Redis và `corpus-inspect` chạy một lần; backend
+mới có foundation T003 (`backend/app`: config, logging, errors, health), chưa có
+frontend. Topology dưới đây là **đích dài hạn**; service chỉ được
 thêm cùng implementation và tests, không tham chiếu module chưa có. Image mang
 code/lock; sách mount read-only; DB/objects/checkpoints ngoài Git.
 

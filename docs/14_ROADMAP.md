@@ -16,7 +16,10 @@ khác tra tại bảng cuối file này.
   Compose tối giản PostgreSQL/Redis/inspector, doctor tách `dev`/`deploy`.
 - T002 ⏳ toolchain đã khóa, Compose đã build; còn smoke foundation trên Ubuntu 22.04
   thật (`scripts/dev doctor --target deploy`). Chi tiết ở decision log của 15.
-- Việc kế tiếp: hoàn tất T002 trên Ubuntu → T003.
+- T003 ✅ backend foundation: app factory, typed config, request ID, JSON log có
+  redaction, Problem Details, `/health/live` và `/health/ready` (chạy trên Windows dev;
+  chưa có Compose service API).
+- Việc kế tiếp: T004 migrations; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -112,7 +115,7 @@ trước khi trình duyệt.
 | T001 | Bảo toàn đầu vào và kiểm tra repository | K0 | ✅ |
 | T057 | Cấu trúc kho tri thức và kế hoạch RAG | K0 | ✅ |
 | T002 | Khóa toolchain, giấy phép và hạ tầng Compose | K1 | ⏳ smoke Ubuntu |
-| T003 | Backend foundation và logging | K1 | |
+| T003 | Backend foundation và logging | K1 | ✅ |
 | T004 | Migrations storage và document schema | K1 | |
 | T005 | Migrations knowledge, chart, chat và jobs | K1 | |
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | |

@@ -17,12 +17,14 @@ mục lục tài liệu: [docs/README.md](docs/README.md).
 | `infra/` | Image Linux và Compose cho thành phần đã chạy được |
 | `inputs/books/` | Sách gốc local, không Git; chép riêng sang Ubuntu |
 | `inputs/source/`, `legacy/bazi/` | Archive/mã BaZi gốc bảo toàn, tái dùng khi làm lá số |
+| `backend/` | FastAPI backend (`backend/app`) |
 | `tests/` | Unit, integration, bảo mật đầu vào và regression |
 | `docs/` | Đặc tả, API/schema, lộ trình và ADR — bắt đầu từ [docs/README.md](docs/README.md) |
 | `evidence/` | Manifest và audit dùng để kiểm chứng nguồn |
 | `.tools/`, `.cache/`, `.artifacts/`, `.venv/` | Công cụ/cache/output local đã ignore |
 
-Không tạo module rỗng. `backend/` và frontend sẽ xuất hiện cùng chức năng thật.
+Không tạo module rỗng. `backend/app` mới có foundation (config, log, lỗi, health);
+frontend sẽ xuất hiện cùng chức năng thật.
 Scaffold Next.js/proxy/worker trỏ tới code chưa có đã bỏ; stack dài hạn
 vẫn là FastAPI + Next.js + PostgreSQL/pgvector + Celery.
 
@@ -37,7 +39,12 @@ uv run --locked --group corpus python scripts/dev doctor --target dev
 uv run --locked --group corpus python scripts/dev inspect-books
 uv run --locked --group corpus python -B -m unittest discover -s tests -v
 uv run --locked python scripts/scan_secrets.py
+uv run --locked python -m uvicorn backend.app.main:create_app --factory --port 8000
 ```
+
+API đọc `.env`; config sai thì dừng ngay với tên field, không in giá trị. Kiểm
+`http://127.0.0.1:8000/api/v1/health/live` và `/health/ready` (model chưa cấu hình
+là `degraded`). Log là JSON một dòng, có `request_id` trùng header `X-Request-ID`.
 
 Inspector chỉ đọc, xuất JSON SHA256/trang/đoạn/bảng/cờ xem lại; không OCR/publish.
 Lưu output local vào `.artifacts/` nếu cần, không Git. `--sample-chars 1000` bật

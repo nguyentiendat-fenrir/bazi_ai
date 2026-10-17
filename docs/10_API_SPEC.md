@@ -15,7 +15,7 @@ Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu.
 | Method/path | Quyền | Request | Response / behavior |
 |---|---|---|---|
 | GET /health/live | public | — | 200 process up, không lộ version/secrets |
-| GET /health/ready | A hoặc internal | — | DB/storage/broker status; model unavailable là degraded không chặn chart |
+| GET /health/ready | A hoặc internal | — | DB/storage/broker status; model unavailable là degraded không chặn chart. Essential fail → 503. Trước T006 chỉ nhận loopback/RFC1918 |
 | POST /auth/login | public+rate limit | email,password | 200 user+CSRF, HttpOnly session cookie |
 | POST /auth/logout | R | — | 204 revoke current session |
 | GET /auth/me | R | — | UserDTO, role, capabilities |
