@@ -2644,6 +2644,64 @@
         "title": "DslProblem",
         "type": "object"
       },
+      "EmbeddingRef": {
+        "properties": {
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "locality": {
+            "description": "external: book text leaves the server only for versions that allow it",
+            "enum": [
+              "fixture",
+              "local",
+              "external"
+            ],
+            "title": "Locality",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_revision": {
+            "title": "Model Revision",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "ready": {
+            "description": "its vector collection is provisioned",
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "model_name",
+          "model_revision",
+          "dimension",
+          "locality",
+          "ready"
+        ],
+        "title": "EmbeddingRef",
+        "type": "object"
+      },
       "Envelope_AssertionDetail_": {
         "properties": {
           "data": {
@@ -3026,6 +3084,22 @@
           "meta"
         ],
         "title": "Envelope[ReleaseDetail]",
+        "type": "object"
+      },
+      "Envelope_ReviewItemDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReviewItemDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ReviewItemDTO]",
         "type": "object"
       },
       "Envelope_ReviewResult_": {
@@ -4271,6 +4345,15 @@
             ],
             "title": "Batch Id"
           },
+          "book_id": {
+            "format": "uuid",
+            "title": "Book Id",
+            "type": "string"
+          },
+          "book_title": {
+            "title": "Book Title",
+            "type": "string"
+          },
           "book_version_id": {
             "format": "uuid",
             "title": "Book Version Id",
@@ -4284,6 +4367,10 @@
           "created_at": {
             "format": "date-time",
             "title": "Created At",
+            "type": "string"
+          },
+          "edition_label": {
+            "title": "Edition Label",
             "type": "string"
           },
           "error": {
@@ -4377,6 +4464,9 @@
           "error",
           "generation_id",
           "book_version_id",
+          "book_id",
+          "book_title",
+          "edition_label",
           "batch_id",
           "parent_job_id",
           "pipeline_profile_id",
@@ -4412,6 +4502,15 @@
             ],
             "title": "Batch Id"
           },
+          "book_id": {
+            "format": "uuid",
+            "title": "Book Id",
+            "type": "string"
+          },
+          "book_title": {
+            "title": "Book Title",
+            "type": "string"
+          },
           "book_version_id": {
             "format": "uuid",
             "title": "Book Version Id",
@@ -4425,6 +4524,10 @@
           "created_at": {
             "format": "date-time",
             "title": "Created At",
+            "type": "string"
+          },
+          "edition_label": {
+            "title": "Edition Label",
             "type": "string"
           },
           "error": {
@@ -4533,6 +4636,9 @@
           "error",
           "generation_id",
           "book_version_id",
+          "book_id",
+          "book_title",
+          "edition_label",
           "batch_id",
           "parent_job_id",
           "pipeline_profile_id",
@@ -4898,6 +5004,29 @@
           "meta"
         ],
         "title": "ListEnvelope[PageSummaryDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_PipelineProfileDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineProfileDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[PipelineProfileDTO]",
         "type": "object"
       },
       "ListEnvelope_ProfileDTO_": {
@@ -5753,6 +5882,68 @@
         "title": "PageSummaryDTO",
         "type": "object"
       },
+      "PipelineProfileDTO": {
+        "properties": {
+          "chunker_version": {
+            "title": "Chunker Version",
+            "type": "string"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "embedding": {
+            "$ref": "#/components/schemas/EmbeddingRef"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "normalizer_version": {
+            "title": "Normalizer Version",
+            "type": "string"
+          },
+          "parser_version": {
+            "title": "Parser Version",
+            "type": "string"
+          },
+          "renderer_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renderer Version"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parser_version",
+          "chunker_version",
+          "normalizer_version",
+          "renderer_version",
+          "config",
+          "created_at",
+          "embedding"
+        ],
+        "title": "PipelineProfileDTO",
+        "type": "object"
+      },
       "ProcessInput": {
         "properties": {
           "pipeline_profile_id": {
@@ -6494,6 +6685,17 @@
       },
       "ReviewItemDTO": {
         "properties": {
+          "book_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Title"
+          },
           "book_version_id": {
             "anyOf": [
               {
@@ -6629,6 +6831,7 @@
           "page_id",
           "physical_page_number",
           "book_version_id",
+          "book_title",
           "entity_kind",
           "entity_id",
           "reason_code",
@@ -15968,6 +16171,120 @@
         "x-permission": "R"
       }
     },
+    "/api/v1/page-revisions/{revision_id}/render": {
+      "get": {
+        "description": "The page image a reviewer compares with the text (docs/11 · /review/ocr).",
+        "operationId": "render_page_api_v1_page_revisions__revision_id__render_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "revision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Revision Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1.0 = 72 dpi; capped at 8 million pixels",
+            "in": "query",
+            "name": "scale",
+            "required": false,
+            "schema": {
+              "default": 1.5,
+              "description": "1.0 = 72 dpi; capped at 8 million pixels",
+              "maximum": 3.0,
+              "minimum": 0.5,
+              "title": "Scale",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "PNG of the page"
+          },
+          "304": {
+            "description": "unchanged (If-None-Match)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Render Page",
+        "tags": [
+          "pages"
+        ],
+        "x-permission": "R"
+      }
+    },
     "/api/v1/pages/{page_id}/corrections": {
       "post": {
         "operationId": "correct_page_api_v1_pages__page_id__corrections_post",
@@ -16100,6 +16417,73 @@
         "x-permission": "V"
       }
     },
+    "/api/v1/pipeline-profiles": {
+      "get": {
+        "description": "Newest first; the UI preselects the newest profile whose collection is ready.",
+        "operationId": "pipeline_profiles_api_v1_pipeline_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_PipelineProfileDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Pipeline Profiles",
+        "tags": [
+          "ingestion"
+        ],
+        "x-permission": "V"
+      }
+    },
     "/api/v1/review-items": {
       "get": {
         "operationId": "list_items_api_v1_review_items_get",
@@ -16176,6 +16560,28 @@
                 }
               ],
               "title": "Generation Id"
+            }
+          },
+          {
+            "description": "page: source pages (OCR, quality); knowledge: candidates and changed sources of entities",
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "page",
+                    "knowledge"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "page: source pages (OCR, quality); knowledge: candidates and changed sources of entities",
+              "title": "Scope"
             }
           },
           {
@@ -16264,6 +16670,95 @@
           }
         },
         "summary": "List Items",
+        "tags": [
+          "reviews"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/review-items/{item_id}": {
+      "get": {
+        "operationId": "get_item_api_v1_review_items__item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ReviewItemDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Item",
         "tags": [
           "reviews"
         ],

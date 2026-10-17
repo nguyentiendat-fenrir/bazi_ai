@@ -973,6 +973,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/page-revisions/{revision_id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Render Page
+         * @description The page image a reviewer compares with the text (docs/11 · /review/ocr).
+         */
+        get: operations["render_page_api_v1_page_revisions__revision_id__render_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pages/{page_id}/corrections": {
         parameters: {
             query?: never;
@@ -990,6 +1010,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pipeline-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pipeline Profiles
+         * @description Newest first; the UI preselects the newest profile whose collection is ready.
+         */
+        get: operations["pipeline_profiles_api_v1_pipeline_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/review-items": {
         parameters: {
             query?: never;
@@ -999,6 +1039,23 @@ export interface paths {
         };
         /** List Items */
         get: operations["list_items_api_v1_review_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Item */
+        get: operations["get_item_api_v1_review_items__item_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2342,6 +2399,33 @@ export interface components {
             /** Path */
             path: string;
         };
+        /** EmbeddingRef */
+        EmbeddingRef: {
+            /** Dimension */
+            dimension: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Locality
+             * @description external: book text leaves the server only for versions that allow it
+             * @enum {string}
+             */
+            locality: "fixture" | "local" | "external";
+            /** Model Name */
+            model_name: string;
+            /** Model Revision */
+            model_revision: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Ready
+             * @description its vector collection is provisioned
+             */
+            ready: boolean;
+        };
         /** Envelope[AssertionDetail] */
         Envelope_AssertionDetail_: {
             data: components["schemas"]["AssertionDetail"];
@@ -2460,6 +2544,11 @@ export interface components {
         /** Envelope[ReleaseDetail] */
         Envelope_ReleaseDetail_: {
             data: components["schemas"]["ReleaseDetail"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ReviewItemDTO] */
+        Envelope_ReviewItemDTO_: {
+            data: components["schemas"]["ReviewItemDTO"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[ReviewResult] */
@@ -2955,6 +3044,13 @@ export interface components {
             /** Batch Id */
             batch_id: string | null;
             /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /** Book Title */
+            book_title: string;
+            /**
              * Book Version Id
              * Format: uuid
              */
@@ -2968,6 +3064,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Edition Label */
+            edition_label: string;
             error: components["schemas"]["JobError"] | null;
             /**
              * Generation Id
@@ -3014,6 +3112,13 @@ export interface components {
             /** Batch Id */
             batch_id: string | null;
             /**
+             * Book Id
+             * Format: uuid
+             */
+            book_id: string;
+            /** Book Title */
+            book_title: string;
+            /**
              * Book Version Id
              * Format: uuid
              */
@@ -3027,6 +3132,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Edition Label */
+            edition_label: string;
             error: components["schemas"]["JobError"] | null;
             /**
              * Generation Id
@@ -3185,6 +3292,13 @@ export interface components {
         ListEnvelope_PageSummaryDTO_: {
             /** Data */
             data: components["schemas"]["PageSummaryDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
+        /** ListEnvelope[PipelineProfileDTO] */
+        ListEnvelope_PipelineProfileDTO_: {
+            /** Data */
+            data: components["schemas"]["PipelineProfileDTO"][];
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
@@ -3513,6 +3627,34 @@ export interface components {
              * @enum {string}
              */
             state: "accepted" | "review_required" | "excluded";
+        };
+        /** PipelineProfileDTO */
+        PipelineProfileDTO: {
+            /** Chunker Version */
+            chunker_version: string;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            embedding: components["schemas"]["EmbeddingRef"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Normalizer Version */
+            normalizer_version: string;
+            /** Parser Version */
+            parser_version: string;
+            /** Renderer Version */
+            renderer_version: string | null;
         };
         /** ProcessInput */
         ProcessInput: {
@@ -3851,6 +3993,8 @@ export interface components {
         };
         /** ReviewItemDTO */
         ReviewItemDTO: {
+            /** Book Title */
+            book_title: string | null;
             /** Book Version Id */
             book_version_id: string | null;
             /**
@@ -10019,6 +10163,98 @@ export interface operations {
             };
         };
     };
+    render_page_api_v1_page_revisions__revision_id__render_get: {
+        parameters: {
+            query?: {
+                /** @description 1.0 = 72 dpi; capped at 8 million pixels */
+                scale?: number;
+            };
+            header?: never;
+            path: {
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PNG of the page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description unchanged (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     correct_page_api_v1_pages__page_id__corrections_post: {
         parameters: {
             query?: never;
@@ -10125,6 +10361,66 @@ export interface operations {
             };
         };
     };
+    pipeline_profiles_api_v1_pipeline_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEnvelope_PipelineProfileDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     list_items_api_v1_review_items_get: {
         parameters: {
             query?: {
@@ -10132,6 +10428,8 @@ export interface operations {
                 reason?: string | null;
                 book_version_id?: string | null;
                 generation_id?: string | null;
+                /** @description page: source pages (OCR, quality); knowledge: candidates and changed sources of entities */
+                scope?: ("page" | "knowledge") | null;
                 limit?: number;
                 cursor?: string | null;
             };
@@ -10162,6 +10460,78 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    get_item_api_v1_review_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ReviewItemDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["backend__app__api__schemas__Problem"];
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

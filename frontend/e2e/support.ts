@@ -1,6 +1,7 @@
 // Shared E2E helpers: stack details written by scripts/e2e_stack.py, sign-in through the
 // real form, and an API client (same origin as the browser) for seeding data.
 import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import { expect, request, type APIRequestContext, type Page } from '@playwright/test'
 
 export type Role = 'admin' | 'reviewer' | 'reader'
@@ -9,7 +10,7 @@ interface Stack {
   users: Record<Role, { id: string, email: string }>
   password: string
   pipeline_profile_id: string
-  fixtures: { clean: string, scan: string }
+  fixtures: Record<'clean_a' | 'clean_b' | 'clean_c' | 'scan' | 'corrupt' | 'not_pdf', string>
   api: string
 }
 
@@ -59,6 +60,33 @@ export async function apiAs(role: Role, baseURL: string): Promise<Api> {
       return response.json()
     },
   }
+}
+
+/** Upload one fixture through the API (batch with the stack's pipeline profile). */
+export async function uploadViaApi(api: Api, file: string, title: string) {
+  const batch = (await api.post('/api/v1/ingestion-batches', {
+    name: `e2e ${title}`, pipeline_profile_id: stack().pipeline_profile_id, auto_publish: false,
+  })).data
+  const response = await api.context.post('/api/v1/uploads', {
+    headers: { 'X-CSRF-Token': api.csrf, 'Idempotency-Key': `e2e-${tag()}-${tag()}` },
+    multipart: {
+      file: { name: basename(file), mimeType: 'application/pdf', buffer: readFileSync(file) },
+      batch_id: batch.id, rights_status: 'private_reference', title, edition_label: 'v1',
+      language: 'vi', external_processing_allowed: 'false',
+    },
+  })
+  expect(response.status(), await response.text()).toBe(201)
+  return (await response.json()).data as { book_id: string, version_id: string, job_id: string }
+}
+
+/** Poll a job until it leaves the active states; returns the final state. */
+export async function waitForJob(api: Api, jobId: string): Promise<string> {
+  for (let i = 0; i < 120; i++) {
+    const state = (await api.get(`/api/v1/jobs/${jobId}`)).data.state as string
+    if (!['queued', 'running', 'retry_wait', 'cancel_requested'].includes(state)) return state
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error(`job ${jobId} did not finish`)
 }
 
 /** A short unique tag so every test sees only its own rows in the shared database. */

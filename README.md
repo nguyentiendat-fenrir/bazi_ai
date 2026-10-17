@@ -69,6 +69,13 @@ uv run --locked python -m backend.app.cli create-runtime-login   # đọc POSTGR
 uv run --locked python -m backend.app.cli bootstrap-admin --email admin@example.test
 ```
 
+Upload cần một pipeline profile (parser/OCR + embedding đã provision); tạo bằng CLI, nên
+chạy trong image worker để phiên bản LibreOffice ghi đúng:
+
+```powershell
+uv run --locked python -m backend.app.cli pipeline-profile --name "Sách in" --embedding-profile <id> --ocr-languages vie+eng
+```
+
 API kết nối bằng `POSTGRES_APP_USER`. Nếu để trống, dev dùng owner và
 `/health/ready` báo `RLS_BYPASS_ROLE` (degraded); production từ chối khởi động.
 API đọc `.env`; config sai thì dừng ngay với tên field, không in giá trị. Kiểm

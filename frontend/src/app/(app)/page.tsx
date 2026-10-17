@@ -12,7 +12,7 @@ function count(items: unknown[], more: boolean | undefined): string {
   return more ? `${formatNumber(items.length)}+` : formatNumber(items.length)
 }
 
-function LibraryPanel() {
+function LibraryPanel({ canUpload }: { canUpload: boolean }) {
   const books = useQuery('dashboard:books', () =>
     call(api.GET('/api/v1/books', { params: { query: { limit: 6 } } })))
   return (
@@ -24,7 +24,8 @@ function LibraryPanel() {
       {books.error ? <ErrorState error={books.error} retry={books.reload} />
         : books.loading || !books.data ? <Loading rows={3} />
         : books.data.data.length === 0 ? (
-          <Empty title="Chưa có sách nào">
+          <Empty title="Chưa có sách nào"
+                 action={canUpload && <Link className="button" href="/books/upload">Tải sách lên</Link>}>
             Kho chưa có sách bạn được xem. Người duyệt tải sách lên rồi publish để tra cứu.
           </Empty>
         ) : (
@@ -62,7 +63,10 @@ function OperationsPanels() {
   return (
     <div className="grid">
       <section className="panel" aria-labelledby="jobs-heading">
-        <h2 id="jobs-heading">Jobs xử lý sách</h2>
+        <div className="panel-head">
+          <h2 id="jobs-heading">Jobs xử lý sách</h2>
+          <Link href="/jobs">Mở jobs</Link>
+        </div>
         {jobs.error ? <ErrorState error={jobs.error} retry={jobs.reload} />
           : jobs.loading || !jobs.data ? <Loading rows={2} />
           : (
@@ -75,7 +79,10 @@ function OperationsPanels() {
           )}
       </section>
       <section className="panel" aria-labelledby="reviews-heading">
-        <h2 id="reviews-heading">Mục cần duyệt</h2>
+        <div className="panel-head">
+          <h2 id="reviews-heading">Mục cần duyệt</h2>
+          <Link href="/review">Mở hàng đợi</Link>
+        </div>
         {reviews.error ? <ErrorState error={reviews.error} retry={reviews.reload} />
           : reviews.loading || !reviews.data ? <Loading rows={2} />
           : (
@@ -110,7 +117,7 @@ export default function DashboardPage() {
       <title>Tổng quan · Kho Bát Tự</title>
       <PageHeader title="Tổng quan" description={`Xin chào ${user?.email ?? ''}`} />
       {can('library:review') && <OperationsPanels />}
-      <LibraryPanel />
+      <LibraryPanel canUpload={can('library:review')} />
     </>
   )
 }

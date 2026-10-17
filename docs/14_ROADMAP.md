@@ -89,7 +89,11 @@ khác tra tại bảng cuối file này.
 - T043.1 ✅ `frontend/` Next.js 16 + TS client sinh từ OpenAPI (kiểm lệch snapshot), đăng
   nhập/CSRF/hết phiên, shell theo quyền, tổng quan, thư viện + chi tiết sách; Compose
   `api`/`frontend`/`gateway` (Caddy, chỉ loopback); 11 E2E Playwright trên stack thật.
-- Việc kế tiếp: T046.1 upload/jobs/duyệt OCR/publish; rồi T052.1/T053.1 backup/restore kho.
+- T046.1 ✅ màn tải sách (batch, tiến độ, thử lại từng tệp), jobs + nhật ký + hủy/thử lại,
+  phiên bản (publish có xác nhận thiếu trang, thu hồi gõ tên), hàng đợi duyệt và trang duyệt
+  ảnh + bbox + sửa khối + diff + rebase khi 412; API ảnh trang PNG, pipeline profiles (CLI
+  tạo), review item theo id; 17 E2E trên stack thật.
+- Việc kế tiếp: T052.1/T053.1 backup/restore kho.
 
 ## Các giai đoạn
 
@@ -230,7 +234,7 @@ trước khi trình duyệt.
 | T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
 | T044 | Giao diện lập/xem/lưu lá số | K6 | |
 | T045 | Chat UI, nguồn và so sánh | K6 | |
-| T046 | Library upload/jobs/OCR review dashboard | K5/K6 | |
+| T046 | Library upload/jobs/OCR review dashboard | K5/K6 | T046.1 ✅ |
 | T047 | Knowledge/rules/cases admin UI | K6 | |
 | T048 | Evaluation/settings/dashboard UI | K6 | |
 | T049 | Security hardening và privacy deletion | K7 | |

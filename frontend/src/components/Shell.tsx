@@ -16,16 +16,24 @@ interface NavItem {
   needs: Capability
   /** Also highlight for these path prefixes. */
   match?: string[]
+  /** ...but not for these (a more specific item owns them). */
+  except?: string[]
 }
 
 // Only screens backed by a real API appear here (docs/11: no placeholder screens).
 export const NAV: NavItem[] = [
   { href: '/', label: 'Tổng quan', needs: 'library:read' },
-  { href: '/books', label: 'Thư viện sách', needs: 'library:read', match: ['/books', '/versions'] },
+  { href: '/books', label: 'Thư viện sách', needs: 'library:read', match: ['/books', '/versions'],
+    except: ['/books/upload'] },
+  { href: '/books/upload', label: 'Tải sách lên', needs: 'library:review' },
+  { href: '/jobs', label: 'Jobs xử lý', needs: 'library:review' },
+  { href: '/review', label: 'Duyệt nguồn', needs: 'library:review', match: ['/pages'] },
 ]
 
 function active(pathname: string, item: NavItem): boolean {
   if (item.href === '/') return pathname === '/'
+  const under = (prefix: string) => pathname === prefix || pathname.startsWith(prefix + '/')
+  if (item.except?.some(under)) return false
   return [item.href, ...(item.match ?? [])].some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
 }

@@ -29,8 +29,10 @@ JOB_SELECT = (
     " (SELECT e.payload->>'stage' FROM job_events e WHERE e.job_id = j.id"
     "  AND e.code = 'STAGE_STARTED' ORDER BY e.seq DESC LIMIT 1) AS stage,"
     " (SELECT (e.payload->>'attempt')::int FROM job_events e WHERE e.job_id = j.id"
-    "  AND e.code = 'UNIT_RETRY' ORDER BY e.seq DESC LIMIT 1) AS attempt"
-    ' FROM ingestion_jobs j')
+    "  AND e.code = 'UNIT_RETRY' ORDER BY e.seq DESC LIMIT 1) AS attempt,"
+    ' v.book_id, b.title AS book_title, v.edition_label'
+    ' FROM ingestion_jobs j JOIN book_versions v ON v.id = j.book_version_id'
+    ' JOIN books b ON b.id = v.book_id')
 
 
 def job_dto(row) -> dict:
@@ -43,6 +45,8 @@ def job_dto(row) -> dict:
         'error': {'code': error.get('code'), 'message': error.get('message'),
                   'retryable': bool(error.get('retryable'))} if error else None,
         'generation_id': str(row['generation_id']), 'book_version_id': str(row['book_version_id']),
+        'book_id': str(row['book_id']), 'book_title': row['book_title'],
+        'edition_label': row['edition_label'],
         'batch_id': str(row['batch_id']) if row['batch_id'] else None,
         'parent_job_id': str(row['parent_job_id']) if row['parent_job_id'] else None,
         'pipeline_profile_id': str(row['pipeline_profile_id']),

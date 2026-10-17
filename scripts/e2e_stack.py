@@ -112,14 +112,22 @@ def fixtures(target: Path) -> dict:
             builder.page(lines=[(f'CHƯƠNG {n + 1}: {titles[n % len(titles)]}', 72, 720, 18, BLACK),
                                 (f'Sách {tag} trang {n + 1}: thực thần sinh tài, thương quan kiến quan.',
                                  72, 680, 11, BLACK),
-                                (f'Giáp Tý, Bính Dần, Mậu Thìn là ví dụ {tag} {n + 1}.', 72, 660, 11,
+                                (f'Giáp Tý, Bính Dần, Mậu Thìn là ví dụ {tag} {n + 1}.', 72, 600, 11,
                                  BLACK)])
         if scan:
             builder.page(image=(0, 0, 612, 792))
         return str(builder.save(target / file))
 
-    return {'clean': book('sach-mau-sach.pdf', 'mẫu sạch', 3, False),
-            'scan': book('sach-co-trang-quet.pdf', 'có trang quét', 2, True)}
+    corrupt = target / 'hong.pdf'                    # PDF magic, unreadable body
+    corrupt.write_bytes(b'%PDF-1.7' + bytes([10]) + b'garbage ' * 64)
+    not_pdf = target / 'khong-phai-pdf.pdf'          # wrong bytes behind a .pdf name
+    not_pdf.write_bytes('Đây chỉ là văn bản, không phải PDF.'.encode('utf-8'))
+    # Distinct bytes per file: the same file twice is a duplicate by design.
+    return {'clean_a': book('sach-mau-a.pdf', 'mẫu A', 3, False),
+            'clean_b': book('sach-mau-b.pdf', 'mẫu B', 3, False),
+            'clean_c': book('sach-mau-c.pdf', 'mẫu C', 2, False),
+            'scan': book('sach-co-trang-quet.pdf', 'có trang quét', 2, True),
+            'corrupt': str(corrupt), 'not_pdf': str(not_pdf)}
 
 
 class InlineBroker:

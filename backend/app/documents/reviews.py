@@ -28,9 +28,13 @@ SELECT = (
     'SELECT i.id, i.generation_id, i.page_revision_id, i.entity_kind, i.entity_id,'
     ' i.reason_code, i.severity, i.state, i.resolution, i.created_at, i.updated_at,'
     ' r.page_id, p.physical_page_number,'
-    ' coalesce(g.book_version_id, p.book_version_id) AS book_version_id'
+    ' coalesce(g.book_version_id, p.book_version_id) AS book_version_id, b.title AS book_title'
     ' FROM review_items i LEFT JOIN page_revisions r ON r.id = i.page_revision_id'
-    ' LEFT JOIN pages p ON p.id = r.page_id LEFT JOIN generations g ON g.id = i.generation_id')
+    ' LEFT JOIN pages p ON p.id = r.page_id LEFT JOIN generations g ON g.id = i.generation_id'
+    ' LEFT JOIN book_versions bv ON bv.id = coalesce(g.book_version_id, p.book_version_id)'
+    ' LEFT JOIN books b ON b.id = bv.book_id')
+SCOPES = {'page': 'i.entity_kind IS NULL AND i.page_revision_id IS NOT NULL',
+          'knowledge': 'i.entity_kind IS NOT NULL'}
 
 
 def _dto(row) -> dict:
@@ -39,7 +43,8 @@ def _dto(row) -> dict:
     return {'id': str(row['id']), 'generation_id': ref(row['generation_id']),
             'page_revision_id': ref(row['page_revision_id']), 'page_id': ref(row['page_id']),
             'physical_page_number': row['physical_page_number'],
-            'book_version_id': ref(row['book_version_id']), 'entity_kind': row['entity_kind'],
+            'book_version_id': ref(row['book_version_id']), 'book_title': row['book_title'],
+            'entity_kind': row['entity_kind'],
             'entity_id': ref(row['entity_id']), 'reason_code': row['reason_code'],
             'severity': row['severity'], 'state': row['state'],
             'resolution': row['resolution'] or {}, 'created_at': row['created_at'],
@@ -47,8 +52,9 @@ def _dto(row) -> dict:
 
 
 def list_items(conn: Connection, state: str | None, reason: str | None, book_version_id,
-               generation_id, limit: int, cursor: str | None) -> tuple[list[dict], str | None]:
-    clauses, params = [], {'limit': limit + 1}
+               generation_id, limit: int, cursor: str | None,
+               scope: str | None = None) -> tuple[list[dict], str | None]:
+    clauses, params = [SCOPES[scope]] if scope else [], {'limit': limit + 1}
     if state:
         clauses.append('i.state = :state')
         params['state'] = state
@@ -76,6 +82,13 @@ def list_items(conn: Connection, state: str | None, reason: str | None, book_ver
         f"{page[-1]['created_at'].isoformat()}|{page[-1]['id']}".encode()).decode()
         if more else None)
     return [_dto(r) for r in page], next_cursor
+
+
+def get_item(conn: Connection, item_id: uuid.UUID) -> dict:
+    row = conn.execute(text(f'{SELECT} WHERE i.id = :i'), {'i': item_id}).mappings().first()
+    if row is None:
+        raise AppError(404, 'NOT_FOUND', 'Review item not found')
+    return _dto(row)
 
 
 def resolve(conn: Connection, principal: Principal, item_id: uuid.UUID, action: str,

@@ -7,6 +7,7 @@
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
+    python -m backend.app.cli pipeline-profile --name "Sách in"         --embedding-profile <id> --ocr-languages vie+eng
 
 Passwords come from an environment variable or an interactive prompt, never
 from argv (shell history, process lists).
@@ -130,6 +131,25 @@ def embedding_profile(args) -> int:
     return 0
 
 
+def pipeline_profile(args) -> int:
+    import uuid
+
+    from .ingestion.docx import renderer_version
+    from .ingestion.profiles import ProfileError, create_pipeline_profile
+    settings = load_settings()
+    engine = create_engine(settings.database_url, poolclass=pool.NullPool)
+    try:
+        with engine.begin() as conn:
+            # Run it where the worker runs (its image) so the DOCX renderer recorded is real.
+            profile_id, created = create_pipeline_profile(
+                conn, args.name, uuid.UUID(args.embedding_profile), args.ocr_languages,
+                renderer_version())
+    except (ProfileError, ValueError) as exc:
+        raise SystemExit(str(exc)) from None
+    print(f'Pipeline profile {profile_id} ({"created" if created else "already existed"})')
+    return 0
+
+
 def collect_garbage(args) -> int:
     from datetime import timedelta
 
@@ -167,6 +187,11 @@ def main(argv: list[str] | None = None) -> int:
     embed.add_argument('--distance', default='cosine', choices=['cosine', 'l2', 'inner_product'])
     embed.add_argument('--provision', action='store_true', help='create the vector table')
     embed.add_argument('--ann-index', action='store_true', help='create the HNSW index')
+    pipe = commands.add_parser('pipeline-profile',
+                               help='create the profile uploads are processed with')
+    pipe.add_argument('--name', required=True)
+    pipe.add_argument('--embedding-profile', required=True, help='id of a provisioned profile')
+    pipe.add_argument('--ocr-languages', help='Tesseract languages, default vie+eng')
     gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
     gc.add_argument('--grace-hours', type=float, default=24.0)
     gc.add_argument('--dry-run', action='store_true')
@@ -180,6 +205,8 @@ def main(argv: list[str] | None = None) -> int:
             return embedding_profile(args)
         if args.command == 'gc':
             return collect_garbage(args)
+        if args.command == 'pipeline-profile':
+            return pipeline_profile(args)
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

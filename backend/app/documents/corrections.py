@@ -88,6 +88,26 @@ def get_revision(conn: Connection, principal: Principal, revision_id: uuid.UUID)
         'blocks': [{**b, 'id': str(b['id'])} for b in _blocks(conn, row['id'])]}
 
 
+def page_source(conn: Connection, principal: Principal, revision_id: uuid.UUID):
+    """What to render for a revision: its DOCX canonical render or the version's PDF."""
+    from .render import RenderUnavailable, Source
+    row = conn.execute(text(
+        'SELECT p.book_version_id, p.physical_page_number, p.page_kind,'
+        ' coalesce(ro.object_key, vo.object_key) AS object_key,'
+        ' coalesce(ro.sha256, vo.sha256) AS sha256,'
+        ' coalesce(ro.detected_mime, vo.detected_mime) AS mime'
+        ' FROM page_revisions r JOIN pages p ON p.id = r.page_id'
+        ' JOIN book_versions v ON v.id = p.book_version_id JOIN objects vo ON vo.id = v.object_id'
+        ' LEFT JOIN objects ro ON ro.id = r.rendered_object_id WHERE r.id = :r'),
+        {'r': revision_id}).mappings().first()
+    if row is None:
+        raise AppError(404, 'NOT_FOUND', 'Page revision not found')
+    _visible(conn, principal, row['book_version_id'], 'Page revision')
+    if row['page_kind'] == 'docx_anchor' or row['mime'] != 'application/pdf':
+        raise RenderUnavailable('this page has no rendered image')
+    return Source(row['object_key'], row['sha256'].strip(), row['physical_page_number'] - 1)
+
+
 def _encode(value: str) -> str:
     return base64.urlsafe_b64encode(value.encode()).decode()
 

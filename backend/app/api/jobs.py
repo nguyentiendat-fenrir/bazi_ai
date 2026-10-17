@@ -40,6 +40,9 @@ class JobDTO(BaseModel):
     error: JobError | None
     generation_id: uuid.UUID
     book_version_id: uuid.UUID
+    book_id: uuid.UUID
+    book_title: str
+    edition_label: str
     batch_id: uuid.UUID | None
     parent_job_id: uuid.UUID | None
     pipeline_profile_id: uuid.UUID

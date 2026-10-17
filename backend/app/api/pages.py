@@ -11,14 +11,17 @@ from typing import Literal
 import uuid
 
 from fastapi import APIRouter, Depends, Query, Request, Response
+from sqlalchemy.engine import Engine
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.engine import Connection
 
-from ..auth.deps import current_principal, db, require_role
+from ..auth.deps import current_principal, db, engine, require_role
 from ..auth.service import Principal
 from ..core.concurrency import claim_idempotency, etag, require_if_match
+from ..core.db import transaction
+from ..core.errors import AppError
 from ..core.logging import request_id_var
-from ..documents import corrections
+from ..documents import corrections, render
 from .health import envelope
 from .schemas import AUTHENTICATED_ERRORS, Envelope, ListEnvelope, permission, problem_responses
 
@@ -182,6 +185,36 @@ def get_revision(revision_id: uuid.UUID, response: Response,
     revision = corrections.get_revision(conn, principal, revision_id)
     response.headers['ETag'] = etag(revision['latest_revision_id'])
     return envelope(revision)
+
+
+@router.get('/page-revisions/{revision_id}/render', response_class=Response,
+            responses={200: {'content': {'image/png': {}}, 'description': 'PNG of the page'},
+                       304: {'description': 'unchanged (If-None-Match)'},
+                       **AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
+            openapi_extra=permission('R'))
+def render_page(revision_id: uuid.UUID, request: Request,
+                scale: float = Query(default=1.5, ge=0.5, le=3.0,
+                                     description='1.0 = 72 dpi; capped at 8 million pixels'),
+                principal: Principal = Depends(current_principal),
+                db_engine: Engine = Depends(engine)) -> Response:
+    """The page image a reviewer compares with the text (docs/11 · /review/ocr)."""
+    scale = round(scale * 4) / 4                  # few distinct sizes: cache-friendly
+    with transaction(db_engine, principal.user_id) as conn:
+        try:
+            source = corrections.page_source(conn, principal, revision_id)
+        except render.RenderUnavailable as exc:
+            raise AppError(409, 'NO_PAGE_IMAGE', str(exc)) from None
+    # The image depends only on the immutable source bytes, page, scale and renderer.
+    tag = etag(f'{source.sha256[:16]}-{source.page_index}-{scale}-{render.RENDERER}')
+    headers = {'ETag': tag, 'Cache-Control': 'private, max-age=86400'}
+    if request.headers.get('If-None-Match') == tag:
+        return Response(status_code=304, headers=headers)
+    try:
+        image, _ = render.page_png(request.app.state.store, source, scale)
+    except render.RenderUnavailable as exc:
+        raise AppError(409, 'NO_PAGE_IMAGE', str(exc)) from None
+    return Response(image, media_type='image/png',
+                    headers={**headers, 'Content-Disposition': 'inline'})
 
 
 @router.post('/pages/{page_id}/corrections', status_code=201,

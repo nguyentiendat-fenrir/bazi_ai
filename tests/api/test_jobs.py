@@ -47,6 +47,7 @@ class JobsApiTests(PipelineTestCase):
         detail = self.c.get(f'/api/v1/jobs/{job}').json()['data']
         self.assertEqual((detail['state'], detail['stage'], detail['error']['code'],
                           detail['error']['retryable']), ('failed', 'inspect', 'FLAKY', False))
+        self.assertEqual((detail['book_title'], detail['edition_label']), ('b', 'v1'))
         stages = {s['stage']: s for s in detail['stages']}
         self.assertTrue(stages['extract']['done'])
         self.assertEqual((stages['inspect']['units'], stages['inspect']['done']), (1, False))
@@ -107,8 +108,15 @@ class JobsApiTests(PipelineTestCase):
         items = self.c.get('/api/v1/review-items',
                            params={'book_version_id': version}).json()['data']
         ocr = next(i for i in items if i['reason_code'] == 'OCR_UNAVAILABLE')
-        self.assertEqual((ocr['physical_page_number'], ocr['state'], ocr['generation_id']),
-                         (3, 'open', gen))
+        self.assertEqual((ocr['physical_page_number'], ocr['state'], ocr['generation_id'],
+                          ocr['book_title']), (3, 'open', gen, 'b'))
+        scoped = {scope: {i['id'] for i in self.c.get('/api/v1/review-items', params={
+            'book_version_id': version, 'scope': scope}).json()['data']}
+            for scope in ('page', 'knowledge')}
+        self.assertIn(ocr['id'], scoped['page'])
+        self.assertNotIn(ocr['id'], scoped['knowledge'])
+        self.assertEqual(self.c.get(f"/api/v1/review-items/{ocr['id']}").json()['data'], ocr)
+        self.assertEqual(self.c.get(f'/api/v1/review-items/{uuid.uuid4()}').status_code, 404)
         page = next(p for p in self.c.get(f'/api/v1/book-versions/{version}/pages').json()['data']
                     if p['physical_page_number'] == 3)
         url = f"/api/v1/review-items/{ocr['id']}/resolve"

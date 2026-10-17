@@ -61,7 +61,7 @@ RLS và service ACL ở 04; per-job principal/rights snapshot được re-check 
 
 ## Upload sandbox và prompt injection
 
-Magic bytes + extension/MIME cross-check, size/page/pixel/uncompressed limits trước parse. Worker không root, read-only filesystem trừ scratch, drop capabilities, hạn chế CPU/RAM/PIDs/runtime, tắt network cho OCR/parser; model downloader riêng allowlist. Tệp gốc lưu quarantine tới validation. Không active PDF JS, macros, DOCX relationships fetch mạng, shell filename interpolation. Antivirus adapter optional thêm phòng thủ, không thay validation/sandbox.
+Ảnh trang cho duyệt (T046.1) được API render bằng PDFium: chỉ cho trang đã tồn tại, tức nguồn đã được worker trong sandbox mở thành công; một khóa tuần tự hóa mọi lời gọi PDFium trong process, trần 8 triệu pixel; bản sao nguồn tạm có kiểm sha256, giữ tối đa 8 tệp. Magic bytes + extension/MIME cross-check, size/page/pixel/uncompressed limits trước parse. Worker không root, read-only filesystem trừ scratch, drop capabilities, hạn chế CPU/RAM/PIDs/runtime, tắt network cho OCR/parser; model downloader riêng allowlist. Tệp gốc lưu quarantine tới validation. Không active PDF JS, macros, DOCX relationships fetch mạng, shell filename interpolation. Antivirus adapter optional thêm phòng thủ, không thay validation/sandbox.
 
 Document text luôn là quoted untrusted evidence. Prompt template đặt ranh giới, nhưng phòng thủ thật là tool allowlist, schema, ACL, không arbitrary code/network, không access keys và không cấp approve action cho LLM. Red-team PDF chứa “ignore instructions”, fake system text, secret requests, source URL callback, malformed JSON tool arguments. Injection không được tạo rule approved hoặc đọc data khác owner.
 

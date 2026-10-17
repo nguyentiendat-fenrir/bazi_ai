@@ -31,6 +31,11 @@ export function setSessionLostListener(listener: Listener | null): void {
   onSessionLost = listener
 }
 
+/** For requests made outside `call` (multipart uploads): end the session on 401/CSRF. */
+export function reportAuthFailure(error: ApiError): void {
+  if (error.status === 401 || error.code === 'CSRF_FAILED') onSessionLost?.(error)
+}
+
 interface Result<T> {
   data?: T
   error?: unknown
