@@ -42,8 +42,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 | POST /uploads | V | multipart file,batch_id,book_id?,edition_label,rights_status,external_processing_allowed | 201 version_id/object hash/job_id hoặc 200 duplicate_of; server stream/hash |
 | GET /books/{id}/versions | R | cursor | VersionDTO[] coverage/status/edition |
 | GET /book-versions/{id} | R | — | VersionDTO |
-| POST /book-versions/{id}/process | V | pipeline_profile_id, scope full/page_ids | 202 ingestion job |
-| POST /book-versions/{id}/withdraw | V | reason | 202 operation; visibility revoke ngay |
+| POST /book-versions/{id}/process | V | pipeline_profile_id?, scope full; Idempotency-Key | 202 JobDTO (generation mới, giữ bản sửa) |
+| POST /book-versions/{id}/withdraw | V | reason | 200 đồng bộ: release active mới không có version, visibility_epoch mới |
 | DELETE /books/{id} | A | deletion_mode metadata/content, reason | 202 deletion job, dependent impact report |
 | GET /ingestion-batches/{id} | V | — | per-file accepted/rejected/counters, không fail all |
 | GET /jobs | V | state,batch_id,book_version_id,cursor | JobDTO[] |
@@ -57,7 +57,7 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 | GET /page-revisions/{id}/render | R | scale bounded | image/bản dựng protected, cache private |
 | POST /pages/{id}/corrections | V | base_revision_id,changes[],reason; If-Match | 201 new revision + 202 job reference, unchanged source immutable |
 | GET /review-items | V | reason,state,book_version_id | review queue |
-| POST /review-items/{id}/resolve | V | action accept/exclude/retry, reason,base_revision | 200 review+job nếu cần |
+| POST /review-items/{id}/resolve | V | action accept/exclude/retry/dismiss, reason, base_revision_id; Idempotency-Key | 200 item + job/generation nếu có rebuild |
 | GET /generations/{id}/impact | V | — | affected chunks/rules/cases/analyses counters+IDs paginated |
 | GET /generations/{id} | V | — | state, manifest, coverage + excluded_ranges, review mở, job, release chứa nó |
 | POST /generations/{id}/publish | V | allow_partial,ack_excluded_ranges,activate; Idempotency-Key | 201 release mới (đồng bộ), không rule autoapprove |
@@ -70,6 +70,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 Đã triển khai (T017): `GET /book-versions/{id}/pages` (R, cursor; revision mới nhất của từng trang + quality), `GET /page-revisions/{id}` (R; text, blocks có offset codepoint, `latest_revision_id`; header `ETag` = id revision mới nhất của trang), `POST /pages/{id}/corrections` (V; bắt buộc `If-Match` = ETag đó và `Idempotency-Key`; body `base_revision_id`, `changes[]` gồm `ordinal` + text/kind/level/role/speaker_layer/table_cells, `reason`; 201 + `ETag` của revision mới, `job_id`, `generation_id`, `coalesced`, `source_changed`; 412 khi trang đã có revision mới hơn, 422 `NO_CHANGE`, 409 `JOB_ACTIVE`/`NOT_PROCESSED`), `GET /generations/{id}/impact` (V; counts luôn có, `kind` = page/chunk_added/chunk_removed/evidence/rule/assertion/case_revision + `cursor` để phân trang ID).
 
 Đã triển khai (T018): publish đồng bộ vì chỉ ghi membership và đổi con trỏ (vector/lexical đã có từ lúc ingest); lỗi gate là 409 với mã `GENERATION_NOT_READY`, `VERSION_WITHDRAWN`, `RIGHTS_RESTRICTED`, `NOTHING_TO_PUBLISH`, `PARTIAL_NOT_ACKNOWLEDGED` (detail liệt kê khoảng trang), `INDEX_INCOMPLETE`, `EMBEDDING_PROFILE_MISMATCH`, `LEXICAL_PROFILE_MISMATCH`, `ONTOLOGY_MISSING`. `activate=false` chỉ dựng release `ready`; admin bật bằng `POST /corpus-releases/{id}/activate` với `expected_active_id` (compare-and-swap: lệch → 409 `ACTIVE_CHANGED`, release không `ready` → 409 `RELEASE_NOT_READY`, gọi lại khi đã active → 200 không đổi gì). Kho rỗng: `GET /corpus-releases` trả 200 `{active: null, releases: []}`.
+
+Đã triển khai (T019): `GET /jobs` (V; lọc state/batch_id/book_version_id, cursor), `GET /jobs/{id}` (JobDTO + `stages[{stage,units,computed,reused,done}]` + `retried_by`), `GET /jobs/{id}/events` (`after_seq`, `limit`; `page.next_cursor` là seq cuối), `POST /jobs/{id}/retry` (202 job con; job chưa kết thúc/thành công → 409 `JOB_NOT_RETRYABLE`, generation đã niêm phong → 409 `GENERATION_CLOSED`, đang có job → 409 `JOB_ACTIVE`; `failed_units_only=false` → 422 vì dựng lại toàn bộ là `/process`), `POST /jobs/{id}/cancel` (202 `cancel_requested` khi worker đang chạy, 200 khi đã kết thúc hoặc hủy xong ngay), `POST /book-versions/{id}/process`, `POST /book-versions/{id}/withdraw`, `GET /review-items` (mặc định `state=open`; lọc reason/book_version_id/generation_id), `POST /review-items/{id}/resolve` (item đã đóng → 409 `REVIEW_CLOSED`; accept/exclude/retry cho item tri thức → 422).
 
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 

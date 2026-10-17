@@ -70,7 +70,8 @@ class S3ObjectStore:
             if _missing(exc):
                 return None
             raise
-        return ObjectStat(key, head['ContentLength'], head.get('Metadata', {}).get('sha256'))
+        return ObjectStat(key, head['ContentLength'], head.get('Metadata', {}).get('sha256'),
+                          head.get('LastModified'))
 
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=validate_key(key))
@@ -84,4 +85,5 @@ class S3ObjectStore:
                     validate_key(key)
                 except Exception:
                     continue
-                yield ObjectStat(key, item['Size'], key.rsplit('/', 1)[1])
+                yield ObjectStat(key, item['Size'], key.rsplit('/', 1)[1],
+                                 item.get('LastModified'))

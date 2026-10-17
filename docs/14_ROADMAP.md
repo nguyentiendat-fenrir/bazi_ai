@@ -55,7 +55,11 @@ khác tra tại bảng cuối file này.
 - T018 ✅ niêm phong generation (manifest), publish có gate quyền/chất lượng/index/profile,
   xác nhận partial theo khoảng trang, release mới + đổi con trỏ nguyên tử, activate CAS,
   `auto_publish`; chặn gửi text ra embedding provider ngoài khi version chưa cho phép.
-- Việc kế tiếp: T019 reprocess, withdrawal, GC, jobs API; smoke T002 trên Ubuntu khi có máy.
+- T019 ✅ jobs API (list/chi tiết/sự kiện/retry/cancel) + `job_events` bền, reprocess giữ bản
+  sửa, withdraw thu hồi ngay khỏi release active, review queue (accept/exclude/retry/dismiss
+  kèm rebuild), GC object/blob mồ côi có thời gian ân hạn. K2 xong phần backend.
+- Việc kế tiếp: K3 — T020 trường phái/phương pháp/concept/aliases; smoke T002 trên Ubuntu khi
+  có máy.
 
 ## Các giai đoạn
 
@@ -169,7 +173,7 @@ trước khi trình duyệt.
 | T016 | Embedding/index staging và model registry | K2 | ✅ |
 | T017 | Sửa OCR incremental và impact | K2 | ✅ |
 | T018 | Publication và active corpus release | K2 | ✅ |
-| T019 | Reprocess, withdrawal, GC và jobs API | K2 | |
+| T019 | Reprocess, withdrawal, GC và jobs API | K2 | ✅ |
 | T020 | Trường phái, phương pháp, concept và aliases | K3 | |
 | T021 | Trích xuất candidates từ nguồn | K3 | |
 | T022 | Duyệt assertions/rules và relations | K3 | |

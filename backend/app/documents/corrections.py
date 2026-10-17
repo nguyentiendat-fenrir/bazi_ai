@@ -144,6 +144,25 @@ def lock_page(conn: Connection, principal: Principal, page_id: uuid.UUID) -> dic
             'latest_revision_id': latest}
 
 
+def effective_revision(conn: Connection, page_id, revision_id):
+    """The page's newest correction if it descends from ``revision_id``, else ``revision_id``.
+
+    Extraction links this, so a reprocess keeps human fixes made on the same
+    extracted text; a different extraction (new parser) is not silently patched.
+    """
+    newest = conn.execute(text(
+        "SELECT id FROM page_revisions WHERE page_id = :p AND quality ? 'correction'"
+        ' ORDER BY revision_no DESC LIMIT 1'), {'p': page_id}).scalar()
+    if newest is None:
+        return revision_id
+    descends = conn.execute(text(
+        'WITH RECURSIVE chain (id, base) AS (SELECT id, base_revision_id FROM page_revisions'
+        ' WHERE id = :c UNION ALL SELECT r.id, r.base_revision_id FROM page_revisions r'
+        ' JOIN chain ON r.id = chain.base) SELECT EXISTS (SELECT 1 FROM chain'
+        ' WHERE id = CAST(:r AS uuid))'), {'c': newest, 'r': str(revision_id)}).scalar()
+    return newest if descends else revision_id
+
+
 def changed_range(old: str, new: str) -> tuple[int, int]:
     """``[start, end)`` of ``old`` replaced by the edit (empty for a pure insertion)."""
     limit = min(len(old), len(new))
@@ -263,7 +282,7 @@ def correct_page(conn: Connection, principal: Principal, page: dict, base_revisi
             'b': json.dumps(block['bbox']), 's': block['start_offset'], 'e': block['end_offset'],
             't': block['text'], 'sp': block['speaker_layer'], 'a': json.dumps(block['attributes']),
             'cells': json.dumps(block['table_cells']) if block['table_cells'] is not None else None})
-    generation, job, coalesced = _schedule(conn, principal, page['book_version_id'],
+    generation, job, coalesced = schedule_rebuild(conn, principal, page['book_version_id'],
                                            page['page_id'], revision_id)
     old = {b['ordinal']: b for b in blocks}
     affected = _flag_sources(conn, generation, page['page_id'], revision_id,
@@ -296,7 +315,7 @@ def lock_version(conn: Connection, version_id) -> None:
                  {'v': str(version_id)})
 
 
-def _schedule(conn: Connection, principal: Principal, version_id, page_id, revision_id):
+def schedule_rebuild(conn: Connection, principal: Principal, version_id, page_id, revision_id):
     lock_version(conn, version_id)
     base = conn.execute(text(
         "SELECT g.id, g.pipeline_profile_id FROM generations g WHERE g.book_version_id = :v"

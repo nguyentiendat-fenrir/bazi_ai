@@ -18,6 +18,7 @@ import tempfile
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from ..documents.corrections import effective_revision
 from ..documents.formats import DOCX
 from ..storage.service import store_object
 from .docx import PARSER_VERSION, DocxBlock, DocxDocument, DocxRejected, extract, renderer_version
@@ -100,8 +101,8 @@ class DocxExtractStage:
             linked += conn.execute(text(
                 'INSERT INTO generation_pages (generation_id, page_revision_id, page_id)'
                 ' VALUES (:g, :r, :p) ON CONFLICT (generation_id, page_id) DO NOTHING'),
-                {'g': ctx.generation_id, 'r': page['page_revision_id'],
-                 'p': page['page_id']}).rowcount
+                {'g': ctx.generation_id, 'p': page['page_id'],
+                 'r': effective_revision(conn, page['page_id'], page['page_revision_id'])}).rowcount
         if not linked:
             return
         total = len(output['pages'])
@@ -143,12 +144,16 @@ class DocxExtractStage:
             position += len(block.text) + 2
         normalized = '\n\n'.join(parts)
         text_hash = hashlib.sha256(normalized.encode('utf-8')).hexdigest()
+        same = conn.execute(text(
+            "SELECT id FROM page_revisions WHERE page_id = :p AND text_hash = :h"
+            " AND layout->>'parser_version' = :parser AND NOT (quality ? 'correction')"
+            ' ORDER BY revision_no LIMIT 1'),
+            {'p': page_id, 'h': text_hash, 'parser': PARSER_VERSION}).scalar()
+        if same:
+            return page_id, same
         latest = conn.execute(text(
-            "SELECT id, revision_no, text_hash, layout->>'parser_version' AS parser"
-            ' FROM page_revisions WHERE page_id = :p ORDER BY revision_no DESC LIMIT 1'),
-            {'p': page_id}).mappings().first()
-        if latest and latest['text_hash'].strip() == text_hash and latest['parser'] == PARSER_VERSION:
-            return page_id, latest['id']
+            'SELECT id, revision_no FROM page_revisions WHERE page_id = :p'
+            ' ORDER BY revision_no DESC LIMIT 1'), {'p': page_id}).mappings().first()
         layout = {'parser_version': PARSER_VERSION, 'renderer': doc.renderer,
                   'rendered_pages': doc.rendered_pages, 'render_error': doc.render_error,
                   'page_kind': kind}

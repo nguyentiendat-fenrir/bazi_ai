@@ -105,6 +105,17 @@ class ReleasesEnvelope(BaseModel):
     meta: Meta
 
 
+class WithdrawInput(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class WithdrawResult(BaseModel):
+    book_version_id: uuid.UUID
+    status: str
+    active_release_id: uuid.UUID | None = Field(description='the release now active, if any')
+    visibility_epoch: int | None
+
+
 class ActivateInput(BaseModel):
     expected_active_id: uuid.UUID | None = Field(
         description='the release the caller saw active (null for an empty corpus)')
@@ -152,6 +163,16 @@ def list_releases(limit: int = Query(default=20, ge=1, le=100), cursor: str | No
 def get_release(release_id: uuid.UUID, principal: Principal = Depends(require_role('reviewer')),
                 conn: Connection = Depends(db)) -> dict:
     return envelope(releases.get_release(conn, release_id, members=True))
+
+
+@router.post('/book-versions/{version_id}/withdraw', response_model=Envelope[WithdrawResult],
+             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('V'))
+def withdraw(version_id: uuid.UUID, body: WithdrawInput,
+             principal: Principal = Depends(require_role('reviewer')),
+             conn: Connection = Depends(db)) -> dict:
+    """Synchronous: visibility is revoked when this returns (idempotent)."""
+    return envelope(releases.withdraw_version(conn, principal.user_id, version_id, body.reason,
+                                              request_id_var.get()))
 
 
 @router.post('/corpus-releases/{release_id}/activate', response_model=Envelope[ReleaseDTO],

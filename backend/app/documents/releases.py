@@ -26,6 +26,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..core.errors import AppError
+from ..ingestion import events, queue
 from ..retrieval.indexer import LEXICAL_VERSION
 from ..retrieval.models import collection_for
 
@@ -116,11 +117,11 @@ def publish(conn: Connection, actor_id, generation_id, allow_partial: bool = Fal
         {'g': generation_id}).mappings().first()
     if gen is None:
         raise AppError(404, 'NOT_FOUND', 'Generation not found')
+    if gen['version_status'] != 'active':
+        raise AppError(409, 'VERSION_WITHDRAWN', 'This book version is withdrawn')
     if gen['state'] != 'ready':
         raise AppError(409, 'GENERATION_NOT_READY',
                        f"Generation is {gen['state']}; only a sealed (ready) one can be published")
-    if gen['version_status'] != 'active':
-        raise AppError(409, 'VERSION_WITHDRAWN', 'This book version is withdrawn')
     if gen['rights_status'] == 'restricted':
         raise AppError(409, 'RIGHTS_RESTRICTED', 'Rights status restricted forbids publication')
     pages = coverage(conn, generation_id)
@@ -157,6 +158,24 @@ def publish(conn: Connection, actor_id, generation_id, allow_partial: bool = Fal
     if ontology is None:
         raise AppError(409, 'ONTOLOGY_MISSING', 'No published ontology release')
     parent = active['release_id'] if active else None
+    release_id = _derive_release(conn, parent, collection_id, ontology, gen['book_version_id'],
+                                 generation_id)
+    conn.execute(text('UPDATE generations SET coverage = coverage || CAST(:c AS jsonb)'
+                      ' WHERE id = :g'),
+                 {'g': generation_id, 'c': json.dumps({'publication': {
+                     **pages, 'release_id': str(release_id),
+                     'acknowledged_partial': bool(pages['excluded_ranges'])}})})
+    _audit(conn, actor_id, 'corpus.publish', release_id, request_id,
+           {'generation_id': str(generation_id), 'parent_id': str(parent) if parent else None,
+            'excluded_ranges': pages['excluded_ranges']})
+    if activate:
+        activate_release(conn, actor_id, release_id, parent, request_id)
+    return {'release': get_release(conn, release_id), 'activated': activate, 'coverage': pages}
+
+
+def _derive_release(conn: Connection, parent, collection_id, ontology, version_id,
+                    generation_id=None):
+    """A ready release: ``parent``'s members without ``version_id`` (+ its new generation)."""
     release_id = conn.execute(text(
         'INSERT INTO corpus_releases (parent_id, embedding_collection_id, ontology_release_id,'
         ' lexical_profile_version) VALUES (:p, :c, :o, :lv) RETURNING id'),
@@ -170,23 +189,64 @@ def publish(conn: Connection, actor_id, generation_id, allow_partial: bool = Fal
             ' JOIN book_versions v ON v.id = m.book_version_id'
             " WHERE m.release_id = :parent AND m.book_version_id <> :v"
             " AND g.state IN ('ready', 'published') AND v.status = 'active'"),
-            {'r': release_id, 'parent': parent, 'v': gen['book_version_id']})
-    conn.execute(text('INSERT INTO corpus_members (release_id, book_version_id, generation_id)'
-                      ' VALUES (:r, :v, :g)'),
-                 {'r': release_id, 'v': gen['book_version_id'], 'g': generation_id})
+            {'r': release_id, 'parent': parent, 'v': version_id})
+    if generation_id is not None:
+        conn.execute(text('INSERT INTO corpus_members (release_id, book_version_id,'
+                          ' generation_id) VALUES (:r, :v, :g)'),
+                     {'r': release_id, 'v': version_id, 'g': generation_id})
     conn.execute(text("UPDATE corpus_releases SET state = 'ready', manifest_hash = :m"
                       ' WHERE id = :r'), {'r': release_id, 'm': _manifest(conn, release_id)})
-    conn.execute(text('UPDATE generations SET coverage = coverage || CAST(:c AS jsonb)'
-                      ' WHERE id = :g'),
-                 {'g': generation_id, 'c': json.dumps({'publication': {
-                     **pages, 'release_id': str(release_id),
-                     'acknowledged_partial': bool(pages['excluded_ranges'])}})})
-    _audit(conn, actor_id, 'corpus.publish', release_id, request_id,
-           {'generation_id': str(generation_id), 'parent_id': str(parent) if parent else None,
-            'excluded_ranges': pages['excluded_ranges']})
-    if activate:
-        activate_release(conn, actor_id, release_id, parent, request_id)
-    return {'release': get_release(conn, release_id), 'activated': activate, 'coverage': pages}
+    return release_id
+
+
+def withdraw_version(conn: Connection, actor_id, version_id, reason: str,
+                     request_id: str | None = None) -> dict:
+    """Revoke a version at once: no job keeps building it, no release shows it.
+
+    The active release is replaced by one without the version (possibly empty)
+    and ``visibility_epoch`` moves so caches and pinned answers re-check access.
+    History keeps its rows; the next publish never carries the version along.
+    """
+    lock_corpus(conn)
+    status = conn.execute(text('SELECT status FROM book_versions WHERE id = :v FOR UPDATE'),
+                          {'v': version_id}).scalar()
+    if status is None:
+        raise AppError(404, 'NOT_FOUND', 'Version not found')
+    if status != 'withdrawn':
+        conn.execute(text("UPDATE book_versions SET status = 'withdrawn', withdrawn_at = now()"
+                          ' WHERE id = :v'), {'v': version_id})
+        for job_id in conn.execute(text(
+                'SELECT id FROM ingestion_jobs WHERE book_version_id = :v AND state IN'
+                " ('queued', 'running', 'retry_wait', 'waiting_review')"),
+                {'v': version_id}).scalars().all():
+            queue.request_cancel(conn, job_id)
+            events.log(conn, job_id, 'warning', 'CANCEL_REQUESTED', {'by': 'withdrawal'})
+        conn.execute(text("UPDATE generations SET state = 'withdrawn' WHERE book_version_id = :v"
+                          " AND state <> 'withdrawn'"), {'v': version_id})
+    active = conn.execute(text(
+        'SELECT a.release_id, r.embedding_collection_id, r.ontology_release_id'
+        ' FROM active_corpus a JOIN corpus_releases r ON r.id = a.release_id'
+        ' WHERE a.slot = :s FOR UPDATE OF a'), {'s': SLOT}).mappings().first()
+    if active and conn.execute(text('SELECT 1 FROM corpus_members WHERE release_id = :r'
+                                    ' AND book_version_id = :v'),
+                               {'r': active['release_id'], 'v': version_id}).first():
+        release_id = _derive_release(conn, active['release_id'],
+                                     active['embedding_collection_id'],
+                                     active['ontology_release_id'], version_id)
+        activate_release(conn, actor_id, release_id, active['release_id'], request_id)
+    pointer = conn.execute(text(
+        'UPDATE active_corpus SET visibility_epoch = visibility_epoch + :bump WHERE slot = :s'
+        ' RETURNING release_id, visibility_epoch'),
+        {'s': SLOT, 'bump': 0 if status == 'withdrawn' else 1}).first()
+    conn.execute(text(
+        "INSERT INTO audit_logs (actor_id, action, target_kind, target_id, trace_id,"
+        " redacted_diff, outcome) VALUES (:a, 'book_version.withdraw', 'book_version', :v, :t,"
+        " CAST(:d AS jsonb), 'success')"),
+        {'a': actor_id, 'v': version_id, 't': request_id or '',
+         'd': json.dumps({'reason': reason, 'already_withdrawn': status == 'withdrawn'})})
+    return {'book_version_id': str(version_id), 'status': 'withdrawn',
+            'active_release_id': str(pointer[0]) if pointer else None,
+            'visibility_epoch': pointer[1] if pointer else None}
 
 
 def activate_release(conn: Connection, actor_id, release_id, expected_active_id,

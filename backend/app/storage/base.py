@@ -7,6 +7,7 @@ and are promoted atomically, so readers never see partial objects.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import hashlib
 import re
 from typing import BinaryIO, Iterator, Protocol
@@ -45,6 +46,7 @@ class ObjectStat:
     key: str
     size_bytes: int
     sha256: str | None
+    modified: datetime | None = None   # last write; GC grace periods use it
 
 
 def object_key(sha256: str, namespace: str = 'objects') -> str:

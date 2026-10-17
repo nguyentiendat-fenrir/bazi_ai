@@ -16,6 +16,7 @@ import tempfile
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from ..documents.corrections import effective_revision
 from ..documents.formats import PDF
 from .pdf_native import (PARSER_VERSION, PageExtraction, PdfRejected, document_profile,
                          extract_page, open_document)
@@ -127,11 +128,11 @@ class ExtractPdfStage:
         return output
 
     def attach(self, conn: Connection, ctx: JobContext, unit: Unit, output: dict) -> None:
+        revision = effective_revision(conn, output['page_id'], output['page_revision_id'])
         linked = conn.execute(text(
             'INSERT INTO generation_pages (generation_id, page_revision_id, page_id)'
             ' VALUES (:g, :r, :p) ON CONFLICT (generation_id, page_id) DO NOTHING RETURNING id'),
-            {'g': ctx.generation_id, 'r': output['page_revision_id'],
-             'p': output['page_id']}).first()
+            {'g': ctx.generation_id, 'r': revision, 'p': output['page_id']}).first()
         if linked is None:
             return  # already linked (retry job of this generation): counters already done
         state = output['state']
@@ -147,12 +148,18 @@ class ExtractPdfStage:
 
     def _revision(self, conn: Connection, page_id, page: PageExtraction):
         text_hash = hashlib.sha256(page.normalized_text.encode('utf-8')).hexdigest()
+        # Any earlier extraction of the same text by this parser is the same revision
+        # (corrections and OCR merges stacked on it are not extractions).
+        same = conn.execute(text(
+            "SELECT id FROM page_revisions WHERE page_id = :p AND text_hash = :h"
+            " AND layout->>'parser_version' = :parser AND NOT (quality ? 'correction')"
+            " AND NOT (quality ? 'ocr') ORDER BY revision_no LIMIT 1"),
+            {'p': page_id, 'h': text_hash, 'parser': PARSER_VERSION}).scalar()
+        if same:
+            return same, False
         latest = conn.execute(text(
-            "SELECT id, revision_no, text_hash, layout->>'parser_version' AS parser"
-            ' FROM page_revisions WHERE page_id = :p ORDER BY revision_no DESC LIMIT 1'),
-            {'p': page_id}).mappings().first()
-        if latest and latest['text_hash'].strip() == text_hash and latest['parser'] == PARSER_VERSION:
-            return latest['id'], False
+            'SELECT id, revision_no FROM page_revisions WHERE page_id = :p'
+            ' ORDER BY revision_no DESC LIMIT 1'), {'p': page_id}).mappings().first()
         layout = {'width': page.width, 'height': page.height, 'rotation': page.rotation,
                   'page_class': page.page_class, 'image_area': page.image_area,
                   'image_boxes': page.image_boxes, 'char_count': page.char_count,

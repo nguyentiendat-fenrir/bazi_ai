@@ -9,7 +9,8 @@ Stage handlers split work in two:
   ``queue.complete``; a stale fencing token rolls the whole unit back.
 
 A killed worker therefore leaves either nothing or a fully published unit, and
-a rerun skips succeeded units by their idempotency key.
+a rerun skips succeeded units by their idempotency key. Stage boundaries,
+failures and the outcome go to ``job_events`` (durable, ordered per job).
 """
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection, Engine
 
 from ..storage.base import ObjectStore
-from . import queue
+from . import events, queue
 
 log = logging.getLogger('bazi.worker')
 Fault = Callable[[str], None]
@@ -112,19 +113,28 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
             return conn.execute(text('SELECT state FROM ingestion_jobs WHERE id = :id'),
                                 {'id': job_id}).scalar() or 'missing'
         ctx = load_context(conn, job_id, engine, store, worker_id)
+        events.log(conn, job_id, 'info', 'JOB_STARTED', {'worker_id': worker_id})
     if not handlers:
         with engine.begin() as conn:
             queue.set_job_state(conn, job_id, 'failed',
                                 {'code': 'PIPELINE_NOT_CONFIGURED', 'retryable': False,
                                  'message': 'No stage handlers for this pipeline profile'})
+            events.log(conn, job_id, 'error', 'JOB_FAILED', {'code': 'PIPELINE_NOT_CONFIGURED'})
         return 'failed'
 
     for handler in handlers:
         units = handler.units(ctx)
+        if units:
+            with engine.begin() as conn:
+                events.log(conn, job_id, 'info', 'STAGE_STARTED',
+                           {'stage': handler.name, 'units': len(units)})
+        computed = reused = 0
         for unit in units:
+            where = {'stage': handler.name, 'unit': unit.key}
             with engine.begin() as conn:
                 if queue.cancel_requested(conn, job_id):
                     queue.set_job_state(conn, job_id, 'cancelled')
+                    events.log(conn, job_id, 'warning', 'JOB_CANCELLED', where)
                     return 'cancelled'
                 key = queue.idempotency_key(ctx.book_version_id, ctx.source_sha256, handler.name,
                                             unit.key, ctx.pipeline_config_hash, unit.input_hash)
@@ -137,6 +147,8 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
                     queue.set_job_state(conn, job_id, 'failed', {
                         'code': 'ATTEMPTS_EXHAUSTED', 'retryable': False,
                         'message': f'{handler.name} {unit.key} failed {queue.MAX_ATTEMPTS} times'})
+                    events.log(conn, job_id, 'error', 'JOB_FAILED',
+                               {**where, 'code': 'ATTEMPTS_EXHAUSTED'})
                     return 'failed'
             if claimed.lease is None:
                 # Computed before (retry job or another generation of the same version):
@@ -145,22 +157,29 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
                 if attach is not None:
                     with engine.begin() as conn:
                         attach(conn, ctx, unit, claimed.output_ref)
+                reused += 1
                 continue
             lease = claimed.lease
             try:
                 result = handler.compute(ctx, unit)
             except RetryableError as exc:
+                retry_at = _due(queue.retry_delay(lease.attempt))
                 with engine.begin() as conn:
                     queue.fail(conn, lease, exc.code, retryable=True)
                     queue.set_job_state(conn, job_id, 'retry_wait', {
                         'code': exc.code, 'retryable': True, 'message': str(exc)[:500],
-                        'retry_at': _due(queue.retry_delay(lease.attempt))})
+                        'retry_at': retry_at})
+                    events.log(conn, job_id, 'warning', 'UNIT_RETRY',
+                               {**where, 'code': exc.code, 'attempt': lease.attempt,
+                                'retry_at': retry_at})
                 return 'retry_wait'
             except UnitFailed as exc:
                 with engine.begin() as conn:
                     queue.fail(conn, lease, exc.code, retryable=False)
                     queue.set_job_state(conn, job_id, 'failed', {
                         'code': exc.code, 'retryable': False, 'message': str(exc)[:500]})
+                    events.log(conn, job_id, 'error', 'JOB_FAILED',
+                               {**where, 'code': exc.code, 'message': str(exc)[:500]})
                 return 'failed'
             hit('after_compute_before_commit')
             try:
@@ -172,8 +191,14 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
                 log.warning('lease lost; result discarded',
                             extra={'event': 'lease_lost', 'error_code': 'LEASE_LOST'})
                 return 'running'
+            computed += 1
             hit('after_commit_before_next')
+        if units:
+            with engine.begin() as conn:
+                events.log(conn, job_id, 'info', 'STAGE_DONE',
+                           {'stage': handler.name, 'computed': computed, 'reused': reused})
 
     with engine.begin() as conn:
         queue.set_job_state(conn, job_id, 'succeeded')
+        events.log(conn, job_id, 'info', 'JOB_SUCCEEDED')
     return 'succeeded'

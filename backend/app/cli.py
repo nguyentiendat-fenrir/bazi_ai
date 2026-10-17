@@ -3,6 +3,7 @@
     python -m backend.app.cli create-runtime-login   # LOGIN role in bazi_runtime
     python -m backend.app.cli bootstrap-admin --email admin@example.test
     python -m backend.app.cli export-openapi          # contracts/openapi.json snapshot
+    python -m backend.app.cli gc --dry-run              # unreferenced objects, orphan blobs
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
@@ -128,6 +129,19 @@ def embedding_profile(args) -> int:
     return 0
 
 
+def collect_garbage(args) -> int:
+    from datetime import timedelta
+
+    from .storage import build_store
+    from .storage.gc import collect
+    settings = load_settings()
+    engine = create_engine(settings.database_url, poolclass=pool.NullPool)
+    result = collect(engine, build_store(settings), timedelta(hours=args.grace_hours),
+                     args.dry_run)
+    print(json.dumps(result))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python -m backend.app.cli')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -150,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
     embed.add_argument('--distance', default='cosine', choices=['cosine', 'l2', 'inner_product'])
     embed.add_argument('--provision', action='store_true', help='create the vector table')
     embed.add_argument('--ann-index', action='store_true', help='create the HNSW index')
+    gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
+    gc.add_argument('--grace-hours', type=float, default=24.0)
+    gc.add_argument('--dry-run', action='store_true')
     args = parser.parse_args(argv)
     try:
         if args.command == 'bootstrap-admin':
@@ -158,6 +175,8 @@ def main(argv: list[str] | None = None) -> int:
             return export_openapi()
         if args.command == 'embedding-profile':
             return embedding_profile(args)
+        if args.command == 'gc':
+            return collect_garbage(args)
         return create_runtime_login()
     except ConfigError as exc:
         raise SystemExit(str(exc)) from None

@@ -1,6 +1,7 @@
 """Filesystem ObjectStore: the default local volume (ADR-03)."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import shutil
@@ -85,7 +86,9 @@ class LocalObjectStore:
         path = self._path(key)
         if not path.is_file():
             return None
-        return ObjectStat(key, path.stat().st_size, key.rsplit('/', 1)[1])
+        info = path.stat()
+        return ObjectStat(key, info.st_size, key.rsplit('/', 1)[1],
+                          datetime.fromtimestamp(info.st_mtime, timezone.utc))
 
     def delete(self, key: str) -> None:
         self._path(key).unlink(missing_ok=True)
@@ -100,7 +103,9 @@ class LocalObjectStore:
                 validate_key(key)
             except InvalidKey:
                 continue  # stray files are not objects
-            yield ObjectStat(key, path.stat().st_size, path.name)
+            info = path.stat()
+            yield ObjectStat(key, info.st_size, path.name,
+                             datetime.fromtimestamp(info.st_mtime, timezone.utc))
 
     def purge_staging(self) -> int:
         """Remove leftovers of interrupted writes; only call when no writer is active."""

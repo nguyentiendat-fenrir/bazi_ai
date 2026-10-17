@@ -16,7 +16,7 @@ import time
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from . import outbox
+from . import events, outbox
 from .outbox import Broker
 
 log = logging.getLogger('bazi.watchdog')
@@ -49,13 +49,17 @@ def sweep(engine: Engine, stale_after: str = STALE_AFTER) -> SweepResult:
         for job_id in due:
             conn.execute(text("UPDATE ingestion_jobs SET state = 'queued' WHERE id = :id"),
                          {'id': job_id})
+            events.log(conn, job_id, 'info', 'RETRY_DUE')
         result.retries_due = len(due)
 
         # Cancel requests nobody is working on (no live lease) finish here.
-        result.cancelled = conn.execute(text(
+        cancelled = conn.execute(text(
             "UPDATE ingestion_jobs j SET state = 'cancelled' WHERE j.state = 'cancel_requested'"
             ' AND NOT EXISTS (SELECT 1 FROM job_stages s WHERE s.job_id = j.id'
-            " AND s.state = 'running' AND s.lease_until > now())")).rowcount
+            " AND s.state = 'running' AND s.lease_until > now()) RETURNING j.id")).scalars().all()
+        for job_id in cancelled:
+            events.log(conn, job_id, 'warning', 'JOB_CANCELLED', {'by': 'watchdog'})
+        result.cancelled = len(cancelled)
 
         # Runnable but silent: no live lease, no pending signal, untouched for a while.
         silent = conn.execute(text(

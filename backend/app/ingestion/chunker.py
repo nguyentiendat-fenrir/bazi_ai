@@ -9,8 +9,9 @@ Rules:
 * every piece of chunk text is a span ``[chunk_start, chunk_end)`` that equals
   ``normalized_text[start_offset:end_offset]`` of its page revision — a chunk on
   two pages has spans on both revisions;
-* identical text with identical spans reuses the existing chunk row, so a
-  re-chunk only creates rows for what changed (stable identity, T017).
+* identical text with identical spans and quality reuses the existing chunk
+  row, so a re-chunk only creates rows for what changed (stable identity, T017);
+  a page accepted or excluded by review gets rows with the new quality.
 
 Token counts use an approximate syllable tokenizer until the embedding model's
 tokenizer is chosen (T016/T036); its name is part of the chunker version.
@@ -255,10 +256,11 @@ class ChunkStage:
                                  s['chunk_start'], s['chunk_end']] for s in chunk['spans']])
         existing = conn.execute(text(
             'SELECT c.id FROM chunks c WHERE c.content_hash = :h AND c.speaker_layer = :sp'
-            ' AND (SELECT jsonb_agg(jsonb_build_array(s.page_revision_id::text, s.block_id::text,'
+            ' AND c.quality_state = :q AND (SELECT jsonb_agg(jsonb_build_array(s.page_revision_id::text, s.block_id::text,'
             ' s.start_offset, s.end_offset, s.chunk_start, s.chunk_end) ORDER BY s.ordinal)'
             ' FROM chunk_spans s WHERE s.chunk_id = c.id) = CAST(:sig AS jsonb) LIMIT 1'),
-            {'h': content_hash, 'sp': chunk['speaker'], 'sig': signature}).scalar()
+            {'h': content_hash, 'sp': chunk['speaker'], 'q': chunk['quality'],
+             'sig': signature}).scalar()
         if existing:
             return existing
         chunk_id = conn.execute(text(

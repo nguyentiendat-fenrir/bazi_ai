@@ -67,8 +67,9 @@ class OcrStage:
                 "SELECT p.physical_page_number AS n, r.id, r.text_hash,"
                 " (r.quality->>'needs_ocr')::boolean AS needs_ocr, r.quality->>'page_class' AS cls,"
                 " r.layout->'image_boxes' AS boxes,"
-                # OCR output and human corrections are final for this page's text.
-                " (r.quality ? 'ocr' OR r.quality ? 'correction') AS settled FROM generation_pages gp"
+                # OCR output, human corrections and excluded pages need no (more) OCR.
+                " (r.quality ? 'ocr' OR r.quality ? 'correction' OR r.state = 'excluded') AS settled"
+                ' FROM generation_pages gp'
                 ' JOIN pages p ON p.id = gp.page_id JOIN page_revisions r ON r.id = gp.page_revision_id'
                 " WHERE gp.generation_id = :g AND p.page_kind = 'pdf_page'"
                 ' ORDER BY p.physical_page_number'), {'g': ctx.generation_id}).mappings().all()
