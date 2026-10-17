@@ -59,6 +59,258 @@
         "title": "ActivePointer",
         "type": "object"
       },
+      "AssertionDTO": {
+        "properties": {
+          "applicability": {
+            "additionalProperties": true,
+            "title": "Applicability",
+            "type": "object"
+          },
+          "assertion_key": {
+            "title": "Assertion Key",
+            "type": "string"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "concept_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "exception_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exception Text"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Id"
+          },
+          "origin": {
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "rejected",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "assertion_key",
+          "revision",
+          "school_id",
+          "school_key",
+          "method_id",
+          "concept_id",
+          "statement",
+          "applicability",
+          "exception_text",
+          "origin",
+          "state",
+          "author_id",
+          "created_at"
+        ],
+        "title": "AssertionDTO",
+        "type": "object"
+      },
+      "AssertionDetail": {
+        "properties": {
+          "applicability": {
+            "additionalProperties": true,
+            "title": "Applicability",
+            "type": "object"
+          },
+          "assertion_key": {
+            "title": "Assertion Key",
+            "type": "string"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "concept_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "exception_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exception Text"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Id"
+          },
+          "origin": {
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/RelationDTO"
+            },
+            "title": "Relations",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "school_id": {
+            "format": "uuid",
+            "title": "School Id",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceDTO"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "rejected",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "assertion_key",
+          "revision",
+          "school_id",
+          "school_key",
+          "method_id",
+          "concept_id",
+          "statement",
+          "applicability",
+          "exception_text",
+          "origin",
+          "state",
+          "author_id",
+          "created_at",
+          "sources",
+          "relations"
+        ],
+        "title": "AssertionDetail",
+        "type": "object"
+      },
       "AuthorInput": {
         "properties": {
           "name": {
@@ -1152,6 +1404,22 @@
           "failed"
         ],
         "title": "Coverage",
+        "type": "object"
+      },
+      "Envelope_AssertionDetail_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AssertionDetail"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[AssertionDetail]",
         "type": "object"
       },
       "Envelope_BatchDTO_": {
@@ -2335,6 +2603,29 @@
         "title": "JobRef",
         "type": "object"
       },
+      "ListEnvelope_AssertionDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AssertionDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[AssertionDTO]",
+        "type": "object"
+      },
       "ListEnvelope_BookDTO_": {
         "properties": {
           "data": {
@@ -3325,6 +3616,49 @@
           "checks"
         ],
         "title": "ReadyStatus",
+        "type": "object"
+      },
+      "RelationDTO": {
+        "properties": {
+          "from_id": {
+            "format": "uuid",
+            "title": "From Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "in_review",
+              "approved",
+              "rejected",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "to_id": {
+            "format": "uuid",
+            "title": "To Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "from_id",
+          "to_id",
+          "relation",
+          "state"
+        ],
+        "title": "RelationDTO",
         "type": "object"
       },
       "ReleaseDTO": {
@@ -4343,6 +4677,96 @@
         "title": "SourceChanged",
         "type": "object"
       },
+      "SourceDTO": {
+        "properties": {
+          "block_id": {
+            "format": "uuid",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "book_version_id": {
+            "format": "uuid",
+            "title": "Book Version Id",
+            "type": "string"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "origin": {
+            "enum": [
+              "source_explicit",
+              "editor_interpretation",
+              "ai_inferred"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "physical_page_number": {
+            "title": "Physical Page Number",
+            "type": "integer"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "relation": {
+            "enum": [
+              "states",
+              "supports",
+              "contrasts"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "speaker_layer": {
+            "enum": [
+              "original_author",
+              "commentator",
+              "translator",
+              "editor",
+              "unknown"
+            ],
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "relation",
+          "book_version_id",
+          "page_revision_id",
+          "page_id",
+          "physical_page_number",
+          "block_id",
+          "start_offset",
+          "end_offset",
+          "speaker_layer",
+          "origin",
+          "quote"
+        ],
+        "title": "SourceDTO",
+        "type": "object"
+      },
       "StageProgress": {
         "properties": {
           "computed": {
@@ -5058,6 +5482,265 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/assertions": {
+      "get": {
+        "operationId": "list_assertions_api_v1_assertions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "in_review",
+                    "approved",
+                    "rejected",
+                    "revoked"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "school_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_version_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Book Version Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_AssertionDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Assertions",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      }
+    },
+    "/api/v1/assertions/{assertion_id}": {
+      "get": {
+        "operationId": "get_assertion_api_v1_assertions__assertion_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assertion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assertion Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AssertionDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Assertion",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "R"
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login_api_v1_auth_login_post",

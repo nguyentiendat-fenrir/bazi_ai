@@ -75,6 +75,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T020): `GET/POST /schools` (+ `GET /schools/{id}`), `GET/POST /topics`, `GET/POST /methods` (+ `GET /methods/{id}`, `POST /methods/{id}/revisions` với `base_revision`), `GET/POST /concepts` (list trả revision mới nhất mỗi key, lọc school_id/state/q không dấu, cursor), `GET /concepts/{id}` (terms, các revision, lịch sử review), `POST /concepts/{id}/revisions`, `GET /terms` (q không dấu, school_id, concept_id, state; kèm concept + school), `POST /terms`, `GET /terms/{id}`, school scopes, `POST /reviews` cho method/concept/term/school_scope (assertion/rule/case thêm ở T022). Không có `POST /terms/{id}/revisions`: đổi alias là thêm term mới rồi revoke term cũ.
 
+Đã triển khai (T021): `GET /assertions` (lọc state/school_id/book_version_id/q không dấu, cursor) và `GET /assertions/{id}` (sources với trích dẫn lấy từ revision bất biến, số trang, speaker, relations). Reader chỉ thấy assertion `approved` và trích dẫn từ sách mình được đọc; draft/candidate chỉ reviewer thấy (404 với reader). Ghi/duyệt assertion ở T022.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ

@@ -47,7 +47,7 @@ Stage state: `pending/running/succeeded/failed/skipped`; page quality: `accepted
 | quality | blocks + metrics → review items | risk gates theo loại; mẫu vàng kiểm calibration |
 | chunk | accepted spans → immutable chunks + source links | cross-page sources đầy đủ, không cắt hàng trụ dở dang |
 | embed/index | chunks + model profile → vectors/lexical entries | batching, retry và dedupe cache; model mismatch bị chặn |
-| extract candidates | chunks → candidate terms/rules/cases | JSON validate; chỉ draft, không thực thi |
+| extract candidates | trang có trường phái đã duyệt → assertion draft + evidence (T021, xem 06) | chỉ draft, không thực thi; terms/cases ở T022/T023 |
 | publish | validated generation → new active corpus release | atomic swap; giữ release cũ, chat tiếp tục |
 
 Format/size mặc định cấu hình: PDF/DOCX, 250 MiB/file, 3.000 trang/file, 100 file/batch, tổng quota theo disk. Không upload RAR/ZIP vào ingestion sách; batch dùng nhiều tệp. DOCX giải nén trong sandbox, tổng uncompressed ≤1 GiB, không external relationships/macros/embedded executable. PDF mã hóa trả `PASSWORD_REQUIRED` (release này yêu cầu người dùng cung cấp bản đã mở khóa), không retry parser vô hạn. Partial sách cho phép publish phần accepted nhưng UI/citation luôn nêu coverage và excluded ranges; không trả lời phủ định toàn sách nếu coverage thiếu.

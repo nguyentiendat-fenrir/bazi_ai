@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..core.config import Settings
+from ..knowledge.candidates import ExtractCandidatesStage
 from ..retrieval.indexer import EmbedStage
 from .chunker import ChunkStage
 from .docx_stage import DocxExtractStage
@@ -17,4 +18,5 @@ def handlers_for(settings: Settings | None) -> list[StageHandler]:
     # Each stage returns no units for sources it does not handle (PDF vs DOCX).
     app_env = settings.app_env if settings else 'dev'
     return [ValidatePdfStage(), ExtractPdfStage(), DocxExtractStage(), OcrStage(),
-            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env), PublishStage()]
+            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env),
+            ExtractCandidatesStage(), PublishStage()]

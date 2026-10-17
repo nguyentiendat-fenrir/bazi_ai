@@ -61,7 +61,10 @@ khác tra tại bảng cuối file này.
 - T020 ✅ school/topic/method/concept/alias có revision và review (submit/return/approve/
   reject/revoke, base_revision → 412), tìm alias không dấu theo trường phái, trường phái của
   sách theo version/khoảng trang (M010) thành phân loại chunk theo generation.
-- Việc kế tiếp: T021 trích xuất candidates từ nguồn; smoke T002 trên Ubuntu khi có máy.
+- T021 ✅ stage `extract_candidates`: assertion draft từ câu quy tắc/định nghĩa có evidence
+  đúng offset, chỉ trên trang có trường phái đã duyệt, không nhân bản qua rebuild; đo Tử
+  Bình 241, Manh phái sơ cấp 223 candidate.
+- Việc kế tiếp: T022 duyệt assertions/rules và relations; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -177,7 +180,7 @@ trước khi trình duyệt.
 | T018 | Publication và active corpus release | K2 | ✅ |
 | T019 | Reprocess, withdrawal, GC và jobs API | K2 | ✅ |
 | T020 | Trường phái, phương pháp, concept và aliases | K3 | ✅ |
-| T021 | Trích xuất candidates từ nguồn | K3 | |
+| T021 | Trích xuất candidates từ nguồn | K3 | ✅ |
 | T022 | Duyệt assertions/rules và relations | K3 | |
 | T023 | Kho mệnh lệ và structured chart từ sách | K3 | |
 | T024 | Ontology releases và dependency impact graph | K3 | |

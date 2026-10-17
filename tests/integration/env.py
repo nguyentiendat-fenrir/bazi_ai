@@ -27,6 +27,7 @@ from backend.app.ingestion.publish import PublishStage
 from backend.app.ingestion.quality import QualityStage
 from backend.app.ingestion.structure import StructureStage
 from backend.app.ingestion.worker import run_job
+from backend.app.knowledge.candidates import ExtractCandidatesStage
 from backend.app.main import create_app
 from backend.app.retrieval.indexer import EmbedStage
 from backend.app.retrieval.models import provision_collection, register_profile
@@ -48,7 +49,8 @@ def no_ocr():
 
 def default_stages():
     return [ValidatePdfStage(), ExtractPdfStage(), OcrStage(engine_factory=no_ocr),
-            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(), PublishStage()]
+            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(), ExtractCandidatesStage(),
+            PublishStage()]
 
 
 class PipelineTestCase(unittest.TestCase):
