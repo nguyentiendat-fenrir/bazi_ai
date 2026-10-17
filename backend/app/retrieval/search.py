@@ -343,7 +343,10 @@ def search(conn: Connection, principal: Principal, spec: Spec, app_env: str = 'd
               'query': {**base['query'], 'expansions': found},
               'counts': {'scope': in_scope, **{k: len(v) for k, v in lists.items()}}}
     if spec.pack:
-        result['bundle'] = pack(candidates, book_filtered=bool(spec.book_ids
-                                                               or spec.book_version_ids))
+        from .citations import save_bundle
+        bundle = pack(candidates, book_filtered=bool(spec.book_ids or spec.book_version_ids))
+        bundle['bundle_id'] = save_bundle(conn, principal, active['release_id'],
+                                          active['visibility_epoch'], normalized, bundle)
+        result['bundle'] = bundle
     result['took_ms'] = round((time.perf_counter() - started) * 1000, 1)
     return result

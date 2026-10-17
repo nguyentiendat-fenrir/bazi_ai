@@ -234,6 +234,12 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 |---|---|
 | book_version_id uuid FK book_versions; school_id uuid FK schools; first_page int?; last_page int?; state text; reason text; created_by uuid FK users | Bổ sung T020 (M010): trường phái của cả version (không trang) hoặc khoảng trang vật lý inclusive; lifecycle draft→in_review→approved/rejected→revoked như thực thể tri thức, approve/revoke cần `reviews` cùng transaction; partial unique một scope sống cho mỗi khoảng; dịch vụ chặn khoảng trang chồng nhau; kind `school_scope` trong registry |
 
+### `evidence_bundles`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| owner_id uuid FK users; corpus_release_id uuid FK corpus_releases; visibility_epoch bigint; query_hash char(64); groups jsonb; expires_at timestamptz | Bổ sung T037 (M012): bundle evidence server đã đưa cho model (handle E1…, spans chính xác, hash excerpt) để kiểm citation theo đúng thứ đã đưa; RLS theo owner như dữ liệu người dùng; immutable trừ hạn dùng; index(owner_id, created_at), expires_at |
+
 ### `evidence_spans`
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
@@ -521,6 +527,6 @@ Default ON DELETE RESTRICT cho nguồn/version/evidence/rule/corpus để không
 
 ## Migrations
 
-M001 users/auth/settings/model profiles; M002 objects/books/access; M003 pages/generations/chunks/search; M004 knowledge/evidence/reviews/cases; M005 charts/rulesets; M006 chat/claims/citations/dependencies; M007 jobs/outbox/evaluation/operations; M008 RLS/indexes/composite constraints; M009 batch items (T009); M010 school scopes (T020); M011 hàm SECURITY DEFINER đếm/đánh dấu stale analyses phụ thuộc (T024). Đây là logical grouping; Alembic revisions phải có DAG tuyến tính và references deferred hợp lệ. `alembic upgrade head` empty DB và upgrade từ previous release đều test. Seed ontology trong migration data step idempotent, không gọi API/model trong migration.
+M001 users/auth/settings/model profiles; M002 objects/books/access; M003 pages/generations/chunks/search; M004 knowledge/evidence/reviews/cases; M005 charts/rulesets; M006 chat/claims/citations/dependencies; M007 jobs/outbox/evaluation/operations; M008 RLS/indexes/composite constraints; M009 batch items (T009); M010 school scopes (T020); M011 hàm SECURITY DEFINER đếm/đánh dấu stale analyses phụ thuộc (T024); M012 evidence bundles (T037). Đây là logical grouping; Alembic revisions phải có DAG tuyến tính và references deferred hợp lệ. `alembic upgrade head` empty DB và upgrade từ previous release đều test. Seed ontology trong migration data step idempotent, không gọi API/model trong migration.
 
 Index lớn dùng CREATE INDEX CONCURRENTLY ngoài transaction migration phù hợp; schema expand→backfill→switch→contract, không drop cột đang dùng. Downgrade chỉ support nếu lossless; restore backup là rollback cho destructive migration và cần approval. T053 chứng minh restore source blobs+DB+encryption references và rebuild indexes theo version.

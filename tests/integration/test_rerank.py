@@ -5,9 +5,8 @@ import uuid
 
 import httpx
 
-from tests.fixtures.pdf_factory import PdfBuilder
 from tests.integration.db import sha
-from tests.integration.env import BLACK, PipelineTestCase
+from tests.integration.env import PipelineTestCase
 from tests.integration.test_search import MANH, TU_BINH
 
 
@@ -21,24 +20,6 @@ class RerankTests(PipelineTestCase):
     def setUp(self):
         self.app.state.rerank_transport = None
         self.sql("UPDATE model_profiles SET enabled = false WHERE kind = 'reranker'")
-
-    def publish_book(self, pages, school_key):
-        builder = PdfBuilder()
-        for title, body in pages:
-            builder.page(lines=[(title, 72, 720, 18, BLACK), (body, 72, 680, 11, BLACK)])
-        version, _ = self.ready(data=builder.save(self.tmp / f'{uuid.uuid4().hex}.pdf').read_bytes())
-        school = next(s for s in self.c.get('/api/v1/schools').json()['data']
-                      if s['key'] == school_key)
-        scope = self.c.post(f'/api/v1/book-versions/{version}/school-scopes',
-                            json={'school_id': school['id'], 'reason': 'gán'}).json()['data']
-        job = self.c.post('/api/v1/reviews', headers={'Idempotency-Key': uuid.uuid4().hex},
-                          json={'entity_kind': 'school_scope', 'entity_id': scope['id'],
-                                'decision': 'approve', 'base_revision': 1,
-                                'reason': 'đã xem'}).json()['data']['job_id']
-        self.run_pipeline(job)
-        gen = self.sql('SELECT generation_id::text FROM ingestion_jobs WHERE id = %s', job)[0][0]
-        self.publish(gen)
-        return version
 
     def reranker(self, provider, **config):
         self.sql("INSERT INTO model_profiles (kind, provider, model_name, model_revision, config,"

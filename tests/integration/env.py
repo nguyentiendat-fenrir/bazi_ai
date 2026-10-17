@@ -151,6 +151,25 @@ class PipelineTestCase(unittest.TestCase):
         self.assertEqual(self.run_pipeline(job), 'succeeded')
         return version, gen
 
+    def publish_book(self, pages, school_key: str) -> str:
+        """Ingest ``[(title, paragraph), ...]``, assign and approve its school, publish."""
+        builder = PdfBuilder()
+        for title, body in pages:
+            builder.page(lines=[(title, 72, 720, 18, BLACK), (body, 72, 680, 11, BLACK)])
+        version, _ = self.ready(data=builder.save(self.tmp / f'{uuid.uuid4().hex}.pdf').read_bytes())
+        school = next(s for s in self.c.get('/api/v1/schools').json()['data']
+                      if s['key'] == school_key)
+        scope = self.c.post(f'/api/v1/book-versions/{version}/school-scopes',
+                            json={'school_id': school['id'], 'reason': 'gán'}).json()['data']
+        job = self.c.post('/api/v1/reviews', headers={'Idempotency-Key': uuid.uuid4().hex},
+                          json={'entity_kind': 'school_scope', 'entity_id': scope['id'],
+                                'decision': 'approve', 'base_revision': 1,
+                                'reason': 'đã xem'}).json()['data']['job_id']
+        self.assertEqual(self.run_pipeline(job), 'succeeded')
+        gen = self.sql('SELECT generation_id::text FROM ingestion_jobs WHERE id = %s', job)[0][0]
+        self.assertEqual(self.publish(gen).status_code, 201)
+        return version
+
     def publish(self, gen, client=None, **body):
         return (client or self.c).post(f'/api/v1/generations/{gen}/publish', json=body,
                                        headers={'Idempotency-Key': uuid.uuid4().hex})

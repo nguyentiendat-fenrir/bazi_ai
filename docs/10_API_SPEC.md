@@ -85,6 +85,8 @@ Bootstrap admin chỉ qua local CLI với one-time secret, không public registr
 
 Đã triển khai (T036): `POST /search` nhận `rerank` (mặc định bật) và `pack` (trả `bundle` gồm nhóm evidence `E1…`); các route evaluation ở bảng dưới.
 
+Đã triển khai (T037): `POST /search` với `pack` trả `bundle.bundle_id`; `POST /citations/resolve` (R; `bundle_id`, `claims[{text, evidence_ids, quote?}]`) → trạng thái từng claim, lỗi, mức support và citation đã kiểm; 404 bundle không phải của mình, 410 `BUNDLE_EXPIRED`.
+
 Upload 100 sách: frontend tạo batch rồi stream mỗi file với concurrency=2 và key riêng; lỗi 1 file nằm batch item result, không gửi một multipart request 25 GiB. Pause/resume batch client là resume tệp chưa upload; upload một tệp gián đoạn có thể retry toàn tệp và dedupe, không tuyên bố byte-range resumable chưa triển khai. Worker processing resume từ page checkpoint theo 05.
 
 ## Tri thức và mệnh lệ

@@ -10,9 +10,10 @@ from sqlalchemy.engine import Connection
 
 from ..auth.deps import current_principal, db
 from ..auth.service import Principal
+from ..retrieval.citations import resolve
 from ..retrieval.search import Spec, search
 from .health import envelope
-from .schemas import AUTHENTICATED_ERRORS, Envelope, permission
+from .schemas import AUTHENTICATED_ERRORS, Envelope, permission, problem_responses
 
 router = APIRouter(tags=['retrieval'])
 
@@ -115,6 +116,7 @@ class EvidenceGroup(BaseModel):
 
 
 class Bundle(BaseModel):
+    bundle_id: uuid.UUID = Field(description='cite its handles via POST /citations/resolve')
     groups: list[EvidenceGroup]
     tokens: int
     omitted: int
@@ -145,3 +147,70 @@ def run_search(body: SearchInput, request: Request,
     return envelope(search(conn, principal, spec, state.settings.app_env,
                            getattr(state, 'embedding_transport', None),
                            getattr(state, 'rerank_transport', None)))
+
+
+class ClaimInput(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    evidence_ids: list[str] = Field(max_length=20, description='handles from the bundle (E1…)')
+    quote: str | None = Field(default=None, max_length=1000)
+
+
+class ResolveInput(BaseModel):
+    bundle_id: uuid.UUID
+    claims: list[ClaimInput] = Field(min_length=1, max_length=100)
+
+
+class ViewerSpan(BaseModel):
+    page_revision_id: uuid.UUID
+    physical_page_number: int
+    printed_page_label: str | None
+    start_offset: int
+    end_offset: int
+    bbox: list[float] | None
+
+
+class Citation(BaseModel):
+    evidence_id: str
+    evidence_span_ids: list[uuid.UUID]
+    book_id: uuid.UUID
+    book_title: str
+    book_version_id: uuid.UUID
+    edition_label: str
+    section_title: str
+    speaker_layer: str
+    pages: list[int]
+    printed_pages: list[str]
+    quote: str
+    support: float = Field(description='share of the claim content words in the cited text')
+    viewer: list[ViewerSpan]
+
+
+class Problem(BaseModel):
+    evidence_id: str
+    code: Literal['UNKNOWN_EVIDENCE', 'SOURCE_WITHDRAWN', 'SPAN_INVALID', 'SOURCE_CHANGED',
+                  'QUOTE_MISMATCH']
+
+
+class ClaimResult(BaseModel):
+    index: int
+    status: Literal['supported', 'weak', 'insufficient_evidence', 'invalid']
+    problems: list[Problem]
+    support: float
+    citations: list[Citation]
+
+
+class ResolveResult(BaseModel):
+    bundle_id: uuid.UUID
+    release_id: uuid.UUID
+    epoch_changed: bool
+    claims: list[ClaimResult]
+
+
+@router.post('/citations/resolve', response_model=Envelope[ResolveResult],
+             responses={**AUTHENTICATED_ERRORS, **problem_responses(404, 410)},
+             openapi_extra=permission('R'))
+def resolve_citations(body: ResolveInput, principal: Principal = Depends(current_principal),
+                      conn: Connection = Depends(db)) -> dict:
+    """Invalid citations must never reach a reader, not even in a streaming draft."""
+    return envelope(resolve(conn, principal, body.bundle_id,
+                            [c.model_dump() for c in body.claims]))

@@ -79,8 +79,10 @@ khác tra tại bảng cuối file này.
 - T036 ⏳ adapter reranker + fallback + chặn gửi ngoài, đóng gói evidence bundle, dataset/run
   đánh giá (recall/hit/nDCG/MRR/latency); baseline seed: hit@10 1,0, recall@20 0,87, MRR 0,70.
   Còn chờ: chọn model embedding/reranker thật trên Ubuntu với gold đã duyệt.
-- Việc kế tiếp: T037 citation resolver/validator; T025.1 gold cần chuyên gia; smoke T002
-  khi có máy.
+- T037 ✅ bundle evidence lưu phía server (M012), `POST /citations/resolve` kiểm tồn tại/span/
+  quote/support, claim lỗi không bao giờ kèm nguồn, materialise evidence span cho citation.
+- Việc kế tiếp: T038 adapter LLM (llama.cpp, mock, ngân sách); T025.1 gold cần chuyên gia;
+  smoke T002 khi có máy.
 
 ## Các giai đoạn
 
@@ -203,7 +205,7 @@ trước khi trình duyệt.
 | T025 | Tập gold retrieval và chuyên môn | K3 | |
 | T035 | Hybrid candidate retrieval và filters | K4 | ✅ |
 | T036 | Embedding/reranker benchmark và context packing | K4 | ⏳ |
-| T037 | Citation resolver và validator | K4 | |
+| T037 | Citation resolver và validator | K4 | ✅ |
 | T038 | LLM adapters, cost reservation và mocks | K4 | |
 | T026 | Adapter Calculation Engine và schema facts | K6 | |
 | T027 | Timezone và giờ Mặt Trời | K6 | |
