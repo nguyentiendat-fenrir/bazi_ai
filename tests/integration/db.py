@@ -68,3 +68,26 @@ def migrated_database(target: str = 'head') -> str:
         drop_database(name)
         raise
     return name
+
+
+def create_runtime_login(dbname: str) -> tuple[str, str]:
+    """A throwaway LOGIN role in bazi_runtime (cluster-wide); returns (role, conninfo)."""
+    role = f'bazi_rt_{uuid.uuid4().hex[:10]}'
+    password = uuid.uuid4().hex
+    with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
+        admin.execute(sql.SQL('CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD {}')
+                      .format(sql.Identifier(role), sql.Literal(password)))
+        admin.execute(sql.SQL('GRANT bazi_runtime TO {}').format(sql.Identifier(role)))
+    info = psycopg.conninfo.conninfo_to_dict(ADMIN_URL)
+    info.update(dbname=dbname, user=role, password=password)
+    return role, psycopg.conninfo.make_conninfo(**info)
+
+
+def drop_role(role: str) -> None:
+    with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
+        admin.execute(sql.SQL('DROP ROLE IF EXISTS {}').format(sql.Identifier(role)))
+
+
+def engine_for(conninfo: str):
+    return create_engine('postgresql+psycopg://', poolclass=pool.NullPool,
+                         creator=lambda: psycopg.connect(conninfo))

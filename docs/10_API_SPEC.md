@@ -27,7 +27,9 @@ Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu.
 | POST /model-profiles/{id}/activate | A | target kind | 202 operation cho embedding reindex; llm/rerank settings revision mới |
 | GET /usage | R own / A aggregate | from,to,profile_id | tokens,cost estimate/actual,budget |
 
-Bootstrap admin chỉ qua local CLI với one-time secret, không public registration endpoint.
+Bootstrap admin chỉ qua local CLI với one-time secret, không public registration endpoint (`python -m backend.app.cli bootstrap-admin`, từ chối khi đã có admin).
+
+Đã triển khai (T006): login trả `{data:{user:UserDTO, csrf_token}}` và cookie `bazi_session` (HttpOnly, SameSite=Strict, Secure ở production, TTL `SESSION_TTL_HOURS` mặc định 12). Mọi request không an toàn có cookie phải gửi header `X-CSRF-Token`; thiếu/sai → 403 `CSRF_FAILED`. Header `Origin` ngoài `ALLOWED_ORIGINS` → 403 `ORIGIN_REJECTED`. Sai email/mật khẩu/tài khoản tắt đều trả cùng 401 `AUTH_REQUIRED`; quá `LOGIN_MAX_FAILURES` lần trong `LOGIN_WINDOW_SECONDS` theo IP hoặc email → 429 `RATE_LIMITED` + `Retry-After` (bộ đếm trong process). Hạ quyền/tắt admin cuối → 409 `LAST_ADMIN`; tắt user thu hồi mọi session của họ. UserDTO: id, email, role, enabled, locale, created_at, updated_at; `/auth/me` thêm capabilities. If-Match/ETag cho PATCH /users thuộc T008.
 
 ## Sách, upload, jobs và nguồn
 

@@ -31,7 +31,18 @@ class Settings(BaseSettings):
     postgres_db: str = 'bazi'
     postgres_user: str = 'bazi'
     postgres_password: SecretStr | None = None
+    # Runtime login (member of bazi_runtime, subject to RLS). Migrations and the
+    # bootstrap CLI use postgres_user; the API must not run as that owner role.
+    postgres_app_user: str | None = None
+    postgres_app_password: SecretStr | None = None
     redis_url: str = 'redis://redis:6379/0'
+
+    session_ttl_hours: int = Field(12, ge=1, le=24 * 30)
+    # Origins allowed to send cookie-authenticated unsafe requests (CSRF defence).
+    allowed_origins: list[str] = ['http://127.0.0.1:8000', 'http://localhost:8000',
+                                  'http://127.0.0.1:3000', 'http://localhost:3000']
+    login_max_failures: int = Field(5, ge=1)
+    login_window_seconds: int = Field(900, ge=1)
 
     session_signing_key: SecretStr | None = None
     field_encryption_key: SecretStr | None = None
@@ -42,9 +53,9 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None
     embedding_model: str | None = None
 
-    @field_validator('postgres_password', 'session_signing_key', 'field_encryption_key',
-                     'llm_api_key', 'llm_base_url', 'llm_model', 'embedding_model',
-                     mode='before')
+    @field_validator('postgres_password', 'postgres_app_user', 'postgres_app_password',
+                     'session_signing_key', 'field_encryption_key', 'llm_api_key', 'llm_base_url',
+                     'llm_model', 'embedding_model', mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".
@@ -64,25 +75,43 @@ class Settings(BaseSettings):
         if self.app_env != 'production':
             return self
         required = {'postgres_password': self.postgres_password,
+                    'postgres_app_password': self.postgres_app_password,
                     'session_signing_key': self.session_signing_key,
                     'field_encryption_key': self.field_encryption_key}
         missing = [name for name, value in required.items() if value is None]
         if missing:
             raise ValueError(f'production requires {", ".join(missing)}')
+        if not self.postgres_app_user or self.postgres_app_user == self.postgres_user:
+            raise ValueError('production requires postgres_app_user distinct from postgres_user')
         short = [name for name, value in required.items()
-                 if name != 'postgres_password'
+                 if name not in ('postgres_password', 'postgres_app_password')
                  and len(value.get_secret_value()) < MIN_SECRET_LENGTH]
         if short:
             raise ValueError(f'{", ".join(short)} must be at least {MIN_SECRET_LENGTH} characters')
         return self
 
-    @property
-    def database_url(self) -> URL:
+    def _url(self, user: str, password: SecretStr | None) -> URL:
         # URL objects escape the password and hide it in str()/repr().
-        password = self.postgres_password.get_secret_value() if self.postgres_password else None
-        return URL.create('postgresql+psycopg', username=self.postgres_user, password=password,
+        return URL.create('postgresql+psycopg', username=user,
+                          password=password.get_secret_value() if password else None,
                           host=self.postgres_host, port=self.postgres_port,
                           database=self.postgres_db)
+
+    @property
+    def database_url(self) -> URL:
+        """Owner/migration connection: migrations, bootstrap CLI, role setup."""
+        return self._url(self.postgres_user, self.postgres_password)
+
+    @property
+    def runtime_database_url(self) -> URL:
+        """API/worker connection; falls back to the owner only outside production."""
+        if self.postgres_app_user:
+            return self._url(self.postgres_app_user, self.postgres_app_password)
+        return self.database_url
+
+    @property
+    def cookie_secure(self) -> bool:
+        return self.app_env == 'production'
 
     @property
     def llm_configured(self) -> bool:
@@ -90,7 +119,7 @@ class Settings(BaseSettings):
 
     def secret_values(self) -> list[str]:
         """Configured secret strings, used by the log redactor."""
-        secrets = (self.postgres_password, self.session_signing_key,
+        secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
                    self.field_encryption_key, self.llm_api_key)
         return [s.get_secret_value() for s in secrets if s is not None]
 

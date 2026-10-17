@@ -12,7 +12,7 @@ import re
 import time
 import uuid
 
-from .errors import unhandled_problem
+from .errors import problem_response, unhandled_problem
 from .logging import request_id_var
 
 HEADER = b'x-request-id'
@@ -61,3 +61,26 @@ class RequestContextMiddleware:
                 'status': status,
                 'duration_ms': round((time.perf_counter() - started) * 1000, 1)})
             request_id_var.reset(token)
+
+
+class OriginGuardMiddleware:
+    """Reject unsafe requests whose Origin is not ours (CSRF defence in depth).
+
+    Browsers always send Origin on cross-site POST/PUT/PATCH/DELETE; requests
+    without one (CLI, server-to-server) still need the session's CSRF token.
+    """
+
+    UNSAFE = frozenset({'POST', 'PUT', 'PATCH', 'DELETE'})
+
+    def __init__(self, app, allowed_origins: list[str]):
+        self.app = app
+        self.allowed = {o.rstrip('/').encode() for o in allowed_origins}
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] == 'http' and scope['method'] in self.UNSAFE:
+            origin = dict(scope['headers']).get(b'origin')
+            if origin is not None and origin.rstrip(b'/') not in self.allowed:
+                response = problem_response(403, 'ORIGIN_REJECTED',
+                                            'Cross-origin request rejected')
+                return await response(scope, receive, send)
+        return await self.app(scope, receive, send)

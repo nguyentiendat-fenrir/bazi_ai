@@ -23,7 +23,9 @@ khác tra tại bảng cuối file này.
   DB; 26 integration tests trên PostgreSQL thật.
 - T005 ✅ migrations M004–M007 (tri thức, lá số, chat, jobs/vận hành), vòng đời duyệt ép ở
   DB, registry tham chiếu đa hình, seed chỉ taxonomy; 26 integration tests.
-- Việc kế tiếp: T006 auth/roles/RLS; smoke T002 trên Ubuntu khi có máy.
+- T006 ✅ auth: Argon2id, session cookie + CSRF + Origin guard, giới hạn đăng nhập, roles,
+  RLS chạy bằng login runtime (M008), chặn mất admin cuối, CLI bootstrap; tests API + RLS.
+- Việc kế tiếp: T007 ObjectStore; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -122,7 +124,7 @@ trước khi trình duyệt.
 | T003 | Backend foundation và logging | K1 | ✅ |
 | T004 | Migrations storage và document schema | K1 | ✅ |
 | T005 | Migrations knowledge, chart, chat và jobs | K1 | ✅ |
-| T006 | Auth, roles, RLS và admin bootstrap | K1 | |
+| T006 | Auth, roles, RLS và admin bootstrap | K1 | ✅ |
 | T007 | ObjectStore local và S3 adapters | K1 | |
 | T008 | API contracts nền và client skeleton | K1 | |
 | T009 | Catalog, upload batch và dedupe | K2 | |

@@ -16,12 +16,14 @@ with warnings.catch_warnings():
 
 from backend.app.core.config import ConfigError, load_settings
 from backend.app.core.errors import AppError
-from backend.app.core.health import CheckResult, ReadinessCheck
+from backend.app.core.health import CheckResult, ReadinessCheck, default_checks
 from backend.app.core.logging import Redactor, configure_logging
 from backend.app.main import create_app
 
 # Obviously fake values; long enough for production validation.
 SIGNING = 'fake-signing-key-for-tests-0123456789'
+PROD = dict(app_env='production', postgres_password='fake-db-password-xyz',
+            postgres_app_user='bazi_app', postgres_app_password='fake-app-password-xyz')
 ENCRYPTION = 'fake-encryption-key-for-tests-012345'
 DB_PASSWORD = 'fake-db-password-xyz'
 # Split so the repository secret scanner does not flag the fixture DSN.
@@ -69,14 +71,15 @@ class ConfigTests(unittest.TestCase):
 
     def test_production_requires_strong_secrets_without_echoing_them(self):
         with self.assertRaisesRegex(ConfigError, 'session_signing_key'):
-            settings(app_env='production', postgres_password=DB_PASSWORD)
+            settings(**PROD)
+        with self.assertRaisesRegex(ConfigError, 'postgres_app_user distinct'):
+            settings(**{**PROD, 'postgres_app_user': 'bazi'}, session_signing_key=SIGNING,
+                     field_encryption_key=ENCRYPTION)
         with self.assertRaises(ConfigError) as caught:
-            settings(app_env='production', postgres_password=DB_PASSWORD,
-                     session_signing_key='short-secret', field_encryption_key=ENCRYPTION)
+            settings(**PROD, session_signing_key='short-secret', field_encryption_key=ENCRYPTION)
         self.assertIn('at least 32', str(caught.exception))
         self.assertNotIn('short-secret', str(caught.exception))
-        ok = settings(app_env='production', postgres_password=DB_PASSWORD,
-                      session_signing_key=SIGNING, field_encryption_key=ENCRYPTION)
+        ok = settings(**PROD, session_signing_key=SIGNING, field_encryption_key=ENCRYPTION)
         self.assertNotIn(SIGNING, repr(ok))
 
     def test_database_url_escapes_and_hides_password(self):
@@ -106,7 +109,9 @@ class AppTests(unittest.TestCase):
     def make_client(self, checks=None, client=('127.0.0.1', 50000), **config):
         config.setdefault('llm_api_key', FAKE_LLM_KEY)
         app_settings = settings(**config)
-        app = create_app(app_settings, readiness_checks=checks)
+        # No database in unit tests: only the configuration-level checks by default.
+        app = create_app(app_settings, readiness_checks=checks if checks is not None
+                         else default_checks(app_settings))
 
         @app.get('/api/v1/_test/boom')
         async def boom():
@@ -208,8 +213,8 @@ class AppTests(unittest.TestCase):
         self.assertEqual(client.get('/api/v1/health/live').status_code, 200)
 
     def test_production_hides_openapi(self):
-        client = self.make_client(app_env='production', postgres_password=DB_PASSWORD,
-                                  session_signing_key=SIGNING, field_encryption_key=ENCRYPTION)
+        client = self.make_client(**PROD, session_signing_key=SIGNING,
+                                  field_encryption_key=ENCRYPTION)
         self.assertEqual(client.get('/api/v1/openapi.json').status_code, 404)
 
 

@@ -1,0 +1,75 @@
+"""Session login/logout and the current user (docs/10 · Routes xác thực và cấu hình).
+
+There is no public registration: accounts are created by an admin (``/users``)
+or, for the first admin, by the local bootstrap CLI.
+"""
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel, Field, StringConstraints
+from sqlalchemy.engine import Engine
+
+from ..auth.deps import SESSION_COOKIE, current_principal, engine
+from ..auth.service import Principal, authenticate, create_session, revoke_session
+from ..core.db import transaction
+from ..core.errors import AppError
+from .health import envelope
+
+router = APIRouter(prefix='/auth', tags=['auth'])
+# Shape check only; deliverability is irrelevant for local accounts.
+Email = Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True, max_length=254,
+                                         pattern=r'^[^@\s]+@[^@\s]+\.[^@\s]+$')]
+
+
+class LoginInput(BaseModel):
+    email: Email
+    password: str = Field(min_length=1, max_length=1024)
+
+
+def user_dto(principal: Principal) -> dict:
+    return {'id': str(principal.user_id), 'email': principal.email, 'role': principal.role,
+            'capabilities': principal.capabilities}
+
+
+@router.post('/login')
+def login(body: LoginInput, request: Request, response: Response,
+          db_engine: Engine = Depends(engine)) -> dict:
+    settings = request.app.state.settings
+    limiter = request.app.state.login_limiter
+    email = body.email
+    client = request.client.host if request.client else 'unknown'
+    keys = (f'ip:{client}', f'email:{email}')
+    if wait := limiter.retry_after(*keys):
+        raise AppError(429, 'RATE_LIMITED', 'Too many failed sign-in attempts',
+                       headers={'Retry-After': str(wait)})
+    with transaction(db_engine) as conn:
+        user = authenticate(conn, email, body.password)
+        session = (create_session(conn, user, timedelta(hours=settings.session_ttl_hours))
+                   if user else None)
+    if session is None:
+        limiter.failure(*keys)
+        # One message for unknown email, wrong password and disabled account.
+        raise AppError(401, 'AUTH_REQUIRED', 'Invalid email or password')
+    limiter.success(*keys)
+    response.set_cookie(SESSION_COOKIE, session.token, httponly=True, samesite='strict',
+                        secure=settings.cookie_secure, path='/',
+                        max_age=settings.session_ttl_hours * 3600)
+    return envelope({'user': user_dto(session.principal), 'csrf_token': session.csrf_token})
+
+
+@router.post('/logout', status_code=204)
+def logout(response: Response, principal: Principal = Depends(current_principal),
+           db_engine: Engine = Depends(engine)) -> Response:
+    with transaction(db_engine, principal.user_id) as conn:
+        revoke_session(conn, principal.session_id)
+    response.status_code = 204
+    response.delete_cookie(SESSION_COOKIE, path='/')
+    return response
+
+
+@router.get('/me')
+def me(principal: Principal = Depends(current_principal)) -> dict:
+    return envelope(user_dto(principal))

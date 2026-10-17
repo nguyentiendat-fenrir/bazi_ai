@@ -54,6 +54,18 @@ uv run --locked python -B -m unittest discover -s tests -v
 ```
 
 Không đặt `BAZI_TEST_DATABASE_URL` thì schema tests được skip, không tính là đã kiểm.
+
+Tài khoản: không có đăng ký công khai. Sau migrate, tạo login DB cho API (thành viên
+`bazi_runtime`, chịu RLS) rồi tạo admin đầu tiên; mật khẩu lấy từ prompt hoặc biến
+môi trường, không qua tham số dòng lệnh:
+
+```powershell
+uv run --locked python -m backend.app.cli create-runtime-login   # đọc POSTGRES_APP_USER/PASSWORD
+uv run --locked python -m backend.app.cli bootstrap-admin --email admin@example.test
+```
+
+API kết nối bằng `POSTGRES_APP_USER`. Nếu để trống, dev dùng owner và
+`/health/ready` báo `RLS_BYPASS_ROLE` (degraded); production từ chối khởi động.
 API đọc `.env`; config sai thì dừng ngay với tên field, không in giá trị. Kiểm
 `http://127.0.0.1:8000/api/v1/health/live` và `/health/ready` (model chưa cấu hình
 là `degraded`). Log là JSON một dòng, có `request_id` trùng header `X-Request-ID`.
