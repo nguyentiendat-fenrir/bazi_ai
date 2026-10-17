@@ -29,6 +29,8 @@ Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu.
 
 Bootstrap admin chỉ qua local CLI với one-time secret, không public registration endpoint (`python -m backend.app.cli bootstrap-admin`, từ chối khi đã có admin).
 
+Đã triển khai (T038): `GET /model-profiles` (R; kèm `active`, `is_fixture`; config không chứa secret), `POST /model-profiles` (A; kind llm/embedding/reranker, provider theo loại, khóa dạng secret trong config → 422, `secret_ref` ngoài allowlist → 422, trùng → 409; embedding dùng cùng định danh với CLI), `POST /model-profiles/{id}/test` (A; LLM gửi lời nhắn ngắn có tính ngân sách, `check_json` thử JSON; embedding trả số chiều; reranker gọi thử), `POST /model-profiles/{id}/activate` (A; llm/reranker; embedding → 422 vì cần release embed lại toàn bộ), `GET /usage` (R; `from`/`to` theo ngày, `profile_id`; của mình + `all` tổng mọi người cho admin + ngân sách ngày).
+
 Đã triển khai (T006): login trả `{data:{user:UserDTO, csrf_token}}` và cookie `bazi_session` (HttpOnly, SameSite=Strict, Secure ở production, TTL `SESSION_TTL_HOURS` mặc định 12). Mọi request không an toàn có cookie phải gửi header `X-CSRF-Token`; thiếu/sai → 403 `CSRF_FAILED`. Header `Origin` ngoài `ALLOWED_ORIGINS` → 403 `ORIGIN_REJECTED`. Sai email/mật khẩu/tài khoản tắt đều trả cùng 401 `AUTH_REQUIRED`; quá `LOGIN_MAX_FAILURES` lần trong `LOGIN_WINDOW_SECONDS` theo IP hoặc email → 429 `RATE_LIMITED` + `Retry-After` (bộ đếm trong process). Hạ quyền/tắt admin cuối → 409 `LAST_ADMIN`; tắt user thu hồi mọi session của họ. UserDTO: id, email, role, enabled, locale, created_at, updated_at; `/auth/me` thêm capabilities. If-Match/ETag cho PATCH /users thuộc T008.
 
 ## Sách, upload, jobs và nguồn

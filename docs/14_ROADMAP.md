@@ -81,8 +81,12 @@ khác tra tại bảng cuối file này.
   Còn chờ: chọn model embedding/reranker thật trên Ubuntu với gold đã duyệt.
 - T037 ✅ bundle evidence lưu phía server (M012), `POST /citations/resolve` kiểm tồn tại/span/
   quote/support, claim lỗi không bao giờ kèm nguồn, materialise evidence span cho citation.
-- Việc kế tiếp: T038 adapter LLM (llama.cpp, mock, ngân sách); T025.1 gold cần chuyên gia;
-  smoke T002 khi có máy.
+- T038 ✅ adapter LLM `openai_compatible` (timeout, retry jitter, JSON mode, một lượt sửa
+  schema) + fixture, giữ chỗ chi phí trước gọi với trần ngày dùng chung (M013), usage/
+  model-profiles API. T038.1 smoke Gemma thật chờ máy Ubuntu.
+- K4 xong phần làm được trên máy dev. Việc kế tiếp theo thứ tự: K5 (T043.1 shell + TS
+  client, T046.1 UI thư viện/jobs/review, T052.1/T053.1 backup/restore kho) hoặc K6 lá số;
+  chờ: T002/T036/T038.1 trên Ubuntu, T025.1 gold với chuyên gia.
 
 ## Các giai đoạn
 
@@ -206,7 +210,7 @@ trước khi trình duyệt.
 | T035 | Hybrid candidate retrieval và filters | K4 | ✅ |
 | T036 | Embedding/reranker benchmark và context packing | K4 | ⏳ |
 | T037 | Citation resolver và validator | K4 | ✅ |
-| T038 | LLM adapters, cost reservation và mocks | K4 | |
+| T038 | LLM adapters, cost reservation và mocks | K4 | ✅ |
 | T026 | Adapter Calculation Engine và schema facts | K6 | |
 | T027 | Timezone và giờ Mặt Trời | K6 | |
 | T028 | Tiết khí, ngày Tý và chu kỳ vận | K6 | |

@@ -1193,6 +1193,35 @@
         "title": "BookPatch",
         "type": "object"
       },
+      "BudgetRow": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "daily_budget": {
+            "title": "Daily Budget",
+            "type": "number"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "spent_today": {
+            "title": "Spent Today",
+            "type": "number"
+          }
+        },
+        "required": [
+          "profile_id",
+          "daily_budget",
+          "currency",
+          "spent_today"
+        ],
+        "title": "BudgetRow",
+        "type": "object"
+      },
       "Bundle": {
         "properties": {
           "bundle_id": {
@@ -2855,6 +2884,22 @@
         "title": "Envelope[PageRevisionDTO]",
         "type": "object"
       },
+      "Envelope_ProfileDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProfileDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[ProfileDTO]",
+        "type": "object"
+      },
       "Envelope_PublishOntologyResult_": {
         "properties": {
           "data": {
@@ -3095,6 +3140,22 @@
         "title": "Envelope[TermDTO]",
         "type": "object"
       },
+      "Envelope_TestResult_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TestResult"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TestResult]",
+        "type": "object"
+      },
       "Envelope_TopicDTO_": {
         "properties": {
           "data": {
@@ -3125,6 +3186,22 @@
           "meta"
         ],
         "title": "Envelope[UploadResult]",
+        "type": "object"
+      },
+      "Envelope_UsageDTO_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UsageDTO"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[UsageDTO]",
         "type": "object"
       },
       "Envelope_UserDTO_": {
@@ -4791,6 +4868,29 @@
         "title": "ListEnvelope[PageSummaryDTO]",
         "type": "object"
       },
+      "ListEnvelope_ProfileDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[ProfileDTO]",
+        "type": "object"
+      },
       "ListEnvelope_ReviewItemDTO_": {
         "properties": {
           "data": {
@@ -5645,6 +5745,166 @@
           }
         },
         "title": "ProcessInput",
+        "type": "object"
+      },
+      "ProfileDTO": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_fixture": {
+            "title": "Is Fixture",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "embedding",
+              "reranker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_revision": {
+            "title": "Model Revision",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "secret_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Ref"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "provider",
+          "model_name",
+          "model_revision",
+          "dimension",
+          "config",
+          "secret_ref",
+          "enabled",
+          "active",
+          "is_fixture",
+          "created_at"
+        ],
+        "title": "ProfileDTO",
+        "type": "object"
+      },
+      "ProfileInput": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "description": "no secrets; base_url, timeout, locality, json_mode, prices, daily_budget…",
+            "title": "Config",
+            "type": "object"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "maximum": 4096.0,
+                "minimum": 8.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "embedding",
+              "reranker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_revision": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model Revision",
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          },
+          "secret_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "name of an allowlisted env var",
+            "title": "Secret Ref"
+          }
+        },
+        "required": [
+          "kind",
+          "provider",
+          "model_name",
+          "model_revision"
+        ],
+        "title": "ProfileInput",
         "type": "object"
       },
       "PublishInput": {
@@ -7882,6 +8142,112 @@
         "title": "TermInput",
         "type": "object"
       },
+      "TestInput": {
+        "properties": {
+          "check_json": {
+            "default": false,
+            "title": "Check Json",
+            "type": "boolean"
+          },
+          "max_tokens": {
+            "default": 16,
+            "maximum": 64.0,
+            "minimum": 1.0,
+            "title": "Max Tokens",
+            "type": "integer"
+          }
+        },
+        "title": "TestInput",
+        "type": "object"
+      },
+      "TestResult": {
+        "properties": {
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "is_fixture": {
+            "title": "Is Fixture",
+            "type": "boolean"
+          },
+          "json_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Json Ok"
+          },
+          "kind": {
+            "enum": [
+              "llm",
+              "embedding",
+              "reranker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "reply": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply"
+          }
+        },
+        "required": [
+          "kind",
+          "latency_ms",
+          "model",
+          "is_fixture"
+        ],
+        "title": "TestResult",
+        "type": "object"
+      },
       "TopicDTO": {
         "properties": {
           "id": {
@@ -8025,6 +8391,96 @@
           "book_id"
         ],
         "title": "UploadResult",
+        "type": "object"
+      },
+      "UsageDTO": {
+        "properties": {
+          "all": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/UsageRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "admins: totals of everyone",
+            "title": "All"
+          },
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetRow"
+            },
+            "title": "Budgets",
+            "type": "array"
+          },
+          "from": {
+            "format": "date-time",
+            "title": "From",
+            "type": "string"
+          },
+          "own": {
+            "items": {
+              "$ref": "#/components/schemas/UsageRow"
+            },
+            "title": "Own",
+            "type": "array"
+          },
+          "to": {
+            "format": "date-time",
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "own",
+          "budgets"
+        ],
+        "title": "UsageDTO",
+        "type": "object"
+      },
+      "UsageRow": {
+        "properties": {
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "requests": {
+            "title": "Requests",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profile_id",
+          "currency",
+          "requests",
+          "input_tokens",
+          "output_tokens",
+          "cost"
+        ],
+        "title": "UsageRow",
         "type": "object"
       },
       "UserCreate": {
@@ -14690,6 +15146,401 @@
         "x-permission": "V"
       }
     },
+    "/api/v1/model-profiles": {
+      "get": {
+        "operationId": "list_profiles_api_v1_model_profiles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "llm",
+                    "embedding",
+                    "reranker"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_ProfileDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Profiles",
+        "tags": [
+          "models"
+        ],
+        "x-permission": "R"
+      },
+      "post": {
+        "operationId": "create_profile_api_v1_model_profiles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProfileDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create Profile",
+        "tags": [
+          "models"
+        ],
+        "x-permission": "A"
+      }
+    },
+    "/api/v1/model-profiles/{profile_id}/activate": {
+      "post": {
+        "operationId": "activate_api_v1_model_profiles__profile_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProfileDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Activate",
+        "tags": [
+          "models"
+        ],
+        "x-permission": "A"
+      }
+    },
+    "/api/v1/model-profiles/{profile_id}/test": {
+      "post": {
+        "operationId": "test_profile_api_v1_model_profiles__profile_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TestResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Test Profile",
+        "tags": [
+          "models"
+        ],
+        "x-permission": "A"
+      }
+    },
     "/api/v1/ontology-releases": {
       "get": {
         "operationId": "list_releases_api_v1_ontology_releases_get",
@@ -17282,6 +18133,125 @@
           "uploads"
         ],
         "x-permission": "V"
+      }
+    },
+    "/api/v1/usage": {
+      "get": {
+        "operationId": "usage_api_v1_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_UsageDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/backend__app__api__schemas__Problem"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Usage",
+        "tags": [
+          "models"
+        ],
+        "x-permission": "R"
       }
     },
     "/api/v1/users": {
