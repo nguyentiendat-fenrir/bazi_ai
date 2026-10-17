@@ -17,7 +17,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..documents.formats import PDF
-from .pdf_native import PARSER_VERSION, PageExtraction, PdfRejected, extract_page, open_document
+from .pdf_native import (PARSER_VERSION, PageExtraction, PdfRejected, document_profile,
+                         extract_page, open_document)
 from .worker import JobContext, Unit, UnitFailed
 
 CACHE_DIR = Path(tempfile.gettempdir()) / 'bazi-source-cache'
@@ -66,7 +67,9 @@ class ValidatePdfStage:
         return [Unit('doc', _sha(ctx.source_sha256, PARSER_VERSION))]
 
     def compute(self, ctx: JobContext, unit: Unit) -> dict:
-        return {'page_count': len(_document(ctx)), 'parser_version': PARSER_VERSION}
+        doc = _document(ctx)
+        return {'page_count': len(doc), 'parser_version': PARSER_VERSION,
+                'profile': document_profile(doc)}
 
     def persist(self, conn: Connection, ctx: JobContext, unit: Unit, result: dict) -> dict:
         self.attach(conn, ctx, unit, result)
@@ -76,7 +79,8 @@ class ValidatePdfStage:
         conn.execute(text(
             'UPDATE generations SET coverage = coverage || CAST(:c AS jsonb) WHERE id = :g'),
             {'g': ctx.generation_id, 'c': json.dumps({'total': result['page_count'],
-                                                     'parser_version': PARSER_VERSION})})
+                                                     'parser_version': PARSER_VERSION,
+                                                     'doc_profile': result.get('profile', {})})})
         conn.execute(text(
             'UPDATE ingestion_jobs SET counters = counters || CAST(:c AS jsonb) WHERE id = :j'),
             {'j': ctx.job_id, 'c': json.dumps({'pages_total': result['page_count']})})
@@ -93,12 +97,16 @@ class ExtractPdfStage:
                                       ' WHERE id = :g'), {'g': ctx.generation_id}).scalar()
         if total is None:
             raise UnitFailed('VALIDATE_MISSING', 'validate stage did not record a page count')
+        with ctx.engine.connect() as conn:
+            ctx.state['doc_profile'] = conn.execute(text(
+                "SELECT coverage->'doc_profile' FROM generations WHERE id = :g"),
+                {'g': ctx.generation_id}).scalar() or {}
         return [Unit(f'page:{n}', _sha(ctx.source_sha256, n, PARSER_VERSION))
                 for n in range(1, total + 1)]
 
     def compute(self, ctx: JobContext, unit: Unit) -> PageExtraction:
         number = int(unit.key.split(':', 1)[1])
-        return extract_page(_document(ctx), number - 1)
+        return extract_page(_document(ctx), number - 1, ctx.state.get('doc_profile'))
 
     def persist(self, conn: Connection, ctx: JobContext, unit: Unit,
                 page: PageExtraction) -> dict:
@@ -166,11 +174,11 @@ class ExtractPdfStage:
         for block in page.blocks:
             conn.execute(text(
                 'INSERT INTO blocks (page_revision_id, ordinal, kind, bbox, start_offset,'
-                " end_offset, text, speaker_layer, attributes) VALUES (:r, :o, 'paragraph',"
-                " CAST(:bbox AS jsonb), :s, :e, :t, 'unknown', CAST(:attrs AS jsonb))"),
-                {'r': revision_id, 'o': block.ordinal, 'bbox': json.dumps(block.bbox),
-                 's': block.start, 'e': block.end, 't': block.text,
-                 'attrs': json.dumps(block.attributes)})
+                " end_offset, text, speaker_layer, attributes) VALUES (:r, :o, :k,"
+                " CAST(:bbox AS jsonb), :s, :e, :t, :sp, CAST(:attrs AS jsonb))"),
+                {'r': revision_id, 'o': block.ordinal, 'k': block.kind,
+                 'bbox': json.dumps(block.bbox), 's': block.start, 'e': block.end,
+                 't': block.text, 'sp': block.speaker, 'attrs': json.dumps(block.attributes)})
         return revision_id, True
 
 

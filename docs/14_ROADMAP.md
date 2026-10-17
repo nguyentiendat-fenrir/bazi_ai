@@ -42,7 +42,10 @@ khác tra tại bảng cuối file này.
   ghi đè native, timeout → review; image `app`/`test` có Tesseract, service worker/watchdog.
 - T013 ✅ DOCX: text + anchor từ XML, bản dựng LibreOffice có font cố định, định vị đoạn
   (96% exact trên DOCX thật), fallback anchor không bịa trang; DOCX mới → version/generation mới.
-- Việc kế tiếp: T014 chuẩn hóa/cấu trúc/quality; smoke T002 trên Ubuntu khi có máy.
+- T014 ✅ chuẩn hóa + offset UTF-16, vai trò block/heading/lớp người nói, cây section, xác minh
+  nhãn trang, review item theo lý do, 9 trang mẫu đối chiếu bằng mắt. Còn chờ: hiệu chỉnh ngưỡng
+  bằng trang gán nhãn của chuyên gia (gộp vào T025.1).
+- Việc kế tiếp: T015 chunking; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -100,7 +103,8 @@ Task cha chỉ hoàn thành khi đạt nghiệm thu gốc.
 
 - **T038.1** llama.cpp config/timeout/model ID: sau T008. T038 đầy đủ (budget, mocks,
   usage, no-provider) sau T024.
-- **T025.1** soạn ≥70 câu và relevant spans: sau T014. T025 đầy đủ sau T024 và chuyên
+- **T025.1** soạn ≥70 câu và relevant spans, kèm 30–60 trang gán nhãn quality để hiệu chỉnh
+  ngưỡng T014: sau T014. T025 đầy đủ sau T024 và chuyên
   gia duyệt gold.
 - **T043.1** shell/auth/library navigation + sinh TS client từ `contracts/openapi.json`:
   sau T006 + T008. T043 đầy đủ sau T042.
@@ -150,7 +154,7 @@ trước khi trình duyệt.
 | T011 | Inspector và native PDF extraction | K2 | ✅ |
 | T012 | OCR sandbox theo trang/vùng | K2 | ✅ |
 | T013 | DOCX extraction và canonical rendering | K2 | ✅ |
-| T014 | Unicode, cấu trúc và quality review | K2 | |
+| T014 | Unicode, cấu trúc và quality review | K2 | ✅ (hiệu chỉnh ngưỡng → T025.1) |
 | T015 | Semantic chunking và provenance | K2 | |
 | T016 | Embedding/index staging và model registry | K2 | |
 | T017 | Sửa OCR incremental và impact | K2 | |

@@ -169,11 +169,16 @@ class DocxExtractStage:
             conn.execute(text(
                 'INSERT INTO blocks (page_revision_id, ordinal, kind, bbox, start_offset, end_offset,'
                 " text, table_cells, speaker_layer, attributes) VALUES (:r, :o, :k,"
-                " CAST(:b AS jsonb), :s, :e, :t, CAST(:cells AS jsonb), 'unknown',"
+                " CAST(:b AS jsonb), :s, :e, :t, CAST(:cells AS jsonb), :sp,"
                 ' CAST(:a AS jsonb))'),
                 {'r': revision_id, 'o': ordinal, 'k': block.kind,
                  'b': json.dumps(block.bbox), 's': start, 'e': end, 't': block.text,
                  'cells': json.dumps(block.table_cells) if block.table_cells is not None else None,
+                 'sp': block.speaker,
                  'a': json.dumps({'anchor': block.anchor, 'style': block.style,
-                                  'located': block.located or False})})
+                                  'located': block.located or False,
+                                  **({'marker': block.marker} if block.marker else {}),
+                                  **({'level': 1 if (block.style or '').lower().startswith(
+                                      ('title', 'heading1')) else 2}
+                                     if block.kind == 'heading' else {})})})
         return page_id, revision_id

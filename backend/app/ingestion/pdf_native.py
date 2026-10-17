@@ -18,7 +18,10 @@ import unicodedata
 import pypdfium2 as pdfium
 import pypdfium2.raw as pdfium_c
 
-PARSER_VERSION = f'pdfium-native-1/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
+from . import layout
+from .normalize import normalize
+
+PARSER_VERSION = f'pdfium-native-4/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
 MAX_PAGES = 3000
 _DIGITS = re.compile(r'^(\d{1,4}|[ivxlcdm]{1,7})$', re.IGNORECASE)
 
@@ -37,6 +40,8 @@ class Block:
     start: int = 0
     end: int = 0
     attributes: dict = field(default_factory=dict)
+    kind: str = 'paragraph'
+    speaker: str = 'unknown'
 
 
 @dataclass
@@ -165,18 +170,36 @@ def _lines(textpage: pdfium.PdfTextPage) -> list[dict]:
 def _same_block(prev: dict, line: dict) -> bool:
     if prev['style'] is None or line['style'] is None:
         return False
-    _, size_a, _, color_a = prev['style']
-    _, size_b, _, color_b = line['style']
+    _, size_a, weight_a, color_a = prev['style']
+    _, size_b, weight_b, color_b = line['style']
     height = max(prev['top'] - prev['bottom'], 1.0)
     gap = prev['bottom'] - line['top']           # PDF y grows upwards
     similar_size = abs(size_a - size_b) <= 0.15 * max(size_a, size_b, 1.0)
-    return color_a == color_b and similar_size and -height < gap <= 1.2 * height
+    if not (color_a == color_b and similar_size and -height < gap <= 1.2 * height):
+        return False
+    if layout.speaker_marker(line['text'])[0]:   # "Từ chú:" never joins "Nguyên văn:"
+        return False
+    width_a, width_b = prev['right'] - prev['left'], line['right'] - line['left']
+    if (weight_a >= 600) != (weight_b >= 600) and width_a < 0.75 * width_b:
+        return False                             # a short bold title above regular text
+    if layout.LIST_ITEM.match(line['text']):     # each list item starts a block
+        return False
+    # First-line indent after a finished sentence starts a new paragraph; hanging
+    # continuation lines of a list item follow an unfinished sentence and stay.
+    indented = line['left'] > prev['left'] + 0.8 * height
+    return not (indented and prev['text'].rstrip().endswith(layout.SENTENCE_END))
 
 
 def _blocks(lines: list[dict], to_box) -> list[Block]:
     groups: list[list[dict]] = []
     for line in lines:
-        if groups and _same_block(groups[-1][-1], line):
+        # A numbered heading line starts its own block, and so does the line after it.
+        heading_here = layout.numbered_heading_line(line['text'])
+        after_heading = bool(groups) and layout.numbered_heading_line(groups[-1][-1]['text'])
+        # ...unless the next line continues a wrapped title ("...của Manh" / "phái").
+        wrapped_title = after_heading and line['text'][:1].islower() and len(line['text']) <= 40
+        if groups and not heading_here and (wrapped_title or not after_heading) \
+                and _same_block(groups[-1][-1], line):
             groups[-1].append(line)
         else:
             groups.append([line])
@@ -221,7 +244,70 @@ def _label(doc: pdfium.PdfDocument, index: int, blocks: list[Block]) -> tuple[st
     return None, None
 
 
-def extract_page(doc: pdfium.PdfDocument, index: int) -> PageExtraction:
+def document_profile(doc: pdfium.PdfDocument) -> dict:
+    """Whole-document facts needed to read one page: body font size, running
+    headers/footers (lines repeating at page edges) and table-of-contents pages."""
+    sizes = Counter()
+    pages_lines = []
+    toc_pages = []
+    for index in range(len(doc)):
+        page = doc[index]
+        textpage = page.get_textpage()
+        try:
+            text = textpage.get_text_range()
+            for i in range(0, textpage.count_chars(), 7):   # sampling is enough for a median
+                if not text[i:i + 1].isspace():
+                    sizes[round(pdfium_c.FPDFText_GetFontSize(textpage, i), 1)] += 1
+        finally:
+            textpage.close()
+            page.close()
+        lines = text.replace('\r', '').split('\n')
+        pages_lines.append(lines)
+        if layout.is_toc_page(lines):
+            toc_pages.append(index + 1)
+    body = sizes.most_common(1)[0][0] if sizes else None
+    return {'body_size': body, 'repeated': sorted(layout.repeated_patterns(pages_lines)),
+            'toc_pages': toc_pages, 'pages': len(doc)}
+
+
+def _classify_blocks(blocks: list[Block], profile: dict, number: int) -> None:
+    body = profile.get('body_size')
+    repeated = set(profile.get('repeated', []))
+    toc = number in set(profile.get('toc_pages', []))
+    layer, color = None, None
+    for block in blocks:
+        attrs = block.attributes
+        stripped = block.text.strip()
+        at_edge = block.bbox[1] < 0.12 or block.bbox[3] > 0.88
+        if at_edge and layout.FOLIO.match(stripped):
+            attrs['role'] = 'folio'
+            continue
+        if at_edge and layout.mask(stripped) in repeated:
+            attrs['role'] = 'header' if block.bbox[1] < 0.5 else 'footer'
+            continue
+        if toc:
+            attrs['role'] = 'toc'
+            continue
+        if all(layout.is_chart_row(line) for line in stripped.split('\n')):
+            attrs['chart_row'] = True       # pillar/chart rows: chunker keeps them together
+        found = layout.heading(stripped, attrs.get('size'), attrs.get('weight'), body,
+                               attrs.get('lines', 1))
+        if found:
+            block.kind = 'heading'
+            attrs['level'], attrs['heading_rule'] = found
+        marker_layer, marker = layout.speaker_marker(stripped)
+        if marker_layer:
+            block.speaker, attrs['marker'] = marker_layer, marker
+            layer, color = marker_layer, attrs.get('color')
+        elif layer and block.kind != 'heading' and attrs.get('color') == color:
+            # Same colour right after a marked block continues that speaker on this page.
+            block.speaker, attrs['speaker_inherited'] = layer, True
+        else:
+            layer, color = None, None
+
+
+def extract_page(doc: pdfium.PdfDocument, index: int,
+                 profile: dict | None = None) -> PageExtraction:
     page = doc[index]
     try:
         width, height = page.get_size()
@@ -241,6 +327,12 @@ def extract_page(doc: pdfium.PdfDocument, index: int) -> PageExtraction:
     finally:
         page.close()
     blocks = _blocks(lines, to_box)
+    for block in blocks:
+        block.text = normalize(block.text)[0]
+    blocks = [b for b in blocks if b.text.strip()]
+    for ordinal, block in enumerate(blocks):
+        block.ordinal = ordinal
+    _classify_blocks(blocks, profile or {}, index + 1)
     position = 0
     parts = []
     for block in blocks:

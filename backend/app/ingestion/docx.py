@@ -20,8 +20,11 @@ import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
 
+from .layout import speaker_marker
+from .normalize import normalize
+
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-PARSER_VERSION = 'docx-xml-1'
+PARSER_VERSION = 'docx-xml-2'
 RENDER_TIMEOUT = 240
 MAX_XML_BYTES = 50 * 1024 * 1024
 _HEADING = re.compile(r'^(heading|title|subtitle|u\d|tieude|tiêuđề)', re.IGNORECASE)
@@ -44,6 +47,8 @@ class DocxBlock:
     page: int | None = None           # rendered page, when located
     bbox: list[float] | None = None
     located: str | None = None        # exact (text matched) | inferred (between neighbours)
+    speaker: str = 'unknown'
+    marker: str | None = None
 
 
 @dataclass
@@ -76,7 +81,7 @@ def _paragraph_text(p: ET.Element) -> str:
             parts.append('\t')
         elif node.tag in (W + 'br', W + 'cr'):
             parts.append('\n')
-    return unicodedata.normalize('NFC', ''.join(parts)).strip()
+    return normalize(''.join(parts))[0].strip()
 
 
 def _style(p: ET.Element) -> str | None:
@@ -120,9 +125,12 @@ def parse(path: str | Path) -> list[DocxBlock]:
             if not text:
                 continue
             style = _style(node)
-            blocks.append(DocxBlock(f'body/p[{p_index}]',
-                                    'heading' if _is_heading(node, style) else 'paragraph',
-                                    text, style))
+            block = DocxBlock(f'body/p[{p_index}]',
+                              'heading' if _is_heading(node, style) else 'paragraph', text, style)
+            layer, marker = speaker_marker(text)
+            if layer:
+                block.speaker, block.marker = layer, marker
+            blocks.append(block)
         else:
             t_index += 1
             rows = []
