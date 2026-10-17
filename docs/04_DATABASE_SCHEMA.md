@@ -6,11 +6,17 @@ Logical schema v1. Mỗi bảng dưới đây mặc định có `id uuid PRIMARY
 
 Enums lifecycle ở 05/06/09 là contract chuẩn; DDL dùng TEXT+CHECK để migration rõ. JSONB không là chỗ chứa quan hệ tùy tiện: schema versioned, validate Pydantic/JSON Schema trước ghi. FK polymorphic chỉ cho reviews/review_items/analysis_dependencies/audit target: cần registry trigger kiểm tồn tại và delete guard; không gọi đó là FK native. Các quan hệ nghiệp vụ chính dùng FK thật. Tên table đặc biệt `embeddings_<collection>` là pattern vật lý, không tên SQL literal. `rulesets` active pointer nằm settings theo method; không suy active bằng revision số lớn nhất. `book_versions` visibility là private-by-default, book_access seed cho uploader và reviewer quản trị theo policy.
 
-Triển khai: Alembic tại `backend/migrations` (SQL viết tay, file này là contract). M001–M003 đã có từ T004; M004–M008 thêm ở T005/T006. Enum đã chốt (TEXT+CHECK):
+Triển khai: Alembic tại `backend/migrations` (SQL viết tay, file này là contract). M001–M003 có từ T004, M004–M007 từ T005; M008 (RLS/roles) ở T006. Enum đã chốt (TEXT+CHECK):
 
 - `objects.state` staging/ready/quarantined/deleting; `storage_backend` local/s3. `book_versions.status` active/withdrawn (withdrawn ⇔ `withdrawn_at`). `book_access.role_scope` reader/reviewer/admin, `permission` read/review/manage. `settings.scope` system/user (user ⇔ `owner_id`).
 - `pages.page_kind` pdf_page/docx_rendered_page/docx_anchor. `page_revisions.state`, `chunks.quality_state` accepted/review_required/excluded. `blocks.kind` paragraph/heading/table/figure/caption. `chunks.kind` text/table/case. `speaker_layer` original_author/commentator/translator/editor/unknown (06).
 - `generations.state` building→ready→published→superseded, mọi trạng thái → withdrawn. `corpus_releases.state` building→ready→active→retired (ready/building → retired). `embedding_collections.distance` cosine/l2/inner_product, `state` provisioning/ready/retired.
+
+- Vòng đời duyệt (methods, concepts, terms, assertions, assertion_relations, knowledge_rules, case_revisions): draft → in_review → approved | rejected, in_review → draft, approved → revoked. Bản ghi mới bắt buộc `draft`; chuyển sang approved/rejected/revoked cần một `reviews` cùng decision trong **cùng transaction**; cột nội dung đóng băng ngoài draft (sửa = revision mới). Rule approved cần ≥1 `rule_sources`; sources/dependencies chỉ sửa khi rule còn draft; dependency không được tạo vòng.
+- Snapshot (`ontology_releases`, `rulesets`): building → published → retired. `calculation_policies` draft → active → retired, config bất biến sau active. `chat_runs.state` theo 09; `ingestion_jobs.state` theo 05; `chart_analyses.status` pending/completed/failed/stale/withdrawn, answer bất biến sau completed.
+- Tham chiếu đa hình (`reviews`, `review_items`, `analysis_dependencies`) đi qua bảng nội bộ `entity_registry(kind, table_name)`: kind lạ hoặc target không tồn tại bị từ chối; target đang bị tham chiếu không xóa được. `audit_logs.target_kind` không ràng buộc vì audit sống lâu hơn entity.
+- `ingestion_jobs` có thêm `pipeline_profile_id` (FK nhiều cột về generation) để unique partial index "một active job/version/profile" không phụ thuộc trigger. `reviews` append-only; `audit_logs` chỉ xóa bởi retention job (`SET LOCAL bazi.retention = 'on'`).
+- Seed (M004, idempotent, `SET LOCAL bazi.seed = 'on'`): schools `tu_tru` (gốc) → `manh_phai`, `tu_binh`; 27 concept cấu trúc của `tu_tru` (10 Can, 12 Chi, 5 Ngũ Hành) với term Việt + chữ Hán; 5 topics; ontology release `seed-1` published. Không seed assertion, rule, case hay evidence.
 
 Hash dùng domain `sha256_hex` (64 hex thường). `page_revisions.text_hash` = SHA256 UTF-8 của `normalized_text`, `chunks.content_hash` = SHA256 của `text`, cả hai là CHECK. `manifest_hash` của generation/release chỉ được NULL khi `building` (hoặc withdrawn/retired) và đóng băng sau đó. `bbox` là mảng 4 số 0..1 với x0≤x1, y0≤y1, hoặc JSON `null` cho nguồn không có hình học (DOCX).
 
@@ -388,7 +394,7 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
 |---|---|
-| batch_id uuid? FK ingestion_batches; book_version_id uuid FK book_versions; generation_id uuid FK generations; parent_job_id uuid? FK ingestion_jobs; requested_by uuid FK users; state text; counters jsonb; error jsonb?; cancel_requested bool | index(state,updated_at); chỉ một active job/version/profile qua partial unique index |
+| batch_id uuid? FK ingestion_batches; book_version_id uuid FK book_versions; generation_id uuid FK generations; pipeline_profile_id uuid FK pipeline_profiles; parent_job_id uuid? FK ingestion_jobs; requested_by uuid FK users; state text; counters jsonb; error jsonb?; cancel_requested bool | index(state,updated_at); chỉ một active job/version/profile qua partial unique index |
 
 ### `job_stages`
 

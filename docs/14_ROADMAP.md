@@ -21,7 +21,9 @@ khác tra tại bảng cuối file này.
   chưa có Compose service API).
 - T004 ✅ migrations M001–M003 (identity, thư viện, tài liệu/chunk/release) với ràng buộc ở
   DB; 26 integration tests trên PostgreSQL thật.
-- Việc kế tiếp: T005 migrations tri thức/chat/jobs; smoke T002 trên Ubuntu khi có máy.
+- T005 ✅ migrations M004–M007 (tri thức, lá số, chat, jobs/vận hành), vòng đời duyệt ép ở
+  DB, registry tham chiếu đa hình, seed chỉ taxonomy; 26 integration tests.
+- Việc kế tiếp: T006 auth/roles/RLS; smoke T002 trên Ubuntu khi có máy.
 
 ## Các giai đoạn
 
@@ -119,7 +121,7 @@ trước khi trình duyệt.
 | T002 | Khóa toolchain, giấy phép và hạ tầng Compose | K1 | ⏳ smoke Ubuntu |
 | T003 | Backend foundation và logging | K1 | ✅ |
 | T004 | Migrations storage và document schema | K1 | ✅ |
-| T005 | Migrations knowledge, chart, chat và jobs | K1 | |
+| T005 | Migrations knowledge, chart, chat và jobs | K1 | ✅ |
 | T006 | Auth, roles, RLS và admin bootstrap | K1 | |
 | T007 | ObjectStore local và S3 adapters | K1 | |
 | T008 | API contracts nền và client skeleton | K1 | |
