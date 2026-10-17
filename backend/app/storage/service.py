@@ -29,7 +29,9 @@ def store_object(conn: Connection, store: ObjectStore, stream: BinaryIO,
     row = conn.execute(text(
         'INSERT INTO objects (sha256, storage_backend, object_key, size_bytes, detected_mime, state)'
         " VALUES (:sha, :backend, :key, :size, :mime, 'ready')"
-        ' ON CONFLICT (sha256) DO NOTHING RETURNING id, sha256, object_key, size_bytes, state'),
+        # No conflict target: sha256 and object_key are both unique (1:1), and a racing
+        # insert may hit either index first; a targeted ON CONFLICT would still raise.
+        ' ON CONFLICT DO NOTHING RETURNING id, sha256, object_key, size_bytes, state'),
         {'sha': stored.sha256, 'backend': store.backend, 'key': stored.key,
          'size': stored.size_bytes, 'mime': detected_mime}).mappings().first()
     if row is None:

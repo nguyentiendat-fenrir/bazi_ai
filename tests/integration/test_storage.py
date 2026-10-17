@@ -119,6 +119,28 @@ class LocalStoreTests(StoreContract, unittest.TestCase):
         staging = Path(self.tmp.name) / 'staging'
         return len(list(staging.iterdir())) if staging.is_dir() else 0
 
+    def test_concurrent_identical_writes(self):
+        """Regression: Windows final-path lookups raced with concurrent writers."""
+        import threading
+        errors = []
+        for _ in range(10):
+            store = LocalObjectStore(tempfile.mkdtemp(dir=self.tmp.name))
+            barrier = threading.Barrier(4)
+
+            def put():
+                barrier.wait()
+                try:
+                    store.put_if_absent(io.BytesIO(BIG))
+                except Exception as exc:  # noqa: BLE001 - collected for the assertion
+                    errors.append(repr(exc))
+            threads = [threading.Thread(target=put) for _ in range(4)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            self.assertEqual(sha(read_all(store.get_stream(object_key(sha(BIG))))), sha(BIG))
+        self.assertEqual(errors, [])
+
     def test_symlink_escape_rejected(self):
         outside = tempfile.TemporaryDirectory()
         self.addCleanup(outside.cleanup)

@@ -20,9 +20,14 @@ class LocalObjectStore:
 
     def _path(self, key: str) -> Path:
         validate_key(key)
-        path = (self.root / key).resolve()
-        if self.root not in path.parents:  # defence in depth beyond the key pattern
-            raise InvalidKey('key escapes the storage root')
+        path = self.root / key
+        # Defence in depth beyond the key pattern (which already fixes the layout
+        # root/<namespace>/<xx>/<sha>): neither directory may be a link that leads
+        # elsewhere. Checked without Path.resolve(), whose Windows final-path lookup
+        # races with concurrent writers creating the same directories.
+        for directory in (path.parent.parent, path.parent):
+            if directory.is_symlink() or os.path.isjunction(directory):
+                raise InvalidKey('key escapes the storage root')
         return path
 
     def put_if_absent(self, stream: BinaryIO, expected_sha256: str | None = None,
@@ -44,7 +49,14 @@ class LocalObjectStore:
                 return StoredObject(key, reader.sha256, reader.size, created=False)
             final.parent.mkdir(parents=True, exist_ok=True)
             # Same filesystem: rename is atomic, readers see all bytes or nothing.
-            os.replace(staging, final)
+            try:
+                os.replace(staging, final)
+            except PermissionError:
+                # Windows refuses to replace a file another writer is placing right now;
+                # identical bytes are already there, so this writer simply lost the race.
+                if final.is_file() and final.stat().st_size == reader.size:
+                    return StoredObject(key, reader.sha256, reader.size, created=False)
+                raise
             return StoredObject(key, reader.sha256, reader.size, created=True)
         finally:
             staging.unlink(missing_ok=True)
