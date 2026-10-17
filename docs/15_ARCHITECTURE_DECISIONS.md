@@ -1,26 +1,5 @@
 # 15 · Architecture Decision Records
 
-## ADR-21 — Kho tri thức trước; Windows dev / Ubuntu runtime
-
-**ACCEPTED 17/10/2026 theo yêu cầu chủ dự án, T057.** Thay thứ tự T001→T056 và
-gate bắt buộc WSL trên máy dev. Giữ schema/API, source preservation và release gates.
-
-- Windows native chạy code/tests; Ubuntu 22.04 chạy Docker Engine/Compose. Image
-  mang code/lock, dữ liệu ngoài Git. Doctor tách `dev` và `deploy`.
-- Giữ FastAPI, Next.js khi có UI thật, PostgreSQL/pgvector/FTS, Redis/Celery,
-  immutable sources, human review và citation. Kho nguồn/tra cứu đi trước lá số.
-- Người dùng xác nhận Gemma qua `ghcr.io/ggml-org/llama.cpp:server-cuda`; chọn
-  adapter `openai_compatible`, không cài model thứ hai. Endpoint/model/VRAM chưa biết.
-- pypdf thuộc dependency group `corpus` chỉ để preflight, không thay Docling
-  layout parser/OCR production ADR-11/12; không có publish hoặc HTTP API mới.
-- Bỏ scaffold frontend/proxy và service command trỏ module vắng mặt. Thêm lại
-  cùng implementation/tests. Giữ backend lock cho foundation kế tiếp.
-- Giữ sách, legacy, manifest kiểm nguồn và contracts kỹ thuật.
-
-Phương án loại: ép WSL; OCR mọi trang; dùng Gemma chat làm embedding mặc định;
-CASE tự thành nguồn chuẩn; xóa evidence để ít file. Rollback bằng revert commit
-`49636dd`, không chạm input/volumes. Không migration/DTO mới.
-
 Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi cần ADR diff; `EXPERIMENT` là tham số phải đo, không phải lý do bỏ module. Ngày đối chiếu nguồn kỹ thuật 10–11/10/2026. Patch versions xác minh lại ở T002.
 
 | ADR | Trạng thái | Quyết định và lý do | Phương án loại / hệ quả |
@@ -45,6 +24,29 @@ Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi c�
 | 18 | EXPERIMENT | Top lexical/vector 80, fused 40, context 8/6k tokens, RRF k=60 | Ablations và p95/recall quyết định; school/ACL filters cố định |
 | 19 | EXPERIMENT | OCR DPI 200–300, concurrency1; worker ingest2; resource quotas | Benchmark trên máy thực, no GPU requirement |
 | 20 | EXPERIMENT | Reranker multilingual local hoặc API, timeout fallback | Module rerank bắt buộc, lựa chọn model không cố định vào provider |
+| 21 | FIXED | Kho tri thức trước; Windows dev native, Ubuntu 22.04 runtime cùng host Gemma — [chi tiết](#adr-21-chi-tiết) | Không ép WSL trên máy dev; không đổi schema/API |
+
+## ADR-21 chi tiết
+
+**ACCEPTED 17/10/2026 theo yêu cầu chủ dự án, T057.** Thay thứ tự T001→T056 bằng lộ trình ở
+[14](14_ROADMAP.md) và bỏ gate bắt buộc WSL trên máy dev. Giữ schema/API, source preservation và release gates.
+
+- Windows native chạy code/tests; Ubuntu 22.04 chạy Docker Engine/Compose. Image
+  mang code/lock, dữ liệu ngoài Git. Doctor tách `dev` và `deploy`.
+- Giữ FastAPI, Next.js khi có UI thật, PostgreSQL/pgvector/FTS, Redis/Celery,
+  immutable sources, human review và citation. Kho nguồn/tra cứu đi trước lá số.
+- Người dùng xác nhận Gemma qua `ghcr.io/ggml-org/llama.cpp:server-cuda`; chọn
+  adapter `openai_compatible`, không cài model thứ hai. Endpoint/model/VRAM chưa biết.
+- pypdf thuộc dependency group `corpus` chỉ để preflight, không thay Docling
+  layout parser/OCR production ADR-11/12; không có publish hoặc HTTP API mới.
+- Bỏ scaffold frontend/proxy và service command trỏ module vắng mặt. Thêm lại
+  cùng implementation/tests. Giữ backend lock cho foundation kế tiếp.
+- Giữ sách, legacy, manifest kiểm nguồn và contracts kỹ thuật.
+
+Phương án loại: ép WSL; OCR mọi trang; dùng Gemma chat làm embedding mặc định;
+CASE tự thành nguồn chuẩn; xóa evidence để ít file. Rollback: revert commit
+T057 `49636dd`, không chạm input/volumes; các commit sau đó (bỏ TASKS/AGENTS/reports,
+tái cấu trúc docs) độc lập, revert riêng nếu cần. Không migration/DTO mới.
 
 ## Nguồn kỹ thuật chính thức và điều đã sử dụng
 
@@ -54,12 +56,32 @@ Trạng thái `FIXED` là quyết định của đặc tả này, thay đổi c�
 - [Docling pipeline options](https://docling-project.github.io/docling/reference/pipeline_options/): OCR/table/layout tăng chi phí tài nguyên; profile/timeout cần cấu hình. Không có bảo đảm parse đúng mọi bảng mệnh lệ.
 - [MinIO official repository](https://github.com/minio/minio): trang hiện trạng ghi archive 25/04/2026 và no longer maintained. Do đó loại khỏi mandatory local dependencies, vẫn giữ storage interface S3-compatible.
 - [PyMuPDF documentation](https://pymupdf.readthedocs.io/): AGPL/commercial license; cần kiểm điều kiện sử dụng khi đóng gói thương mại, không đưa ra kết luận pháp lý thay chuyên gia.
-- [Docker Desktop WSL best practices](https://docs.docker.com/desktop/features/wsl/best-practices/): dùng filesystem Linux cho workload Linux và WSL integration. Các giới hạn RAM cụ thể là dự trù phải đo.
+- [Docker Engine trên Ubuntu](https://docs.docker.com/engine/install/ubuntu/): runtime đích theo ADR-21; repo nằm trên filesystem Linux. Giới hạn RAM cụ thể là dự trù phải đo trên máy thật.
 - [lunar-python repository](https://github.com/6tail/lunar-python): thư viện tính lịch đang được adapter dùng; audit thực thi dùng bản 1.4.4 trích từ archive, không thay bằng master web.
 - [sxtwl repository](https://github.com/yuangu/sxtwl_cpp): ứng viên đối chiếu, không coi độc lập hoàn toàn với mọi thuật toán cùng gốc ShouXing.
 - [NOAA Solar equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF): fractional-year reference dùng để phát hiện pha góc EOT sai trong code cũ. Chỉ là công thức xấp xỉ đối chiếu, không là chứng nhận thiên văn chính xác vô hạn.
 - [HKO solar terms](https://www.hko.gov.hk/en/gts/astronomy/Solar_Term.htm): nguồn oracle thời điểm tiết khí cần thu thập ở implementation. Trang năm 2024 cụ thể không truy cập được trong audit này; không báo đã có gold HKO đầy đủ.
 
-## Decision log cần điền khi triển khai
+## Decision log
 
-T002 ghi resolved package/image versions/license matrix; T025/T035 ghi dataset/gold; T027–T030 ghi policy/oracle/sai số; T036–T037 ghi model/chunk/rerank ablations; T051 ghi tài nguyên/throughput/latency; T053 ghi measured restore. Mỗi entry có date, author, evidence, chosen setting, rejected variants và rollback. Thay model không đổi business schema; thêm collection/profile/release có thể chạy từ admin qua registry được kiểm soát.
+Mỗi entry có date, task, chosen setting, evidence, rejected variants và rollback.
+Các task cần ghi: T002 versions/license; T025/T035 dataset/gold; T027–T030
+policy/oracle/sai số; T036–T037 model/chunk/rerank ablations; T051 tài nguyên/
+throughput/latency; T053 measured restore. Thay model không đổi business schema;
+thêm collection/profile/release chạy từ admin qua registry được kiểm soát.
+
+- **11/10/2026 · T002 (chưa nghiệm thu):** khóa Python 3.12 + uv (`uv.lock`, 52
+  packages); image upstream ghim digest SHA256 trong `infra/compose.yaml` và
+  Dockerfile, không dùng `latest`. Smoke thực: PostgreSQL 17.11 + pgvector 0.8.7,
+  Redis 8.8.3, temp table ghi/đọc và Redis `PONG`. License: Docling code MIT
+  (weights license riêng, khóa khi làm T011); PyMuPDF AGPLv3/commercial → chỉ adapter
+  tùy chọn; OCRmyPDF MPL-2.0, Tesseract Apache-2.0 → OCR profile T012;
+  multilingual-e5-base/bge-m3 model card MIT → ứng viên ADR-16; Redis 8 chọn
+  AGPLv3/RSALv2/SSPLv1 → dùng image upstream không sửa, review trước phân phối;
+  lunar-python MIT. Loại: image không digest, `latest`, MinIO bắt buộc, PyMuPDF mặc
+  định. Rollback: checkout trước `c9e709a`, giữ volumes; không có migration. Phần
+  Next 16/Caddy trong T002 đã bỏ ở T057. Còn thiếu: smoke trên Ubuntu 22.04 thật.
+- **17/10/2026 · T057:** Compose chỉ còn PostgreSQL, Redis, `corpus-inspect`
+  (non-root, read-only, network none); bỏ scaffold frontend/Caddy; doctor tách
+  `dev`/`deploy`; pypdf ở dependency group `corpus` chỉ cho preflight. Inspector cho
+  cùng SHA256 bảy file trên Windows và Linux. Rollback: revert `49636dd`.

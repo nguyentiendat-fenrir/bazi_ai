@@ -1,9 +1,9 @@
 # 11 · Frontend UX và mapping API
 
-## Thứ tự form quản trị kho — ADR-21
+## Thứ tự form quản trị kho
 
-Chưa có frontend ứng dụng mới; chủ dự án ưu tiên cấu trúc/pipeline trong T057.
-Thiết kế UI kế tiếp:
+Chưa có frontend ứng dụng. Theo [14](14_ROADMAP.md), UI đầu tiên phục vụ kho tri thức,
+theo thứ tự:
 
 1. Nhập sách: file, nhan đề, tác giả/bình chú/dịch giả, edition, school, language,
    rights; checksum/dedupe, unknown metadata, mặc định không tự publish.
@@ -14,8 +14,8 @@ Thiết kế UI kế tiếp:
 5. Search/evaluation: query + scope sách/school, evidence mở đúng trang;
    lexical-only/degraded rõ ràng và gold đã duyệt.
 
-T043.1 shell/library navigation, T046.1 library/jobs/review đi trước chart/chat;
-parent T043/T046 chỉ done khi đủ integration đầy đủ. Giữ route/DTO bên dưới,
+Subtask T043.1 (shell/library navigation) và T046.1 (library/jobs/review) đi trước
+chart/chat; T043/T046 chỉ done khi đủ integration đầy đủ. Giữ route/DTO bên dưới,
 không dựng màn hình placeholder khi API chưa có.
 
 ## Bố cục thống nhất

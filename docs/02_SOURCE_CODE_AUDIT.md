@@ -60,7 +60,7 @@ Output legacy gồm đầu_vào, trụ, điểm_ngũ_hành, quan_hệ_chi, đạ
 
 ## 5. Kiểm thử thực chạy và giới hạn
 
-Python 3.12.14 Linux, source nghiệp vụ không sửa + lunar_python đi kèm 1.4.4. Đã chạy `audit/probe.py` và `audit/test_observations.py`; **9 observation tests pass**. Đây là tests xác nhận hành vi hiện tại, trong đó có test cố ý xác nhận lỗi; không phải 9 tests chứng nhận engine đúng. 12 Thai Nguyên comparisons dùng chính thư viện, không oracle độc lập. Smokes leap day/aware time/10 vận chỉ xác nhận chạy được.
+Python 3.12.14 Linux, source nghiệp vụ không sửa + lunar_python đi kèm 1.4.4. Đã chạy probe và observation tests (nay là `evidence/reproduce_probe.py`, `evidence/test_legacy_observations.py`); **9 observation tests pass**. Đây là tests xác nhận hành vi hiện tại, trong đó có test cố ý xác nhận lỗi; không phải 9 tests chứng nhận engine đúng. 12 Thai Nguyên comparisons dùng chính thư viện, không oracle độc lập. Smokes leap day/aware time/10 vận chỉ xác nhận chạy được.
 
 Chưa chạy server HTTP FastAPI, browser UI, Docker, test Windows thật, sxtwl độc lập, HKO exact second đối chiếu, full 60/120 combination tables, mọi Đại Vận/Cung Mệnh. Truy cập trang HKO 2024 cụ thể không thành công qua công cụ; không bịa bảng đã tải. T026–T030 tiếp tục kiểm này; bug A01/A02/A04/A05 có gate chặn release.
 
@@ -90,11 +90,11 @@ Tử Bình: đầu sách nêu tác giả Thẩm Hiếu Chiêm, Từ Nhạc Ngô 
 
 `evidence/source_manifest.json` ghi hash source nghiệp vụ và source lunar_python đã dùng; `legacy_probe_results.json` và `legacy_observation_tests.txt` là output lần chạy thực. `pdf_metrics.json` chứa thống kê từng trang, không chứa toàn văn sách. Các script chỉ dành cho audit, không phải application tests đã sửa lỗi.
 
-Sau T001, đặt lunar_python đúng bản 1.4.4 đã đối chiếu vào audit/vendor (hoặc cài dependency đúng bản trong audit venv); xác minh hash manifest. Chạy trong WSL/Linux vì kiểm host TZ dùng time.tzset:
+Đặt source lunar_python đúng bản 1.4.4 đã đối chiếu vào một thư mục tạm ngoài Git, ví dụ `.tools/audit/vendor` (`.tools/` đã gitignore), hoặc cài đúng bản đó trong venv audit; xác minh hash theo `evidence/source_manifest.json`. Chạy trên Linux (Ubuntu hoặc WSL) vì kiểm host TZ dùng `time.tzset`:
 
 ```bash
-BAZI_AUDIT_BACKEND=legacy/bazi/backend BAZI_AUDIT_VENDOR=audit/vendor python evidence/test_legacy_observations.py
-BAZI_AUDIT_BACKEND=legacy/bazi/backend BAZI_AUDIT_VENDOR=audit/vendor python evidence/reproduce_probe.py
+BAZI_AUDIT_BACKEND=legacy/bazi/backend BAZI_AUDIT_VENDOR=.tools/audit/vendor python evidence/test_legacy_observations.py
+BAZI_AUDIT_BACKEND=legacy/bazi/backend BAZI_AUDIT_VENDOR=.tools/audit/vendor python evidence/reproduce_probe.py
 ```
 
 Nếu code đã sửa, các observation tests cố ý kiểm bug sẽ không còn pass; giữ legacy để tái hiện, viết regression tests mới trong backend để đòi hành vi đúng. Không sửa code hiện tại cho quay lại bug để các observation tests pass.

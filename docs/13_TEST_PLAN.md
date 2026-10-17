@@ -2,7 +2,7 @@
 
 ## Trạng thái tài liệu
 
-Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằng chứng đã chạy trong Work nằm ở 02 và evidence: 9 observation tests legacy, PDF metrics, package checks. Không đánh dấu các test ứng dụng dưới đây đã pass. Chạy suite hiện có bằng `python -B -m unittest discover -s tests -v`; các module mới bổ sung kiểm thử tương ứng khi triển khai.
+Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằng chứng audit đã chạy nằm ở [02](02_SOURCE_CODE_AUDIT.md) và `evidence/`: 9 observation tests legacy, PDF metrics, package checks. Không đánh dấu các test ứng dụng dưới đây đã pass. Chạy suite hiện có bằng `python -B -m unittest discover -s tests -v`; các module mới bổ sung kiểm thử tương ứng khi triển khai.
 
 ## Tầng kiểm thử
 
@@ -13,7 +13,7 @@ Kế hoạch này là tests **phải xây và chạy trong triển khai**. Bằn
 | API/contract | OpenAPI snapshots, generated TS client, malformed input và scopes | statuses/DTO/security nhất quán |
 | Frontend E2E | Playwright qua gateway, real backend+DB, fixture provider | flows empty/loaded/error/cancel/reconnect/forbidden |
 | Ingestion | native/scan/mixed/malformed/encrypted PDF, DOCX table | source mapping đúng; một file lỗi không chặn batch |
-| Retrieval | gold query→graded spans, scoped release | các ngưỡng ở 07, không leak school/ACL |
+| Retrieval | gold query→graded spans, scoped release | các ngưỡng ở [07](07_RAG_ENGINE.md#benchmark-retrievalanswer), không leak school/ACL |
 | Citation | exists/hash/page/offset/speaker + human support | 100% ID/page validity, material support ≥95% |
 | Calculation | independent oracle + policy matrix | core fixtures không mismatch chưa giải thích |
 | Rule | safe AST, exception, unknown, DAG, revoke/conflict | trace và output deterministic; no code execution |
@@ -68,11 +68,11 @@ Gold thêm các bản dịch Hán Việt, bảng trụ, ngoại lệ ở trang k
 
 ### E2E-01 · Hệ thống trống
 
-Precondition volumes sạch, mock/live model tắt, không PDF. Steps: doctor→build→migrate→bootstrap-admin→up; login; tạo profile Gregorian synthetic, chart, mở library/chat/settings. Assert: chart đủ facts theo golden verified; DB books/chunks/rules approved=0; search empty_corpus; chat không có citation hay source claim bịa; no-key trạng thái rõ; các screen không 500. Evidence: Playwright video/screens, DB counts, request logs redacted và chart hash. Gate: pass trên Windows WSL2 và Linux CI.
+Precondition volumes sạch, mock/live model tắt, không PDF. Steps: doctor→build→migrate→bootstrap-admin→up; login; tạo profile Gregorian synthetic, chart, mở library/chat/settings. Assert: chart đủ facts theo golden verified; DB books/chunks/rules approved=0; search empty_corpus; chat không có citation hay source claim bịa; no-key trạng thái rõ; các screen không 500. Evidence: Playwright video/screens, DB counts, request logs redacted và chart hash. Gate: unit/contract tests pass trên Windows dev; full stack pass trên Ubuntu 22.04.
 
 ### E2E-02 · Nhập ba PDF
 
-Precondition hashes khớp audit, quyền local processing cho phép, một embedding profile active. Upload cùng batch, theo dõi mọi stage; review nếu quality flagged, publish accepted content. Assert counts pages 292+181+140=613; trang gần trắng/ảnh xử lý đúng; không đòi sửa code theo filename; page mappings 9 trang visual sample chính xác; native text preserved; AI rules đều draft đến khi reviewer duyệt. Retry cùng files/key không duplicate objects/chunks vectors trong cùng generation.
+Ba PDF audit (613 trang) là fixture cố định của kịch bản này; corpus đầy đủ hiện có (4 PDF/815 trang + DOCX, xem [05](05_DOCUMENT_PIPELINE.md#corpus-hiện-tại)) được đo riêng ở pilot. Precondition hashes khớp audit, quyền local processing cho phép, một embedding profile active. Upload cùng batch, theo dõi mọi stage; review nếu quality flagged, publish accepted content. Assert counts pages 292+181+140=613; trang gần trắng/ảnh xử lý đúng; không đòi sửa code theo filename; page mappings 9 trang visual sample chính xác; native text preserved; AI rules đều draft đến khi reviewer duyệt. Retry cùng files/key không duplicate objects/chunks vectors trong cùng generation.
 
 ### E2E-03 · Hỏi đáp có nguồn
 
@@ -106,4 +106,4 @@ PERF01 đo empty/startup; PERF02 ingest 10/100/1.000 manifest; PERF03 query 10/1
 
 ## Release Definition of Done
 
-Các chức năng trong phạm vi release đã được kiểm thử, không blocked calculation oracle/rights xử lý external được dùng, E2E-01…08 pass, retrieval gold đạt gate, specialist review signed, no secrets/data leak, restore drill pass, Windows runbook thực chạy, versions locked, code+docs trong git. Nếu gate chưa đạt, ghi trạng thái **release candidate chưa nghiệm thu**, không gọi phần mềm hoàn chỉnh.
+Các chức năng trong phạm vi release đã được kiểm thử, không blocked calculation oracle/rights xử lý external được dùng, E2E-01…08 pass, retrieval gold đạt gate, specialist review signed, no secrets/data leak, restore drill pass, runbook Windows dev → Ubuntu thực chạy, versions locked, code+docs trong git. Nếu gate chưa đạt, ghi trạng thái **release candidate chưa nghiệm thu**, không gọi phần mềm hoàn chỉnh.

@@ -1,17 +1,29 @@
 # 05 · Document Processing Engine
 
-## Corpus hiện tại và preflight T057
+## Corpus hiện tại
 
-Hiện có 4 PDF/815 trang, 1 DOCX và 2 Markdown, vượt ba PDF/613 trang audit cũ.
-`scripts/inspect_corpus.py` quét text/page count bằng pypdf và thống kê DOCX/MD
-chỉ đọc. Đây không phải parser layout/OCR hoặc gate accepted/publish. Cờ <100
-ký tự/U+FFFD chỉ để xem lại; đủ chữ vẫn có thể sai bảng/ảnh/reading order.
-Audit cũ chỉ ra cao cấp tr.30, Tử Bình tr.77 cần xem ảnh.
+Kiểm kê 17/10/2026 (T057) bằng [`scripts/inspect_corpus.py`](../scripts/inspect_corpus.py):
+pypdf quét text mọi trang PDF, thống kê DOCX/Markdown chỉ đọc. Đây là preflight,
+không phải parser layout/OCR hay gate accepted/publish; cờ <100 ký tự/U+FFFD chỉ để
+xem lại, đủ chữ vẫn có thể sai bảng/ảnh/reading order. Số ký tự pypdf không thay số
+đo PyMuPDF của audit [02](02_SOURCE_CODE_AUDIT.md#6-pdf-audit). Cả bốn PDF là PDF số có
+lớp chữ native; OCR chỉ cần cho vùng ảnh và sách scan sau này.
 
-DOCX có 1.773 đoạn XML, 80 bảng và tự mô tả lược dịch/biên soạn có bình chú;
-cần metadata và author layers trước nhập. CASE Markdown là nguồn dẫn xuất,
-chỉ ứng viên case/evaluation, không mở rộng API upload PDF/DOCX. Kế hoạch theo
-nguồn thật nằm ở docs/07; không đổi số liệu audit lịch sử.
+| Nguồn | Đo thực tế | Cách dùng |
+|---|---|---|
+| Manh phái sơ cấp lý pháp | 292 trang; 286.986 ký tự | Pilot trước: Khách–Chủ, Thể–Dụng, Tố Công; giữ bảng trụ/mệnh lệ |
+| Manh phái cao cấp — Đoàn Kiến Nghiệp | 181 trang; 195.516 ký tự | Ứng kỳ/Tượng pháp; review tr.5 ít chữ, ảnh tr.30 |
+| Tử Bình Chân Thuyên bình chú | 140 trang; 449.136 ký tự | School riêng, nguyên tác Thẩm Hiếu Chiêm/bình chú Từ Nhạc Ngô; review màu và ảnh tr.77 |
+| Trích Thiên tuỷ bình chú — Nhậm Thiết Tiều | 202 trang; 583.731 ký tự | Đối chiếu cổ thư; xác nhận author layers/edition, không tự gộp quan điểm |
+| Tên Sách Chưa Đặt.docx | 1.773 đoạn XML; 80 bảng; 130.687 ký tự | Bản biên soạn Manh phái có bình chú cá nhân; draft chờ metadata/source layers |
+| CASE_01_TAN_KIM_1992.md | 59.481 ký tự | Hồ sơ giả định, ứng viên case/evaluation; không là nguồn sách/oracle |
+| CASE_02_AT_MOC_1997.md | 62.479 ký tự | Kiểm tàng/thấu, thiếu căn, điều kiện chế Sát/tòng; giữ ngoài corpus chuẩn |
+
+CASE Markdown là nguồn dẫn xuất: chỉ ứng viên case/evaluation, không mở rộng API
+upload PDF/DOCX. CASE nhắc `validate_cases.py` nhưng repo không có file đó; các
+tuyên bố "đã kiểm" trong CASE chưa được tái lập, cần đối chiếu trang PDF. Không
+giả nội dung web chưa nhập là nguồn có trong kho. Thứ tự nhập và gate từng đợt:
+[14 · Kế hoạch xây kho tri thức](14_ROADMAP.md#kế-hoạch-xây-kho-tri-thức-k2k4).
 
 ## Đơn vị dữ liệu và trạng thái chuẩn
 
@@ -72,6 +84,6 @@ Thu hồi do quyền sử dụng: đặt version withdrawn và tăng `visibility
 
 ## Benchmark 1.000 sách
 
-Dataset manifest ghi count/bytes/pages/native/scan/mixed/DOCX/languages; SHA và quyền sử dụng. Ba mẫu 613 trang không đại diện scan. Mở rộng bằng tài liệu được phép và fixture tổng hợp có nhãn, không giả 100 bản clone là 100 đầu sách thật.
+Dataset manifest ghi count/bytes/pages/native/scan/mixed/DOCX/languages; SHA và quyền sử dụng. Bốn PDF hiện có (815 trang) đều native, không đại diện scan. Mở rộng bằng tài liệu được phép và fixture tổng hợp có nhãn, không giả 100 bản clone là 100 đầu sách thật.
 
 Đo riêng throughput pages/min theo stage, p50/p95 page latency, cold/warm OCR/model, max RSS/VRAM, IO/disk growth, embeddings/min, cost/1.000 pages, failed/review %, recovery time sau kill. Run 10 → 100 → 1.000 tài liệu; 100k và 500k trang là quy mô thử nghiệm mục tiêu, có dry-run capacity estimator. Công thức dự trù vectors ≈ pages × chunks/page × dimensions × bytes/component; cộng text, indexes, images, staging và ít nhất một backup. Không biến công thức thành đảm bảo dung lượng index thực tế.

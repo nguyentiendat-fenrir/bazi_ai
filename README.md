@@ -6,7 +6,8 @@ Gemma dùng container `ghcr.io/ggml-org/llama.cpp:server-cuda` đã có trên Ub
 
 Hiện có công cụ bảo toàn nguồn, kiểm kê PDF/DOCX/Markdown, kiểm tra môi trường,
 tests và PostgreSQL/Redis Compose. **Chưa có web app, OCR worker, index RAG hay
-kết nối Gemma hoạt động.** Xem [kế hoạch RAG từ sách thật](docs/07_RAG_ENGINE.md).
+kết nối Gemma hoạt động.** Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md);
+mục lục tài liệu: [docs/README.md](docs/README.md).
 
 ## Cấu trúc
 
@@ -17,7 +18,7 @@ kết nối Gemma hoạt động.** Xem [kế hoạch RAG từ sách thật](doc
 | `inputs/books/` | Sách gốc local, không Git; chép riêng sang Ubuntu |
 | `inputs/source/`, `legacy/bazi/` | Archive/mã BaZi gốc bảo toàn, tái dùng khi làm lá số |
 | `tests/` | Unit, integration, bảo mật đầu vào và regression |
-| `docs/` | Thiết kế kỹ thuật, API/schema và kế hoạch RAG |
+| `docs/` | Đặc tả, API/schema, lộ trình và ADR — bắt đầu từ [docs/README.md](docs/README.md) |
 | `evidence/` | Manifest và audit dùng để kiểm chứng nguồn |
 | `.tools/`, `.cache/`, `.artifacts/`, `.venv/` | Công cụ/cache/output local đã ignore |
 
@@ -75,4 +76,4 @@ không `compose down -v`; giữ volume `bazi-ai_*` qua các lần pull.
 Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
 `LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.
 Chưa biết URL/model/VRAM nên để trống, không khởi Gemma thứ hai. Embedding dùng
-model/profile riêng. Xem [kết nối llama.cpp](docs/12_SECURITY_OPERATIONS.md).
+model/profile riêng. Xem [kết nối llama.cpp](docs/12_SECURITY_OPERATIONS.md#kết-nối-gemma-llamacpp).

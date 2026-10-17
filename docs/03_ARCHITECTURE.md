@@ -1,16 +1,16 @@
 # 03 · Kiến trúc và ranh giới module
 
-## Phạm vi hiện hành — ADR-21
+## Hiện trạng và đích
 
-Windows là máy dev; Ubuntu 22.04 chạy OCR/storage/retrieval cùng host với Gemma
-llama.cpp đã có. Topology bên dưới là đích dài hạn. Compose hiện chỉ triển khai
-PostgreSQL, Redis và `corpus-inspect` chạy một lần; không tham chiếu module chưa có.
-Image mang code, sách mount read-only, DB/objects/checkpoints ngoài Git.
+Đang chạy: Compose có PostgreSQL, Redis và `corpus-inspect` chạy một lần; chưa có
+backend/frontend ứng dụng. Topology dưới đây là **đích dài hạn**; service chỉ được
+thêm cùng implementation và tests, không tham chiếu module chưa có. Image mang
+code/lock; sách mount read-only; DB/objects/checkpoints ngoài Git.
 
-Ưu tiên library → jobs → review → search/evaluation; calculation/DSL/chat sau.
-Kế hoạch corpus hiện hành ở docs/07. Gemma ngoài Compose dự án,
-provider `openai_compatible`; OCR không dùng LLM sửa chữ âm thầm, mọi đề xuất là
-draft cần nguồn và reviewer. Không thay business schema/REST contracts.
+Thứ tự xây theo [14](14_ROADMAP.md): library → jobs → review → search/evaluation,
+sau đó calculation/DSL/chat. Gemma chạy ngoài Compose dự án, nối qua provider
+`openai_compatible` ([12](12_SECURITY_OPERATIONS.md#kết-nối-gemma-llamacpp)). LLM
+không âm thầm sửa chữ OCR; mọi đề xuất là draft cần nguồn và reviewer.
 
 ## Topology
 
@@ -27,15 +27,15 @@ flowchart TD
   W --> AI
 ```
 
-Một repository, một backend package, migrations dùng chung. API process không chạy OCR/model nặng. Worker profiles `ingest`, `ocr`, `ai`, `maintenance`; không tách network service nghiệp vụ. Reverse proxy Caddy/Nginx tại một cổng loopback: `/api/*` đến FastAPI, còn lại Next.js; SSE tắt buffering. Database/Redis/object volume không expose host port mặc định. Dev override được bind loopback riêng, không `0.0.0.0`.
+Một repository, một backend package, migrations dùng chung. API process không chạy OCR/model nặng. Worker profiles `ingest`, `ocr`, `ai`, `maintenance`; không tách network service nghiệp vụ. Khi có UI: reverse proxy Caddy/Nginx tại một cổng loopback, `/api/*` đến FastAPI, còn lại Next.js; SSE tắt buffering. Database/Redis/object volume không expose host port mặc định. Dev override được bind loopback riêng, không `0.0.0.0`.
 
 ## Stack chốt và điều chỉnh
 
-Python 3.12 làm baseline tương thích; PostgreSQL 17 + pgvector từ 0.8 để có iterative scans; FastAPI/Pydantic2/SQLAlchemy2/Alembic; Next.js + TypeScript; Redis + Celery. Đây là baseline để giải compatibility ở T002, không chỉ định “latest” hoặc cam kết một patch chưa test. Lock tất cả transitive dependencies, image digest và model revision sau smoke.
+Python 3.12 làm baseline tương thích; PostgreSQL 17 + pgvector từ 0.8 để có iterative scans; FastAPI/Pydantic2/SQLAlchemy2/Alembic; Next.js + TypeScript; Redis + Celery. Phiên bản đã khóa và license matrix ghi ở [decision log](15_ARCHITECTURE_DECISIONS.md#decision-log); không dùng “latest”. Lock tất cả transitive dependencies, image digest và model revision sau smoke.
 
 Storage: `ObjectStore` interface với `put_if_absent`, `get_stream`, `stat`, `delete`, `list_manifest`, `copy_verified`; local filesystem volume là mặc định, S3-compatible adapter cùng contract. Blob key do server tạo theo hash/UUID, không nhận path từ client. MinIO Community không là dependency bắt buộc (ADR-03). Tài liệu lớn được stream, không load nguyên sách vào RAM.
 
-PyMuPDF dùng cho audit hiện tại và là parser option khi giấy phép cho phép; implementation default dùng Docling native pipeline + backend parser được kiểm tra license ở T002. PyMuPDF adapter là optional profile; không coi tách process là cách né nghĩa vụ license. OCRmyPDF/Tesseract là worker option cho scanned PDF; Tesseract vùng ảnh hỗ trợ `vie+eng`, thêm `chi_sim/chi_tra` nếu nguồn cần. Reranker/embedding model có registry, không hardcode provider trong code.
+PyMuPDF dùng cho audit hiện tại và là parser option khi giấy phép cho phép; implementation default dùng Docling native pipeline + backend parser được kiểm tra license ở T002. PyMuPDF adapter là optional profile; không coi tách process là cách né nghĩa vụ license. OCRmyPDF/Tesseract là worker option cho scanned PDF; Tesseract vùng ảnh hỗ trợ `vie+eng`, thêm `chi_sim/chi_tra` nếu nguồn cần. Model OCR dạng VLM (ví dụ PaddleOCR-VL) chỉ là ứng viên benchmark ở T012, phải so trên trang gán nhãn và tính chung VRAM với Gemma; không mặc định khi chưa có ADR. Reranker/embedding model có registry, không hardcode provider trong code.
 
 ## Module contracts nội bộ
 
@@ -68,4 +68,4 @@ Chart computation local. API provider chỉ nhận facts đã bỏ tên/định 
 
 ## Quy mô trên máy cá nhân
 
-Khởi đầu CPU OCR concurrency=1, ingest=2, prefetch=1 cho long jobs; embedding batching theo token budget. Đây là tham số ban đầu để benchmark, không hứa throughput. Máy RAM 32 GB có thể phân bổ thử 12–16 GB cho Docker, còn lại cho Windows/IDE; `doctor` đọc tài nguyên thực tế thay vì mặc định cấu hình này có sẵn. GPU không bắt buộc. PDF 100–500 nghìn trang chạy theo queue và disk budget, không xử lý tất cả trong một transaction. Chính sách pause khi disk dưới ngưỡng (mặc định 15% hoặc 10 GiB, lấy giá trị lớn hơn) và resume sau khi đủ dung lượng.
+Khởi đầu CPU OCR concurrency=1, ingest=2, prefetch=1 cho long jobs; embedding batching theo token budget. Đây là tham số ban đầu để benchmark, không hứa throughput. Tài nguyên Ubuntu chia với Gemma; `doctor --target deploy` đọc RAM/disk thực tế thay vì mặc định cấu hình có sẵn. GPU không bắt buộc. PDF 100–500 nghìn trang chạy theo queue và disk budget, không xử lý tất cả trong một transaction. Chính sách pause khi disk dưới ngưỡng (mặc định 15% hoặc 10 GiB, lấy giá trị lớn hơn) và resume sau khi đủ dung lượng.

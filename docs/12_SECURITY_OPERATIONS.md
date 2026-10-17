@@ -1,43 +1,55 @@
 # 12 · Bảo mật, vận hành và khôi phục
 
-## Windows → Git → Ubuntu 22.04 — ADR-21
+## Triển khai: Windows dev → Git → Ubuntu 22.04
 
-Runbook README thay gate WSL máy dev trong baseline bên dưới. Windows dùng
-Python 3.12/tests; Ubuntu Docker Engine/Compose và repo filesystem Linux.
-Sách, .env, models, text/index/DB/checkpoints ngoài Git; chuyển sách riêng và
-đối chiếu SHA256. Giữ project/volume names; không `down -v` khi update.
+Theo [ADR-21](15_ARCHITECTURE_DECISIONS.md#adr-21-chi-tiết): Windows native chạy code
+và unit tests bằng Python 3.12 qua uv, không bắt buộc WSL/Docker. Ubuntu 22.04 là
+runtime đích: Docker Engine + Compose, repo trên filesystem Linux, cùng host với
+Gemma. Runbook từng bước ở [README](../README.md). Sách, `.env`, models, text/index,
+DB và checkpoints nằm ngoài Git; chuyển sách riêng và đối chiếu SHA256. Giữ tên
+project/volume; không `down -v` khi update.
 
-Người dùng xác nhận `ghcr.io/ggml-org/llama.cpp:server-cuda`. T038 dùng
+Compose hiện chỉ có `postgres` (pgvector), `redis` và `corpus-inspect` chạy một lần.
+Đích dài hạn: gateway, frontend (khi có UI thật), api, worker-ingest, worker-ocr,
+worker-ai, dispatcher/watchdog; mọi worker dùng cùng backend image với command khác.
+Service chỉ được thêm cùng implementation và tests. Profiles cho OCR/model local/S3
+test là optional. Volumes: pgdata, objects, model_cache, staging; backup mã hóa ở
+đường dẫn ngoài các volumes này. Redis state không là nguồn duy nhất cần restore.
+
+`.env.example` chỉ placeholder; `.env` gitignored. Startup: DB health → migration
+one-shot → bootstrap admin → app/workers; không tự migrate destructive khi container
+restart. `scripts/dev` hiện có `doctor --target dev|deploy` và `inspect-books`; các
+lệnh build/migrate/bootstrap-admin/up/down/test/backup/restore thêm theo task
+tương ứng. `down` mặc định không `-v`; reset cần backup và xác nhận rõ. Hướng dẫn
+update giữ previous image digest, migration plan và rollback steps.
+
+Inspector chạy network=none, read-only root/input, non-root, drop capabilities,
+no-new-privileges, 2 GiB RAM/64 PIDs. Đây là preflight sách local tin cậy, không
+thay sandbox ingestion có timeout/retry của T011–T014. OCR khởi đầu concurrency=1;
+benchmark chia CPU/RAM/VRAM với Gemma trên máy thật. Embedding chạy batch riêng;
+không giả GPU còn rảnh.
+
+## Kết nối Gemma llama.cpp
+
+Người dùng xác nhận Gemma chạy bằng `ghcr.io/ggml-org/llama.cpp:server-cuda`; không
+chạy thêm model chat thứ hai và không đổi container hiện tại. T038.1 dùng adapter
 `openai_compatible`, base URL kết thúc `/v1`; lấy model ID/alias, context limit,
-timeout, JSON capability và GPU/VRAM thực trước smoke. Không chạy thêm Gemma.
-Ưu tiên API/AI worker cùng external Docker network riêng với container model,
-DNS/cổng thực; thêm cấu hình đó khi biết network và có adapter test. OCR/parser
-không nối mạng model; DB/Redis giữ internal network. Không đổi Gemma hiện tại.
+timeout, JSON capability và GPU/VRAM thực trước smoke.
 
-Nếu dùng đường host: localhost trong container là container đó; host-gateway
-không tự làm dịch vụ chỉ bind loopback truy cập được. Kiểm bind/firewall ở host,
-không mở Gemma ra Internet. Inspector hiện network=none, read-only root/input,
-non-root, drop capabilities, no-new-privileges, 2 GiB RAM/64 PIDs. Đây là preflight
-sách local tin cậy, không thay sandbox ingestion có timeout/retry của T011–T014.
-OCR khởi đầu concurrency=1; benchmark chia CPU/RAM/VRAM với Gemma trên máy thật.
-Embedding riêng, chạy batch; không giả GPU còn rảnh.
+Ưu tiên API/AI worker cùng một external Docker network riêng với container model,
+dùng DNS/cổng thực; thêm cấu hình đó khi biết network và có adapter test. OCR/parser
+không nối mạng model; DB/Redis giữ internal network. Nếu đi qua host: `localhost`
+trong container là chính container đó; host-gateway không làm dịch vụ chỉ bind
+loopback truy cập được. Kiểm bind/firewall ở host, không mở Gemma ra Internet.
 
-Trên Ubuntu, xem tên/image/cổng bằng `docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'`.
-Xem network container đã chọn bằng `docker inspect --format '{{json .NetworkSettings.Networks}}' <container>`.
+Trên Ubuntu, xem tên/image/cổng bằng `docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'`
+và network bằng `docker inspect --format '{{json .NetworkSettings.Networks}}' <container>`.
 Không gửi toàn bộ inspect/env vì có thể chứa secrets. Adapter kiểm `/health`,
-`/v1/models`, chat smoke nhỏ qua `/v1/chat/completions` theo auth server thực.
+`/v1/models` và một chat smoke nhỏ qua `/v1/chat/completions` theo auth thực của server.
 
 Nguồn: [llama.cpp server](https://github.com/ggml-org/llama.cpp/tree/master/tools/server),
 [llama.cpp Docker](https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md),
 [Docker networking](https://docs.docker.com/engine/network/).
-
-## Local deployment
-
-Compose services: gateway, frontend, api, postgres(pgvector), redis, worker-ingest, worker-ocr, worker-ai, dispatcher/watchdog; tất cả worker dùng cùng backend image với command khác. Profiles cho OCR/model local/S3 test optional. Volumes: pgdata, objects, model_cache, staging; encrypted backup ở đường dẫn ngoài các volumes này. Redis state không là nguồn duy nhất cần restore.
-
-Docker Desktop WSL2; repo trong filesystem Linux, nguồn lưu NTFS được import stream vào object volume. `.env.example` chỉ placeholder; `.env` gitignored. Baseline tài nguyên và dependencies được doctor xác minh ở máy thật; không cần clone một Windows virtualenv trong RAR. Startup: DB health → migration one-shot → bootstrap admin → app/workers. Không tự migrate destructive khi container tự restart.
-
-`scripts/dev` implement doctor/build/migrate/bootstrap-admin/up/down/test/backup/restore/check. PowerShell wrapper gọi WSL script; newline LF cho shell, executable bit. `down` mặc định không `-v`; muốn reset phải có backup/confirmation rõ. Hướng dẫn update giữ previous image digest, migration plan và rollback steps.
 
 ## Secrets và dữ liệu cá nhân
 

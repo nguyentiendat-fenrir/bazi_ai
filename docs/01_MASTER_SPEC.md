@@ -1,21 +1,31 @@
 # 01 · Master specification
 
-## Điều chỉnh triển khai — 17/10/2026, ADR-21
-
-Ưu tiên kho tri thức/RAG; dev Windows native, runtime OCR Ubuntu 22.04 cùng host
-với Gemma llama.cpp. Không bắt buộc WSL2 trên máy dev; triển khai kho nguồn trước
-theo docs/07. R01–R11 vẫn là mục tiêu release đầy đủ, chưa phải các chức năng
-đã triển khai. Không thay schema/API/facts engine.
-
 ## Sản phẩm và phạm vi bàn giao
 
-BAZI AI là nền tảng nghiên cứu và diễn giải Bát Tự chạy local Windows qua WSL2/Docker, chuyển được lên Linux bằng cùng containers. Tính toán lịch là deterministic; diễn giải mệnh lý là tri thức truyền thống có trường phái, không tuyên bố là dự báo khoa học. Không có public hosting, mobile native, thanh toán hay multi-tenant trong release này.
+BAZI AI là chatbot nghiên cứu và diễn giải Bát Tự gồm ba khối tách biệt:
+
+1. **Kho tri thức từ sách** — nhập PDF/DOCX, giữ nguồn bất biến, tách trường phái và
+   lớp tác giả/bình chú, tra cứu hybrid có dẫn nguồn ([05](05_DOCUMENT_PIPELINE.md),
+   [06](06_KNOWLEDGE_MODEL.md), [07](07_RAG_ENGINE.md)).
+2. **Engine tính lá số** — deterministic, không gọi LLM, kèm Rule Engine độc lập
+   ([08](08_BAZI_ENGINE.md)).
+3. **LLM suy luận** — trả lời câu hỏi người dùng chỉ trên facts, rules và evidence
+   đã kiểm, citation do backend xác thực ([09](09_AI_REASONING.md)).
+
+Diễn giải mệnh lý là tri thức truyền thống có trường phái, không tuyên bố là dự
+báo khoa học. Máy dev là Windows; runtime là Ubuntu 22.04 với Docker Compose, cùng
+host với Gemma llama.cpp ([12](12_SECURITY_OPERATIONS.md)). Không có public
+hosting, mobile native, thanh toán hay multi-tenant trong release này.
+
+Thứ tự thực hiện: **kho tri thức trước**, rồi lá số và chat
+([14](14_ROADMAP.md), ADR-21). R01–R11 dưới đây là mục tiêu release đầy đủ, chưa
+phải chức năng đã triển khai; trạng thái từng task ở 14.
 
 Một admin có thể tạo thêm tài khoản reader/reviewer. Tất cả module dưới đây bắt buộc nằm trong release: calculation, profiles/charts, PDF/DOCX batch intake, OCR/layout/corrections, document store, terminology/schools/rules/cases, Hybrid RAG/reranker/citations, independent Rule Engine, ba chế độ chatbot, dashboard quản trị, evaluation, security, backup/restore và observability.
 
 ## Yêu cầu chuẩn
 
-| ID | Yêu cầu bắt buộc | Chủ sở hữu thiết kế | Task |
+| ID | Yêu cầu bắt buộc | Tài liệu | Task ([14](14_ROADMAP.md#danh-sách-task)) |
 |---|---|---|---|
 | R01 | Cài local với kho trống, seed chỉ ontology và settings; không seed bằng chứng giả | 03,12 | T001–T008,T048 |
 | R02 | Tái dùng mã lập lá số; policy lịch tường minh; oracle và regression | 02,08 | T026–T030 |
@@ -52,4 +62,4 @@ Policy mặc định sau khi đạt kiểm thử: năm tại Lập Xuân, tháng
 
 ## Nghiệm thu sản phẩm
 
-T056 phải chứng minh tám kịch bản trong 13, kể cả thêm 100 tài liệu không sửa code, job lỗi không ảnh hưởng sách khác, thay rule xác định được analysis bị stale, restore trên volumes sạch. Vận hành local không đồng nghĩa offline tuyệt đối: LLM API cần Internet, tải model lần đầu cần Internet; engine và kho sách vẫn hoạt động khi mất mạng.
+T056 phải chứng minh tám kịch bản trong [13](13_TEST_PLAN.md#tám-kịch-bản-nghiệm-thu-cuối), kể cả thêm 100 tài liệu không sửa code, job lỗi không ảnh hưởng sách khác, thay rule xác định được analysis bị stale, restore trên volumes sạch. Vận hành local không đồng nghĩa offline tuyệt đối: LLM API cần Internet, tải model lần đầu cần Internet; engine và kho sách vẫn hoạt động khi mất mạng.
