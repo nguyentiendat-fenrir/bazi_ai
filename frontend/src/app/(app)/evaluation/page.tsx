@@ -1,9 +1,10 @@
 'use client'
 // Retrieval evaluation (docs/11 /evaluation, docs/13): datasets, their items, approval, runs
-// against the active corpus, failed examples and a side-by-side comparison of runs. Scores
-// from fixture models are labelled as such, never as a benchmark of real models.
+// against the active corpus with a chosen strategy, release gates, a baseline comparison,
+// failed examples and a side-by-side comparison of runs. Scores from fixture models are
+// labelled as such, never as a benchmark of real models.
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, call, type Schemas } from '@/api/client'
@@ -12,16 +13,30 @@ import { Badge, Empty, ErrorState, Forbidden, FormError, Loading, Notice, PageHe
 import { formatDateTime, shortId } from '@/lib/format'
 import { usePagedList, useQuery } from '@/lib/query'
 import { useSession } from '@/lib/session'
-import { read, write } from '@/lib/storage'
 
-type Run = Schemas['EvaluationRunDTO']
+type Run = Schemas['EvaluationRunSummary']
 type Dataset = Schemas['DatasetDTO']
 
-const METRICS = ['recall@5', 'recall@10', 'hit@10', 'ndcg@10', 'mrr@10', 'no_answer_correct'] as const
+const METRICS = ['recall@20', 'ndcg@10', 'mrr@10', 'page@1', 'school_leakage', 'no_answer_recall'] as const
+const STRATEGIES: Record<string, string> = {
+  hybrid_rerank: 'Kết hợp + rerank', hybrid: 'Kết hợp (từ khóa + vector)', lexical: 'Chỉ từ khóa', vector: 'Chỉ vector',
+}
 const DATASET_STATES: Record<string, [string, 'neutral' | 'ok' | 'warning']> = {
   draft: ['Bản nháp', 'warning'], approved: ['Đã duyệt', 'ok'], retired: ['Ngưng', 'neutral'],
 }
-const RUNS_KEY = 'bazi.evaluation.runs'
+
+function Gates({ run }: { run: Run }) {
+  return (
+    <span className="gates">
+      {run.gates.map((g) => (
+        <Badge key={g.metric} tone={g.passed === null ? 'neutral' : g.passed ? 'ok' : 'danger'}>
+          {g.metric} {g.op} {g.target}{g.passed === null ? ' · chưa đo' : g.passed ? ' · đạt' : ' · trượt'}
+        </Badge>
+      ))}
+      {run.regressed && <Badge tone="danger">hồi quy so với baseline</Badge>}
+    </span>
+  )
+}
 
 function metric(run: Run, name: string): string {
   const value = (run.metrics as Record<string, unknown>)[name]
@@ -68,21 +83,17 @@ export default function EvaluationPage() {
   const [selected, setSelected] = useState<string>('')
   const [split, setSplit] = useState('')
   const [topK, setTopK] = useState(10)
-  const [rerank, setRerank] = useState(false)
-  const [runs, setRuns] = useState<Run[]>([])
+  const [strategy, setStrategy] = useState('hybrid_rerank')
+  const [baseline, setBaseline] = useState('')
   const [shown, setShown] = useState<string | null>(null)
   const [approving, setApproving] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
 
-  // Runs this browser started, reopened by id (the API has no run listing yet).
-  useEffect(() => {
-    const ids = (read(RUNS_KEY) ?? '').split(',').filter(Boolean)
-    if (!reviewer || ids.length === 0) return
-    void Promise.all(ids.map((id) => call(api.GET('/api/v1/evaluation-runs/{run_id}', { params: { path: { run_id: id } } }))
-      .then((r) => r.data).catch(() => null)))
-      .then((found) => setRuns(found.filter((r): r is Run => r !== null)))
-  }, [reviewer])
+  const history = useQuery(reviewer ? 'evaluation-runs' : null, () =>
+    call(api.GET('/api/v1/evaluation-runs', { params: { query: { limit: 20 } } })))
+  const detail = useQuery(shown ? `evaluation-run:${shown}` : null, () =>
+    call(api.GET('/api/v1/evaluation-runs/{run_id}', { params: { path: { run_id: shown! } } })))
 
   if (!reviewer) return <Forbidden what="đánh giá" />
   const list = datasets.data?.data ?? []
@@ -96,11 +107,11 @@ export default function EvaluationPage() {
     setError(null)
     try {
       const done = await call(api.POST('/api/v1/evaluation-runs', { body: {
-        dataset_id: dataset.id, top_k: topK, rerank, split: (split || null) as never } }))
-      const next = [done.data, ...runs.filter((r) => r.id !== done.data.id)].slice(0, 10)
-      setRuns(next)
+        dataset_id: dataset.id, top_k: topK, rerank: strategy === 'hybrid_rerank', tolerance: 0.02,
+        strategy: strategy as 'hybrid_rerank', baseline_run_id: baseline || null,
+        split: (split || null) as 'dev' | null } }))
+      history.reload()
       setShown(done.data.id)
-      write(RUNS_KEY, next.map((r) => r.id).join(','))
     } catch (caught) {
       setError(caught)
     } finally {
@@ -120,8 +131,10 @@ export default function EvaluationPage() {
     }
   }
 
-  const current = runs.find((r) => r.id === shown) ?? null
+  const runs = history.data?.data ?? []
+  const current = detail.data?.data ?? null
   const failed = current?.results.filter((r) => r.status !== 'passed') ?? []
+  const baselines = runs.filter((r) => dataset && r.dataset_id === dataset.id)
   const nameOf = (id: string) => list.find((d) => d.id === id)?.name ?? shortId(id)
   return (
     <>
@@ -172,7 +185,21 @@ export default function EvaluationPage() {
                     <label htmlFor="ev-topk">Top k</label>
                     <input id="ev-topk" type="number" min={1} max={50} value={topK} onChange={(e) => setTopK(Number(e.target.value))} />
                   </div>
-                  <label className="checkbox"><input type="checkbox" checked={rerank} onChange={(e) => setRerank(e.target.checked)} /><span>Dùng reranker</span></label>
+                  <div className="field">
+                    <label htmlFor="ev-strategy">Cách tìm</label>
+                    <select id="ev-strategy" value={strategy} onChange={(e) => setStrategy(e.target.value)}>
+                      {Object.entries(STRATEGIES).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="ev-baseline">So với lần chạy</label>
+                    <select id="ev-baseline" value={baseline} onChange={(e) => setBaseline(e.target.value)}>
+                      <option value="">Không so</option>
+                      {baselines.map((r) => (
+                        <option key={r.id} value={r.id}>{formatDateTime(r.created_at)} · {STRATEGIES[String((r.config as { strategy?: string }).strategy)] ?? ''}</option>
+                      ))}
+                    </select>
+                  </div>
                   <button type="submit" className="button" disabled={busy}>{busy ? 'Đang chạy…' : 'Chạy đánh giá'}</button>
                 </form>
                 <FormError error={error} />
@@ -191,17 +218,18 @@ export default function EvaluationPage() {
             <table>
               <caption className="visually-hidden">So sánh lần chạy đánh giá</caption>
               <thead><tr><th scope="col">Lần chạy</th><th scope="col">Bộ</th><th scope="col">Cấu hình</th>
-                {METRICS.map((m) => <th key={m} scope="col">{m}</th>)}<th scope="col">p95 (ms)</th></tr></thead>
+                {METRICS.map((m) => <th key={m} scope="col">{m}</th>)}<th scope="col">p95 (ms)</th><th scope="col">Ngưỡng</th></tr></thead>
               <tbody>
                 {runs.map((r) => {
-                  const config = r.config as { top_k?: number, rerank?: boolean, split?: string | null, dataset_state?: string }
+                  const config = r.config as { top_k?: number, strategy?: string, split?: string | null, dataset_state?: string }
                   return (
                     <tr key={r.id} className={r.id === shown ? 'selected' : undefined}>
                       <td><button type="button" className="button button-ghost button-small" onClick={() => setShown(r.id)}>{formatDateTime(r.created_at)}</button></td>
                       <td>{nameOf(r.dataset_id)}{config.dataset_state === 'draft' && <> <Badge tone="warning">bộ nháp</Badge></>}</td>
-                      <td className="small">k={config.top_k}{config.rerank ? ' · rerank' : ''}{config.split ? ` · ${config.split}` : ''}</td>
+                      <td className="small">{STRATEGIES[config.strategy ?? ''] ?? config.strategy} · k={config.top_k}{config.split ? ` · ${config.split}` : ''}</td>
                       {METRICS.map((m) => <td key={m}>{metric(r, m)}</td>)}
                       <td>{String(((r.metrics as { latency_ms?: { p95?: number } }).latency_ms?.p95) ?? '—')}</td>
+                      <td><Gates run={r} /></td>
                     </tr>
                   )
                 })}
@@ -212,7 +240,25 @@ export default function EvaluationPage() {
       )}
       {current && (
         <section className="panel">
-          <h2>Câu trượt ({failed.length}/{current.results.length})</h2>
+          <h2>Lần chạy {formatDateTime(current.created_at)}</h2>
+          <p><Gates run={current} /></p>
+          {current.comparison && (
+            <div className="table-wrap">
+              <table>
+                <caption className="visually-hidden">So với baseline</caption>
+                <thead><tr><th scope="col">Chỉ số</th><th scope="col">Baseline</th><th scope="col">Lần này</th><th scope="col">Chênh</th></tr></thead>
+                <tbody>
+                  {current.comparison.map((d) => (
+                    <tr key={d.metric}>
+                      <td>{d.metric}</td><td>{d.baseline.toFixed(3)}</td><td>{d.value.toFixed(3)}</td>
+                      <td>{d.delta > 0 ? '+' : ''}{d.delta.toFixed(3)}{d.regressed && <> <Badge tone="danger">hồi quy</Badge></>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <h3>Câu trượt ({failed.length}/{current.results.length})</h3>
           {failed.length === 0 ? <p className="muted">Mọi câu đều có trang đúng trong top 20.</p> : (
             <ul className="plain-list">
               {failed.map((f) => {

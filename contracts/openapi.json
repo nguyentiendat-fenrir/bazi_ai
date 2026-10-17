@@ -4113,6 +4113,39 @@
         "title": "DatasetItem",
         "type": "object"
       },
+      "Delta": {
+        "properties": {
+          "baseline": {
+            "title": "Baseline",
+            "type": "number"
+          },
+          "delta": {
+            "title": "Delta",
+            "type": "number"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "regressed": {
+            "title": "Regressed",
+            "type": "boolean"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "metric",
+          "baseline",
+          "value",
+          "delta",
+          "regressed"
+        ],
+        "title": "Delta",
+        "type": "object"
+      },
       "Dependents": {
         "properties": {
           "analyses": {
@@ -5281,6 +5314,21 @@
       },
       "EvaluationRunDTO": {
         "properties": {
+          "comparison": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Delta"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "against the baseline run, if any",
+            "title": "Comparison"
+          },
           "config": {
             "additionalProperties": true,
             "title": "Config",
@@ -5296,6 +5344,14 @@
             "title": "Dataset Id",
             "type": "string"
           },
+          "gates": {
+            "description": "release gates of docs/07 on these metrics",
+            "items": {
+              "$ref": "#/components/schemas/Gate"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5303,9 +5359,13 @@
           },
           "metrics": {
             "additionalProperties": true,
-            "description": "means of recall@k, hit@k, ndcg@10, mrr@10; latency",
+            "description": "recall@k, hit@k, ndcg@10, mrr@10, page@1, school_leakage, no_answer_correct/precision/recall; latency",
             "title": "Metrics",
             "type": "object"
+          },
+          "regressed": {
+            "title": "Regressed",
+            "type": "boolean"
           },
           "results": {
             "items": {
@@ -5326,9 +5386,86 @@
           "status",
           "metrics",
           "created_at",
+          "gates",
+          "comparison",
+          "regressed",
           "results"
         ],
         "title": "EvaluationRunDTO",
+        "type": "object"
+      },
+      "EvaluationRunSummary": {
+        "properties": {
+          "comparison": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Delta"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "against the baseline run, if any",
+            "title": "Comparison"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "gates": {
+            "description": "release gates of docs/07 on these metrics",
+            "items": {
+              "$ref": "#/components/schemas/Gate"
+            },
+            "title": "Gates",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": true,
+            "description": "recall@k, hit@k, ndcg@10, mrr@10, page@1, school_leakage, no_answer_correct/precision/recall; latency",
+            "title": "Metrics",
+            "type": "object"
+          },
+          "regressed": {
+            "title": "Regressed",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "config",
+          "status",
+          "metrics",
+          "created_at",
+          "gates",
+          "comparison",
+          "regressed"
+        ],
+        "title": "EvaluationRunSummary",
         "type": "object"
       },
       "EvidenceDTO": {
@@ -5721,6 +5858,58 @@
           "passed"
         ],
         "title": "FixtureResult",
+        "type": "object"
+      },
+      "Gate": {
+        "properties": {
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "op": {
+            "enum": [
+              ">=",
+              "<="
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null when the dataset does not measure it",
+            "title": "Passed"
+          },
+          "target": {
+            "title": "Target",
+            "type": "number"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "metric",
+          "op",
+          "target",
+          "value",
+          "passed"
+        ],
+        "title": "Gate",
         "type": "object"
       },
       "GenerationDTO": {
@@ -6953,6 +7142,29 @@
           "meta"
         ],
         "title": "ListEnvelope[DatasetDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_EvaluationRunSummary_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EvaluationRunSummary"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[EvaluationRunSummary]",
         "type": "object"
       },
       "ListEnvelope_ItemDTO_": {
@@ -10797,6 +11009,19 @@
       },
       "RunInput": {
         "properties": {
+          "baseline_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "an earlier run of the same dataset",
+            "title": "Baseline Run Id"
+          },
           "dataset_id": {
             "format": "uuid",
             "title": "Dataset Id",
@@ -10822,6 +11047,32 @@
               }
             ],
             "title": "Split"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "lexical",
+                  "vector",
+                  "hybrid",
+                  "hybrid_rerank"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "channels to compare on one release; overrides rerank",
+            "title": "Strategy"
+          },
+          "tolerance": {
+            "default": 0.02,
+            "description": "a metric dropping more than this regresses",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Tolerance",
+            "type": "number"
           },
           "top_k": {
             "default": 20,
@@ -27756,15 +28007,238 @@
       }
     },
     "/api/v1/evaluation-runs": {
+      "get": {
+        "description": "Newest first, without per-item results.",
+        "operationId": "list_runs_api_v1_evaluation_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dataset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dataset Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "comparison": [
+                        {
+                          "baseline": 1.0,
+                          "delta": 1.0,
+                          "metric": "example",
+                          "regressed": true,
+                          "value": 1.0
+                        }
+                      ],
+                      "config": {},
+                      "created_at": "2026-10-18T08:00:00Z",
+                      "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                      "gates": [
+                        {
+                          "metric": "example",
+                          "op": ">=",
+                          "passed": true,
+                          "target": 1.0,
+                          "value": 1.0
+                        }
+                      ],
+                      "id": "0b6e6600-2026-4a10-8000-00000000b471",
+                      "metrics": {},
+                      "regressed": true,
+                      "status": "example"
+                    }
+                  ],
+                  "meta": {
+                    "request_id": "example"
+                  },
+                  "page": {
+                    "has_more": false,
+                    "next_cursor": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_EvaluationRunSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "evaluation"
+        ],
+        "x-permission": "V"
+      },
       "post": {
         "operationId": "create_run_api_v1_evaluation_runs_post",
         "requestBody": {
           "content": {
             "application/json": {
               "example": {
+                "baseline_run_id": "0b6e6600-2026-4a10-8000-00000000b471",
                 "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                 "rerank": true,
                 "split": "dev",
+                "strategy": "lexical",
+                "tolerance": 0.02,
                 "top_k": 20
               },
               "schema": {
@@ -27780,11 +28254,30 @@
               "application/json": {
                 "example": {
                   "data": {
+                    "comparison": [
+                      {
+                        "baseline": 1.0,
+                        "delta": 1.0,
+                        "metric": "example",
+                        "regressed": true,
+                        "value": 1.0
+                      }
+                    ],
                     "config": {},
                     "created_at": "2026-10-18T08:00:00Z",
                     "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                    "gates": [
+                      {
+                        "metric": "example",
+                        "op": ">=",
+                        "passed": true,
+                        "target": 1.0,
+                        "value": 1.0
+                      }
+                    ],
                     "id": "0b6e6600-2026-4a10-8000-00000000b471",
                     "metrics": {},
+                    "regressed": true,
                     "results": [
                       {
                         "actual": {},
@@ -27996,11 +28489,30 @@
               "application/json": {
                 "example": {
                   "data": {
+                    "comparison": [
+                      {
+                        "baseline": 1.0,
+                        "delta": 1.0,
+                        "metric": "example",
+                        "regressed": true,
+                        "value": 1.0
+                      }
+                    ],
                     "config": {},
                     "created_at": "2026-10-18T08:00:00Z",
                     "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                    "gates": [
+                      {
+                        "metric": "example",
+                        "op": ">=",
+                        "passed": true,
+                        "target": 1.0,
+                        "value": 1.0
+                      }
+                    ],
                     "id": "0b6e6600-2026-4a10-8000-00000000b471",
                     "metrics": {},
+                    "regressed": true,
                     "results": [
                       {
                         "actual": {},

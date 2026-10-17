@@ -83,6 +83,28 @@ class RunInput(BaseModel):
     top_k: int = Field(default=20, ge=1, le=30)
     rerank: bool = True
     split: Split | None = None
+    strategy: Literal['lexical', 'vector', 'hybrid', 'hybrid_rerank'] | None = Field(
+        default=None, description='channels to compare on one release; overrides rerank')
+    baseline_run_id: uuid.UUID | None = Field(default=None,
+                                              description='an earlier run of the same dataset')
+    tolerance: float = Field(default=0.02, ge=0, le=1,
+                             description='a metric dropping more than this regresses')
+
+
+class Gate(BaseModel):
+    metric: str
+    op: Literal['>=', '<=']
+    target: float
+    value: float | None
+    passed: bool | None = Field(description='null when the dataset does not measure it')
+
+
+class Delta(BaseModel):
+    metric: str
+    baseline: float
+    value: float
+    delta: float
+    regressed: bool
 
 
 class RunResult(BaseModel):
@@ -93,13 +115,20 @@ class RunResult(BaseModel):
     duration_ms: int
 
 
-class EvaluationRunDTO(BaseModel):
+class EvaluationRunSummary(BaseModel):
     id: uuid.UUID
     dataset_id: uuid.UUID
     config: dict
     status: str
-    metrics: dict = Field(description='means of recall@k, hit@k, ndcg@10, mrr@10; latency')
+    metrics: dict = Field(description='recall@k, hit@k, ndcg@10, mrr@10, page@1, school_leakage,'
+                          ' no_answer_correct/precision/recall; latency')
     created_at: datetime
+    gates: list[Gate] = Field(description='release gates of docs/07 on these metrics')
+    comparison: list[Delta] | None = Field(description='against the baseline run, if any')
+    regressed: bool
+
+
+class EvaluationRunDTO(EvaluationRunSummary):
     results: list[RunResult]
 
 
@@ -154,7 +183,18 @@ def create_run(body: RunInput, request: Request,
     return envelope(evaluate.run(conn, principal, body.dataset_id, body.top_k, body.rerank,
                                  body.split, state.settings.app_env,
                                  (getattr(state, 'embedding_transport', None),
-                                  getattr(state, 'rerank_transport', None))))
+                                  getattr(state, 'rerank_transport', None)),
+                                 body.strategy, body.baseline_run_id, body.tolerance))
+
+
+@router.get('/evaluation-runs', response_model=ListEnvelope[EvaluationRunSummary],
+            responses=AUTHENTICATED_ERRORS, openapi_extra=permission('V'))
+def list_runs(dataset_id: uuid.UUID | None = None, limit: int = Query(default=50, ge=1, le=200),
+              principal: Principal = Depends(require_role('reviewer')),
+              conn: Connection = Depends(db)) -> dict:
+    """Newest first, without per-item results."""
+    return {**envelope(evaluate.list_runs(conn, dataset_id, limit)),
+            'page': {'next_cursor': None, 'has_more': False}}
 
 
 @router.get('/evaluation-runs/{run_id}', response_model=Envelope[EvaluationRunDTO],

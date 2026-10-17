@@ -65,6 +65,9 @@ class Spec:
     page_range: tuple[int, int] | None = None
     rerank: bool = True
     pack: bool = False
+    # Evaluation compares lexical-only / vector-only / hybrid on one release (docs/07);
+    # None is every channel, which is all /search ever uses.
+    channels: tuple[str, ...] | None = None
 
     @property
     def filtered(self) -> bool:
@@ -318,15 +321,19 @@ def search(conn: Connection, principal: Principal, spec: Spec, app_env: str = 'd
         return {**base, 'status': 'empty_filters' if spec.filtered else 'empty_corpus'}
     found = expansions(conn, active['ontology_release_id'], normalized, spec.school_ids)
     phrases = [fold(e['matched']) for e in found] + [fold(v) for e in found for v in e['variants']]
-    lists = {'lexical': _lexical(conn, cte, params, folded, normalized, phrases)}
-    sections = _sections(conn, cte, params, folded)
+    use = set(spec.channels or ('lexical', 'section', 'vector'))
+    lists = {}
+    if 'lexical' in use:
+        lists['lexical'] = _lexical(conn, cte, params, folded, normalized, phrases)
+    sections = _sections(conn, cte, params, folded) if 'section' in use else []
     if sections:
         lists['section'] = sections
-    vector, problem = _vector(conn, cte, params, active, normalized, app_env, transport)
-    if problem:
-        base['degraded'].append(problem)
-    else:
-        lists['vector'] = vector
+    if 'vector' in use:
+        vector, problem = _vector(conn, cte, params, active, normalized, app_env, transport)
+        if problem:
+            base['degraded'].append(problem)
+        else:
+            lists['vector'] = vector
     fused = fuse(lists)[:max(spec.top_k, RERANK_CANDIDATES if spec.rerank or spec.pack else 0)]
     meta = _meta(conn, cte, params, [h['chunk_id'] for h in fused])
     for hit in fused:

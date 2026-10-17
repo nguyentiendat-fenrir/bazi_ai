@@ -130,7 +130,10 @@ khác tra tại bảng cuối file này.
   đồ thị FK, ledger áp lại khi restore, test canary toàn DB) + chống prompt injection (dấu
   phân cách không giả được, `reasoning-2`, test SEC04 có mutation check); xóa hồ sơ sinh xóa
   trắng bản mã ngay.
-- Việc kế tiếp: T050–T056.
+- T050 (harness) ✅: chiến lược lexical/vector/hybrid/+rerank trên cùng release, page@1,
+  rò trường phái, no-answer precision/recall, ngưỡng release, so baseline + hồi quy, lịch sử
+  run qua API, CLI `evaluate` làm cổng CI. Số đo thật chờ gold duyệt (T025) + model (T036).
+- Việc kế tiếp: T051–T056.
 
 ## Các giai đoạn
 
@@ -275,7 +278,7 @@ trước khi trình duyệt.
 | T047 | Knowledge/rules/cases admin UI | K6 | ✅ |
 | T048 | Evaluation/settings/dashboard UI | K6 | ✅ |
 | T049 | Security hardening và privacy deletion | K7 | ✅ |
-| T050 | Evaluation harness và quality regression | K7 | |
+| T050 | Evaluation harness và quality regression | K7 | harness ✅; số đo chờ T025/T036 |
 | T051 | Benchmark throughput, storage và observability | K7 | |
 | T052 | Backup service và CLI | K5/K7 | T052.1 ✅ |
 | T053 | Restore drill và disaster recovery | K5/K7 | T053.1 ✅ |

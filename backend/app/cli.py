@@ -7,6 +7,8 @@
     python -m backend.app.cli backup --dest /backups    # db.dump + objects + manifest.json
     python -m backend.app.cli restore --manifest /backup/<name>/manifest.json --confirm <name>
     python -m backend.app.cli deletion-ledger --out /backups/ledger.json   # erasures since
+    python -m backend.app.cli evaluate --dataset gold --version 1 --as reviewer@example.test \
+        --split test --baseline latest     # exit 1 on a regression (or a failed gate with --gates)
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
@@ -200,6 +202,59 @@ def run_backup(args) -> int:
     return 0
 
 
+def run_evaluate(args) -> int:
+    """A retrieval regression check for CI or a release: run, compare, set the exit code."""
+    import uuid
+
+    from sqlalchemy import create_engine, pool, text
+
+    from .auth.service import Principal
+    from .core.errors import AppError
+    from .retrieval import evaluate
+    settings = load_settings()
+    engine = create_engine(settings.database_url, poolclass=pool.NullPool)
+    with engine.begin() as conn:
+        user = conn.execute(text(
+            "SELECT id, email, role FROM users WHERE email = :e AND enabled"
+            " AND role IN ('reviewer', 'admin')"), {'e': args.as_user}).mappings().first()
+        if user is None:
+            _print({'ok': False, 'code': 'USER_NOT_FOUND',
+                    'message': 'evaluate as an enabled reviewer or admin (--as)'})
+            return 2
+        conn.execute(text("SELECT set_config('app.user_id', :u, true)"), {'u': str(user['id'])})
+        principal = Principal(user['id'], user['email'], user['role'], uuid.UUID(int=0), '')
+        dataset = conn.execute(text('SELECT id FROM evaluation_datasets WHERE name = :n'
+                                    ' AND version = :v'),
+                               {'n': args.dataset, 'v': args.version}).scalar()
+        if dataset is None:
+            _print({'ok': False, 'code': 'DATASET_NOT_FOUND', 'message': 'no such dataset'})
+            return 2
+        baseline = None
+        if args.baseline == 'latest':
+            baseline = conn.execute(text(
+                "SELECT id FROM evaluation_runs WHERE dataset_id = :d AND status = 'completed'"
+                " AND config_snapshot->>'strategy' = :st"
+                " AND config_snapshot->>'split' IS NOT DISTINCT FROM :sp"
+                ' ORDER BY created_at DESC, id DESC LIMIT 1'),
+                {'d': dataset, 'st': args.strategy, 'sp': args.split}).scalar()
+        elif args.baseline:
+            baseline = uuid.UUID(args.baseline)
+        try:
+            result = evaluate.run(conn, principal, dataset, args.top_k,
+                                  args.strategy == 'hybrid_rerank', args.split, settings.app_env,
+                                  (None, None), args.strategy, baseline, args.tolerance)
+        except AppError as exc:
+            _print({'ok': False, 'code': exc.code, 'message': str(exc)})
+            return 2
+    failed_gates = [g['metric'] for g in result['gates'] if g['passed'] is False]
+    regressed = [c['metric'] for c in result['comparison'] or [] if c['regressed']]
+    ok = not regressed and not (args.gates and failed_gates)
+    _print({'ok': ok, 'run_id': result['id'], 'strategy': result['config']['strategy'],
+            'baseline_run_id': result['config']['baseline_run_id'],
+            'metrics': result['metrics'], 'failed_gates': failed_gates, 'regressed': regressed})
+    return 0 if ok else 1
+
+
 def run_restore(args) -> int:
     from .ops.backup import BackupError, preflight, restore
     from .storage import build_store
@@ -276,6 +331,17 @@ def main(argv: list[str] | None = None) -> int:
                       ' made after the backup are applied again')
     led = commands.add_parser('deletion-ledger', help='export erasures for a later restore')
     led.add_argument('--out', required=True)
+    ev = commands.add_parser('evaluate', help='retrieval run with gates and regression check')
+    ev.add_argument('--dataset', required=True)
+    ev.add_argument('--version', required=True)
+    ev.add_argument('--as', dest='as_user', required=True, help='a reviewer or admin email')
+    ev.add_argument('--split', choices=('dev', 'test', 'holdout'))
+    ev.add_argument('--strategy', default='hybrid_rerank',
+                    choices=('lexical', 'vector', 'hybrid', 'hybrid_rerank'))
+    ev.add_argument('--top-k', type=int, default=20)
+    ev.add_argument('--baseline', help="'latest' (same strategy and split) or a run id")
+    ev.add_argument('--tolerance', type=float, default=0.02)
+    ev.add_argument('--gates', action='store_true', help='also fail when a release gate fails')
     gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
     gc.add_argument('--grace-hours', type=float, default=24.0)
     gc.add_argument('--dry-run', action='store_true')
@@ -295,6 +361,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_backup(args)
         if args.command in ('restore', 'restore-preflight'):
             return run_restore(args)
+        if args.command == 'evaluate':
+            return run_evaluate(args)
         if args.command == 'deletion-ledger':
             from .ops.backup import export_ledger
             ledger = export_ledger(_owner_database(load_settings()))

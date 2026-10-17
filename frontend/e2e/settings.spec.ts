@@ -89,11 +89,20 @@ test('a reviewer runs an evaluation and sees failed questions and the comparison
   await page.getByRole('button', { name: 'Chạy đánh giá' }).click()
   await expect(page.getByRole('heading', { name: /Câu trượt/ })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('listitem').filter({ hasText: 'q1' })).toBeVisible()
-  await expect(page.getByRole('table', { name: 'So sánh lần chạy đánh giá' }).getByRole('row')).toHaveCount(2)
+  const runs = page.getByRole('table', { name: 'So sánh lần chạy đánh giá' })
+  await expect(runs.getByRole('row')).toHaveCount(2)
+  await expect(runs).toContainText('recall@20 >= 0.9 · trượt')        // the gold page does not exist
   await page.reload()
-  await expect(page.getByRole('table', { name: 'So sánh lần chạy đánh giá' })).toBeVisible()
+  await expect(runs.getByRole('row')).toHaveCount(2)                  // runs come from the API
 
   await page.getByRole('button', { name, exact: true }).click()
+  await page.getByLabel('Cách tìm').selectOption('lexical')
+  await page.getByLabel('So với lần chạy').selectOption({ index: 1 })
+  await page.getByRole('button', { name: 'Chạy đánh giá' }).click()
+  await expect(page.getByRole('table', { name: 'So với baseline' })).toBeVisible({ timeout: 30_000 })
+  await expect(runs.getByRole('row')).toHaveCount(3)
+  await expect(runs).toContainText('Chỉ từ khóa')
+
   await page.getByRole('button', { name: 'Duyệt bộ…' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Duyệt bộ' }).click()
   await expect(page.getByRole('table', { name: 'Bộ đánh giá' }).getByRole('row', { name: new RegExp(name) })).toContainText('Đã duyệt')

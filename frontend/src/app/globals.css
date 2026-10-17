@@ -295,3 +295,4 @@ td.wrap { white-space: normal; min-width: 280px; }
 .setting-row:last-child { border-bottom: 0; }
 .setting-row .actions { padding-top: 22px; }
 tr.selected td { background: var(--teal-weak); }
+.gates { display: inline-flex; flex-wrap: wrap; gap: 4px; }

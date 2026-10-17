@@ -771,7 +771,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Runs
+         * @description Newest first, without per-item results.
+         */
+        get: operations["list_runs_api_v1_evaluation_runs_get"];
         put?: never;
         /** Create Run */
         post: operations["create_run_api_v1_evaluation_runs_post"];
@@ -3343,6 +3347,19 @@ export interface components {
              */
             split: "dev" | "test" | "holdout";
         };
+        /** Delta */
+        Delta: {
+            /** Baseline */
+            baseline: number;
+            /** Delta */
+            delta: number;
+            /** Metric */
+            metric: string;
+            /** Regressed */
+            regressed: boolean;
+            /** Value */
+            value: number;
+        };
         /** Dependents */
         Dependents: {
             /** Analyses */
@@ -3732,6 +3749,11 @@ export interface components {
         };
         /** EvaluationRunDTO */
         EvaluationRunDTO: {
+            /**
+             * Comparison
+             * @description against the baseline run, if any
+             */
+            comparison: components["schemas"]["Delta"][] | null;
             /** Config */
             config: {
                 [key: string]: unknown;
@@ -3747,19 +3769,69 @@ export interface components {
              */
             dataset_id: string;
             /**
+             * Gates
+             * @description release gates of docs/07 on these metrics
+             */
+            gates: components["schemas"]["Gate"][];
+            /**
              * Id
              * Format: uuid
              */
             id: string;
             /**
              * Metrics
-             * @description means of recall@k, hit@k, ndcg@10, mrr@10; latency
+             * @description recall@k, hit@k, ndcg@10, mrr@10, page@1, school_leakage, no_answer_correct/precision/recall; latency
              */
             metrics: {
                 [key: string]: unknown;
             };
+            /** Regressed */
+            regressed: boolean;
             /** Results */
             results: components["schemas"]["RunResult"][];
+            /** Status */
+            status: string;
+        };
+        /** EvaluationRunSummary */
+        EvaluationRunSummary: {
+            /**
+             * Comparison
+             * @description against the baseline run, if any
+             */
+            comparison: components["schemas"]["Delta"][] | null;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Dataset Id
+             * Format: uuid
+             */
+            dataset_id: string;
+            /**
+             * Gates
+             * @description release gates of docs/07 on these metrics
+             */
+            gates: components["schemas"]["Gate"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Metrics
+             * @description recall@k, hit@k, ndcg@10, mrr@10, page@1, school_leakage, no_answer_correct/precision/recall; latency
+             */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Regressed */
+            regressed: boolean;
             /** Status */
             status: string;
         };
@@ -3927,6 +3999,25 @@ export interface components {
              * @enum {string}
              */
             status: "fired" | "not_matched" | "pending" | "blocked_exception" | "dependency_blocked";
+        };
+        /** Gate */
+        Gate: {
+            /** Metric */
+            metric: string;
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: ">=" | "<=";
+            /**
+             * Passed
+             * @description null when the dataset does not measure it
+             */
+            passed: boolean | null;
+            /** Target */
+            target: number;
+            /** Value */
+            value: number | null;
         };
         /** GenerationDTO */
         GenerationDTO: {
@@ -4435,6 +4526,13 @@ export interface components {
         ListEnvelope_DatasetDTO_: {
             /** Data */
             data: components["schemas"]["DatasetDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
+        /** ListEnvelope[EvaluationRunSummary] */
+        ListEnvelope_EvaluationRunSummary_: {
+            /** Data */
+            data: components["schemas"]["EvaluationRunSummary"][];
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
@@ -5969,6 +6067,11 @@ export interface components {
         /** RunInput */
         RunInput: {
             /**
+             * Baseline Run Id
+             * @description an earlier run of the same dataset
+             */
+            baseline_run_id?: string | null;
+            /**
              * Dataset Id
              * Format: uuid
              */
@@ -5980,6 +6083,17 @@ export interface components {
             rerank: boolean;
             /** Split */
             split?: ("dev" | "test" | "holdout") | null;
+            /**
+             * Strategy
+             * @description channels to compare on one release; overrides rerank
+             */
+            strategy?: ("lexical" | "vector" | "hybrid" | "hybrid_rerank") | null;
+            /**
+             * Tolerance
+             * @description a metric dropping more than this regresses
+             * @default 0.02
+             */
+            tolerance: number;
             /**
              * Top K
              * @default 20
@@ -21417,6 +21531,207 @@ export interface operations {
             };
         };
     };
+    list_runs_api_v1_evaluation_runs_get: {
+        parameters: {
+            query?: {
+                dataset_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "comparison": [
+                     *             {
+                     *               "baseline": 1,
+                     *               "delta": 1,
+                     *               "metric": "example",
+                     *               "regressed": true,
+                     *               "value": 1
+                     *             }
+                     *           ],
+                     *           "config": {},
+                     *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                     *           "gates": [
+                     *             {
+                     *               "metric": "example",
+                     *               "op": ">=",
+                     *               "passed": true,
+                     *               "target": 1,
+                     *               "value": 1
+                     *             }
+                     *           ],
+                     *           "id": "0b6e6600-2026-4a10-8000-00000000b471",
+                     *           "metrics": {},
+                     *           "regressed": true,
+                     *           "status": "example"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       },
+                     *       "page": {
+                     *         "has_more": false,
+                     *         "next_cursor": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ListEnvelope_EvaluationRunSummary_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     create_run_api_v1_evaluation_runs_post: {
         parameters: {
             query?: never;
@@ -21428,9 +21743,12 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "baseline_run_id": "0b6e6600-2026-4a10-8000-00000000b471",
                  *       "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                  *       "rerank": true,
                  *       "split": "dev",
+                 *       "strategy": "lexical",
+                 *       "tolerance": 0.02,
                  *       "top_k": 20
                  *     }
                  */
@@ -21447,11 +21765,30 @@ export interface operations {
                     /**
                      * @example {
                      *       "data": {
+                     *         "comparison": [
+                     *           {
+                     *             "baseline": 1,
+                     *             "delta": 1,
+                     *             "metric": "example",
+                     *             "regressed": true,
+                     *             "value": 1
+                     *           }
+                     *         ],
                      *         "config": {},
                      *         "created_at": "2026-10-18T08:00:00Z",
                      *         "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                     *         "gates": [
+                     *           {
+                     *             "metric": "example",
+                     *             "op": ">=",
+                     *             "passed": true,
+                     *             "target": 1,
+                     *             "value": 1
+                     *           }
+                     *         ],
                      *         "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "metrics": {},
+                     *         "regressed": true,
                      *         "results": [
                      *           {
                      *             "actual": {},
@@ -21663,11 +22000,30 @@ export interface operations {
                     /**
                      * @example {
                      *       "data": {
+                     *         "comparison": [
+                     *           {
+                     *             "baseline": 1,
+                     *             "delta": 1,
+                     *             "metric": "example",
+                     *             "regressed": true,
+                     *             "value": 1
+                     *           }
+                     *         ],
                      *         "config": {},
                      *         "created_at": "2026-10-18T08:00:00Z",
                      *         "dataset_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                     *         "gates": [
+                     *           {
+                     *             "metric": "example",
+                     *             "op": ">=",
+                     *             "passed": true,
+                     *             "target": 1,
+                     *             "value": 1
+                     *           }
+                     *         ],
                      *         "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "metrics": {},
+                     *         "regressed": true,
                      *         "results": [
                      *           {
                      *             "actual": {},
