@@ -24,6 +24,7 @@ interface NavItem {
 export const NAV: NavItem[] = [
   { href: '/', label: 'Tổng quan', needs: 'library:read' },
   { href: '/chat', label: 'Hỏi đáp', needs: 'own:data' },
+  { href: '/search', label: 'Tra cứu', needs: 'library:read' },
   { href: '/charts', label: 'Lá số', needs: 'own:data' },
   { href: '/books', label: 'Thư viện sách', needs: 'library:read', match: ['/books', '/versions'],
     except: ['/books/upload'] },

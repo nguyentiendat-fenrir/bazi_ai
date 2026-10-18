@@ -40,12 +40,15 @@ function ContextBar({ conversation, onSaved }: { conversation: Conversation, onS
   const [chartId, setChartId] = useState<string>((ctx.chart_id as string) ?? '')
   const [schools, setSchools] = useState<string[]>((ctx.school_ids as string[]) ?? [])
   const [methodId, setMethodId] = useState<string>(((ctx.method_ids as string[]) ?? [])[0] ?? '')
+  const [bookIds, setBookIds] = useState<string[]>((ctx.book_ids as string[]) ?? [])
+  const books = useQuery('chat:books', () => call(api.GET('/api/v1/books', { params: { query: { limit: 100 } } })))
   const [error, setError] = useState<unknown>(null)
   const charts = useQuery('chat:charts', () => call(api.GET('/api/v1/charts', { params: { query: { limit: 100 } } })))
   const schoolList = useQuery('chat:schools', () => call(api.GET('/api/v1/schools')))
   const methods = useQuery('chat:methods', () => call(api.GET('/api/v1/methods', { params: { query: { state: 'approved' } } })))
   const dirty = mode !== (ctx.mode ?? 'research') || chartId !== (ctx.chart_id ?? '')
     || schools.join() !== ((ctx.school_ids as string[]) ?? []).join() || methodId !== (((ctx.method_ids as string[]) ?? [])[0] ?? '')
+    || bookIds.join() !== ((ctx.book_ids as string[]) ?? []).join()
 
   const save = async () => {
     setError(null)
@@ -53,7 +56,7 @@ function ContextBar({ conversation, onSaved }: { conversation: Conversation, onS
       const saved = await call(api.PATCH('/api/v1/conversations/{conversation_id}', {
         params: { path: { conversation_id: conversation.id }, header: { 'If-Match': ifMatch(conversation.revision) } },
         body: { context: { mode, chart_id: chartId || null, school_ids: schools, method_ids: methodId ? [methodId] : [],
-          book_ids: (ctx.book_ids as string[]) ?? [] } },
+          book_ids: bookIds } },
       }))
       onSaved(saved.data)
     } catch (caught) {
@@ -101,6 +104,19 @@ function ContextBar({ conversation, onSaved }: { conversation: Conversation, onS
           </select>
         </div>
       )}
+      <details className="field book-limit">
+        <summary>{bookIds.length ? `Chỉ trong ${bookIds.length} sách` : 'Mọi sách được xem'}</summary>
+        <fieldset>
+          <legend className="visually-hidden">Giới hạn tra cứu trong sách</legend>
+          {books.data?.data.map((b) => (
+            <label key={b.id} className="checkbox">
+              <input type="checkbox" checked={bookIds.includes(b.id)}
+                     onChange={(e) => setBookIds(e.target.checked ? [...bookIds, b.id] : bookIds.filter((x) => x !== b.id))} />
+              <span>{b.title}</span>
+            </label>
+          ))}
+        </fieldset>
+      </details>
       {dirty && <button type="button" className="button button-secondary" onClick={() => void save()}>Áp dụng ngữ cảnh</button>}
       <FormError error={error} />
     </div>
