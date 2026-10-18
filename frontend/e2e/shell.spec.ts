@@ -119,3 +119,18 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
     await expectNoHorizontalOverflow(page)
   })
 }
+
+test('pages are served with the security headers and no framework banner', async ({ request }) => {
+  const response = await request.get('/login')
+  const headers = response.headers()
+  const csp = headers['content-security-policy'] ?? ''
+  for (const directive of ["default-src 'self'", "connect-src 'self'", "object-src 'none'",
+    "frame-ancestors 'none'", "form-action 'self'"]) {
+    expect(csp).toContain(directive)
+  }
+  expect(csp).not.toContain('unsafe-eval')                   // production build
+  expect(headers['x-frame-options']).toBe('DENY')
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['referrer-policy']).toBe('same-origin')
+  expect(headers['x-powered-by']).toBeUndefined()
+})

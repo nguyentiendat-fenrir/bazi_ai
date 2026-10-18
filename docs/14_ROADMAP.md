@@ -143,7 +143,10 @@ khác tra tại bảng cuối file này.
   cập nhật có kiểm migration + quay lại, restore/diễn tập, theo dõi); `scripts/dev migrate`
   (status; upgrade chỉ khi có backup < 24 h) và `bootstrap`; doctor deploy đòi đủ khóa
   production. Chạy thật trên Ubuntu chờ T002.
-- Việc kế tiếp: T055–T056.
+- T055 ✅ (phần máy dev): quét IDOR sinh từ contract, test log không lộ dữ liệu, test header
+  bảo mật; ma trận SEC01–SEC07 ở docs/13. Sửa: analyses của lá số người khác → 404, log
+  không còn thông điệp exception và URL của httpx.
+- Việc kế tiếp: T056 (cần Ubuntu thật, chuyên gia, gold đã duyệt).
 
 ## Các giai đoạn
 
@@ -293,7 +296,7 @@ trước khi trình duyệt.
 | T052 | Backup service và CLI | K5/K7 | ✅ |
 | T053 | Restore drill và disaster recovery | K5/K7 | ✅ dev; đo RTO trên Ubuntu chờ T002 |
 | T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | ✅ runbook + công cụ; chạy Ubuntu chờ T002 |
-| T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | |
+| T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | ✅ dev; pentest ngoài chưa có |
 | T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | |
 
 ## Không nằm trong release

@@ -12,6 +12,7 @@ import logging
 import re
 import sys
 import time
+import traceback
 
 request_id_var: ContextVar[str | None] = ContextVar('request_id', default=None)
 
@@ -59,8 +60,23 @@ class JsonFormatter(logging.Formatter):
                 entry[field] = getattr(record, field)
         if record.exc_info:
             entry['exc_type'] = record.exc_info[0].__name__
-            entry['traceback'] = self.redact(self.formatException(record.exc_info))
+            entry['traceback'] = self.redact(frames_only(record.exc_info))
         return json.dumps(entry, ensure_ascii=False, default=str)
+
+
+def frames_only(exc_info) -> str:
+    """Where it failed, not what it said: exception messages can quote user input (a
+    duplicate key's value, a bad date), so only the frames and the exception types are
+    kept — for the whole chain of causes."""
+    parts, seen = [], set()
+    current = traceback.TracebackException(*exc_info)
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        name = getattr(current, 'exc_type_str', None) or current.exc_type.__qualname__
+        parts.append(''.join(current.stack.format()) + name)
+        current = current.__cause__ or (None if current.__suppress_context__
+                                         else current.__context__)
+    return '\n-- caused by --\n'.join(reversed(parts))
 
 
 def configure_logging(level: str, secrets: list[str], stream=None) -> logging.Handler:
@@ -79,4 +95,7 @@ def configure_logging(level: str, secrets: list[str], stream=None) -> logging.Ha
     for name in ('uvicorn', 'uvicorn.error'):
         logging.getLogger(name).handlers.clear()
         logging.getLogger(name).propagate = True
+    # HTTP client libraries log full URLs (with query strings) at INFO/DEBUG.
+    for name in ('httpx', 'httpcore'):
+        logging.getLogger(name).setLevel(logging.WARNING)
     return handler

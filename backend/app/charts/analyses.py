@@ -117,6 +117,9 @@ def get_analysis(conn: Connection, analysis_id) -> dict:
 
 
 def list_analyses(conn: Connection, chart_id) -> list[dict]:
+    # Row-level security hides another owner's chart; say so instead of an empty list.
+    if conn.execute(text('SELECT 1 FROM bazi_charts WHERE id = :c'), {'c': chart_id}).first() is None:
+        raise AppError(404, 'NOT_FOUND', 'Chart not found')
     return [_dto(r) for r in conn.execute(text(f'{SELECT} WHERE a.chart_id = :c'
                                                ' ORDER BY a.created_at DESC'), {'c': chart_id})]
 

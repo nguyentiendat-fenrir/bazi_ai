@@ -173,7 +173,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(body['field_errors'][0]['path'], 'body.year')
         self.assertNotIn('secret-birth', response.text)
 
-    def test_unhandled_exception_hides_text_and_logs_redacted(self):
+    def test_unhandled_exception_hides_text_and_logs_only_frames(self):
         response = self.make_client().get('/api/v1/_test/boom')
         body = self.assert_problem(response, 500, 'INTERNAL_ERROR')
         self.assertNotIn(FAKE_LLM_KEY, response.text)
@@ -183,7 +183,9 @@ class AppTests(unittest.TestCase):
         self.assertEqual(errors[0]['request_id'], body['request_id'])
         self.assertEqual(errors[0]['exc_type'], 'RuntimeError')
         self.assertNotIn(FAKE_LLM_KEY, self.logs.getvalue())
-        self.assertIn('[REDACTED]', errors[0]['traceback'])
+        # Frames and the type stay for debugging; the message (which may quote input) does not.
+        self.assertIn('line ', errors[0]['traceback'])
+        self.assertTrue(errors[0]['traceback'].endswith('RuntimeError'))
 
     def test_ready_degraded_without_model(self):
         response = self.make_client().get('/api/v1/health/ready')

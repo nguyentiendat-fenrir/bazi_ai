@@ -102,6 +102,20 @@ Chuẩn bị 3 books + 1 chart + 1 hội thoại có citation + 1 draft/approved
 
 SEC01 IDOR cho chart/source/evidence/run/SSE; SEC02 CSRF/login abuse; SEC03 parser zip/pixel bomb/timeout; SEC04 doc prompt injection + arbitrary tool path; SEC05 log/ZIP/secrets scan; SEC06 deletion cache/vector canary; SEC07 provider budget race. Không unresolved critical/high; mức thấp có issue owner+deadline.
 
+Trạng thái (T055, 18/10/2026; test chạy trong bộ backend, E2E hoặc image test):
+
+| Mục | Test | Ghi chú |
+|---|---|---|
+| SEC01 | `integration/test_idor.py` (quét mọi operation `O` có id trong contract: người khác → 404, không đổi dữ liệu chủ), `test_rls.py`, `test_charts.py`, `test_reasoning.py` (run/SSE), sách riêng → 404 (E2E shell) | quét này tìm ra `GET /charts/{id}/analyses` trả 200 rỗng cho lá số người khác — đã sửa thành 404 |
+| SEC02 | `api/test_auth.py` (CSRF, Origin, rate limit đăng nhập, phiên hết hạn), `test_contracts.py` | |
+| SEC03 | `api/test_uploads.py` (magic bytes, kích thước), `test_page_render.py` (trần pixel), `test_docx.py`, `test_ocr.py`, `test_job_recovery.py` (timeout) | zip bomb DOCX theo giới hạn giải nén |
+| SEC04 | `integration/test_injection.py` (có mutation check), `test_citations.py` (`UNSUPPORTED_DETAIL`) | orchestrator không cho mô hình gọi tool |
+| SEC05 | `integration/test_log_privacy.py` (log DEBUG toàn luồng không chứa mật khẩu, email, ngày giờ sinh, nhãn, câu hỏi, truy vấn — kể cả lỗi 422/500), `unit/test_core.py`, `scripts/scan_secrets.py`, E2E header bảo mật (CSP, X-Frame-Options, nosniff, Referrer-Policy, không X-Powered-By) | test này tìm ra hai chỗ rò: traceback ghi thông điệp exception và logger `httpx` ghi URL kèm query — đã sửa |
+| SEC06 | `integration/test_erasure.py` (quét canary toàn DB sau xóa, áp lại ledger) | không có cache truy vấn; vector gắn chunk sách, không chứa dữ liệu người dùng |
+| SEC07 | `integration/test_llm.py` (giữ chỗ ngân sách đồng thời) | |
+
+Còn mở: quét phụ thuộc (`npm audit`, `uv` advisories) chạy thủ công trước release; kiểm thử thâm nhập bên ngoài chưa có.
+
 PERF01 đo empty/startup; PERF02 ingest 10/100/1.000 manifest; PERF03 query 10/100 concurrent requests synthetic, không mặc định PC phục vụ được số đó; PERF04 job recovery và disk cap; PERF05 vector filter recall. Ghi CPU/RAM/VRAM/disk/model versions, warmup và 3 repeats. Số liệu synthetic load không là user SLA. Ngưỡng latency cuối chốt sau T051, nhưng không được hạ integrity/accuracy gates để đạt tốc độ.
 
 Đã đo (T051, `scripts/bench.py`, 18/10/2026, máy dev Windows 11, 24 CPU, PostgreSQL 17 trong Docker Desktop; DB tạm trên server test; PDF **tổng hợp**, không OCR, embedding `fixture-hashing` 32 chiều, không LLM, client ASGI trong process — không qua mạng): PERF01 tạo app 1,3 ms, live đầu tiên 154 ms, ready 11 ms. PERF02 100 tài liệu × 3 trang, một worker: 100/100 job thành công và publish, 25,4 s (11,8 trang/s), mỗi tài liệu p50 253 ms / p95 277 ms; tăng ~32 KB DB + ~197 KB object mỗi trang. PERF03 `/search` không rerank trên 600 chunk, 3 lần × 100 truy vấn sau warmup: 1 client p50 8,5 / p95 ~9,3 ms (~116 q/s); 10 client p50 ~44 / p95 54–81 ms (~220 q/s); 100 client p50 ~233 / p95 323–382 ms (~230 q/s). Chưa đo: PERF02 1.000 tài liệu, OCR thật, embedding/reranker thật (T036), Ubuntu; PERF04 (job recovery, fencing, disk-low) đang được phủ bằng test tích hợp watchdog chứ chưa có số đo; PERF05 (recall khi lọc vector) chờ model thật. Báo cáo JSON ở `.artifacts/bench/` (không vào git).
