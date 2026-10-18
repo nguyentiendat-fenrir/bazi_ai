@@ -30,13 +30,16 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import threading
 import time
+from typing import Iterator
 import uuid
 
 import psycopg
 from psycopg import sql
 
 from ..storage.base import CHUNK, ObjectStore, validate_key
+from .archive import ArchiveError, BackupKey
 from ..storage.gc import MAINTENANCE_LOCK
 from ..storage.local import LocalObjectStore
 
@@ -131,7 +134,77 @@ def _facts(conn) -> dict:
     }
 
 
-def _copy_blob(store: ObjectStore, item: dict, root: Path) -> None:
+def _key_for(manifest: dict, secret: str | None) -> BackupKey | None:
+    encryption = manifest.get('encryption')
+    if not isinstance(encryption, dict):          # older or clear backups: a note string
+        return None
+    try:
+        return BackupKey.for_manifest(secret, encryption)
+    except ArchiveError as exc:
+        raise BackupError(exc.code, str(exc)) from None
+
+
+def _plain_chunks(path: Path, key: BackupKey | None, name: str, digest) -> Iterator[bytes]:
+    """The file's plaintext in chunks, hashed on the way; decrypted when ``key`` is set.
+    Nothing decrypted is written to disk (containers here have read-only roots)."""
+    if key is None:
+        with open(path, 'rb') as handle:
+            while chunk := handle.read(CHUNK):
+                digest.update(chunk)
+                yield chunk
+        return
+    with open(path, 'rb') as handle:
+        for chunk in key.decrypt(handle, name):
+            digest.update(chunk)
+            yield chunk
+
+
+def _tool_fed(binary: str, args: list[str], chunks: Iterator[bytes], env: dict | None = None,
+              timeout: int = TOOL_TIMEOUT) -> None:
+    """Run a tool reading its archive from stdin. Every chunk is still consumed (so the
+    caller's checksum and the decryption check cover the whole file) even if the tool
+    stops reading early, as ``pg_restore --list`` does after the table of contents."""
+    try:
+        process = subprocess.Popen([binary, *args], stdin=subprocess.PIPE,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env)
+    except FileNotFoundError:
+        raise BackupError('TOOL_MISSING', f'{binary} not found; run this in the app image'
+                          ' (PostgreSQL 17 client tools)') from None
+    errors: list[bytes] = []
+    drain = threading.Thread(target=lambda: errors.append(process.stderr.read()), daemon=True)
+    drain.start()
+    open_pipe = True
+    try:
+        for chunk in chunks:
+            if open_pipe:
+                try:
+                    process.stdin.write(chunk)
+                except (BrokenPipeError, OSError):
+                    open_pipe = False
+        if open_pipe:
+            try:
+                process.stdin.close()
+            except (BrokenPipeError, OSError):
+                pass
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise BackupError('TOOL_TIMEOUT', f'{binary} did not finish in {timeout}s') from None
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        drain.join(timeout=10)
+        for pipe in (process.stdin, process.stderr):
+            try:
+                pipe.close()
+            except (BrokenPipeError, OSError):
+                pass
+    if process.returncode != 0:
+        message = b''.join(errors).decode('utf-8', 'replace').strip()[-500:]
+        raise BackupError('TOOL_FAILED', f'{Path(binary).name}: {message}')
+
+
+def _copy_blob(store: ObjectStore, item: dict, root: Path, key: BackupKey | None = None) -> None:
     target = root / validate_key(item['key'])
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(target.name + '.tmp')
@@ -147,14 +220,23 @@ def _copy_blob(store: ObjectStore, item: dict, root: Path) -> None:
         temporary.unlink()
         raise BackupError('OBJECT_CORRUPT', f"stored bytes of {item['key']} do not match the"
                           ' database record')
-    os.replace(temporary, target)
+    if key is not None:
+        key.encrypt_file(temporary, target, item['key'])
+        temporary.unlink()
+    else:
+        os.replace(temporary, target)
 
 
 def create_backup(db: Database, store: ObjectStore, dest: Path, name: str | None = None,
                   pg_dump: str = 'pg_dump', pg_restore: str = 'pg_restore',
-                  lock_timeout_s: int = 300) -> dict:
-    """Write a verified backup directory under ``dest``; returns its manifest."""
+                  lock_timeout_s: int = 300, encryption_secret: str | None = None) -> dict:
+    """Write a verified backup directory under ``dest``; returns its manifest. With a
+    secret every file is encrypted (archive.py) and the manifest says how, never the key."""
     started = time.monotonic()
+    try:
+        key = BackupKey.new(encryption_secret) if encryption_secret else None
+    except ArchiveError as exc:
+        raise BackupError(exc.code, str(exc)) from None
     name = name or datetime.now(timezone.utc).strftime('bazi-%Y%m%dT%H%M%SZ')
     if not NAME.match(name):
         raise BackupError('VALIDATION_ERROR', 'backup name: letters, digits, . _ - (max 100)')
@@ -182,23 +264,30 @@ def create_backup(db: Database, store: ObjectStore, dest: Path, name: str | None
                           env=db.env())
                     snap.rollback()
                 for item in facts['objects']:
-                    _copy_blob(store, item, staging)
+                    _copy_blob(store, item, staging, key)
             finally:
                 lock.execute('SELECT pg_advisory_unlock(hashtext(%s))', (MAINTENANCE_LOCK,))
         dump = staging / 'db.dump'
         _tool(pg_restore, ['--list', str(dump)], timeout=600)     # the archive is readable
+        database = {'file': 'db.dump', 'sha256': _sha256_file(dump),
+                    'size_bytes': dump.stat().st_size}
+        if key is not None:
+            sealed = staging / 'db.dump.enc'
+            key.encrypt_file(dump, sealed, 'db.dump')
+            dump.unlink()
+            database.update(file='db.dump.enc', stored_sha256=_sha256_file(sealed))
         manifest = {
             'format': FORMAT, 'name': name,
             'created_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'schema_head': facts['schema_head'], 'server_version': facts['server_version'],
-            'database': {'file': 'db.dump', 'sha256': _sha256_file(dump),
-                         'size_bytes': dump.stat().st_size},
+            'database': database,
             'objects': {'count': len(facts['objects']),
                         'total_bytes': sum(o['size_bytes'] for o in facts['objects']),
                         'items': facts['objects']},
             'counts': facts['counts'], 'active_corpus': facts['active_corpus'],
             'secrets': 'not included: a restore needs the same .env (keys, passwords)',
-            'encryption': 'none at this layer: keep backups on encrypted storage',
+            'encryption': key.describe() if key else
+            'none: BACKUP_ENCRYPTION_KEY was not set; keep this backup on encrypted storage',
             'duration_seconds': round(time.monotonic() - started, 1),
         }
         (staging / 'manifest.json').write_text(json.dumps(manifest, indent=1, ensure_ascii=False),
@@ -208,6 +297,79 @@ def create_backup(db: Database, store: ObjectStore, dest: Path, name: str | None
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
+
+
+# ---- catalogue, retention and record ---------------------------------------------------
+
+def list_backups(dest: Path) -> list[dict]:
+    """Complete backups under ``dest`` (a readable manifest), newest first."""
+    found = []
+    for folder in Path(dest).iterdir() if Path(dest).is_dir() else []:
+        if folder.name.startswith('.') or not (folder / 'manifest.json').is_file():
+            continue
+        try:
+            manifest, _ = load_manifest(folder / 'manifest.json')
+        except BackupError:
+            continue
+        found.append({'name': manifest['name'], 'path': str(folder),
+                      'created_at': datetime.fromisoformat(manifest['created_at']),
+                      'encrypted': isinstance(manifest.get('encryption'), dict)})
+    return sorted(found, key=lambda b: b['created_at'], reverse=True)
+
+
+def prune(dest: Path, keep_daily: int = 7, keep_weekly: int = 4, dry_run: bool = False) -> dict:
+    """Keep the newest backup of each of the last ``keep_daily`` days and of the last
+    ``keep_weekly`` ISO weeks (docs/12: 7 daily + 4 weekly); the newest always stays."""
+    backups = list_backups(dest)
+    keep = {b['name'] for b in backups[:1]}
+    for size, bucket in ((keep_daily, lambda d: d.date()),
+                         (keep_weekly, lambda d: tuple(d.isocalendar())[:2])):
+        seen: list = []
+        for b in backups:
+            period = bucket(b['created_at'])
+            if period not in seen and len(seen) < size:
+                seen.append(period)
+                keep.add(b['name'])
+    removed = [b for b in backups if b['name'] not in keep]
+    if not dry_run:
+        for b in removed:
+            shutil.rmtree(b['path'])
+    return {'dry_run': dry_run, 'kept': sorted(keep),
+            'removed': [b['name'] for b in removed]}
+
+
+def record_backup(db: Database, store: ObjectStore, manifest: dict, location: str) -> str | None:
+    """Note a verified backup in its own database (for the overdue alert and the list).
+    The restored copy of this database will not contain the row; the manifest on disk is
+    what a restore reads."""
+    import io
+    body = json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode('utf-8')
+    with psycopg.connect(db.conninfo()) as conn:
+        actor = conn.execute("SELECT id FROM users WHERE role = 'admin' AND enabled"
+                             ' ORDER BY created_at LIMIT 1').fetchone()
+        if actor is None:
+            return None
+        stored = store.put_if_absent(io.BytesIO(body))
+        conn.execute("INSERT INTO objects (sha256, storage_backend, object_key, size_bytes,"
+                     " detected_mime, state) VALUES (%s, %s, %s, %s, 'application/json', 'ready')"
+                     ' ON CONFLICT DO NOTHING',
+                     (stored.sha256, store.backend, stored.key, stored.size_bytes))
+        object_id = conn.execute('SELECT id FROM objects WHERE sha256 = %s',
+                                 (stored.sha256,)).fetchone()[0]
+        job = conn.execute(
+            "INSERT INTO operation_jobs (kind, requested_by, state, target_manifest,"
+            " idempotency_key) VALUES ('backup', %s, 'succeeded', %s, %s) RETURNING id",
+            (actor[0], json.dumps({'name': manifest['name'], 'created_at': manifest['created_at']}),
+             hashlib.sha256(f"backup:{manifest['name']}".encode()).hexdigest())).fetchone()[0]
+        encryption = manifest.get('encryption')
+        ref = (f"BACKUP_ENCRYPTION_KEY:{encryption['key_id'][:16]}"
+               if isinstance(encryption, dict) else 'none')
+        backup_id = conn.execute(
+            'INSERT INTO backups (operation_job_id, manifest_object_id, archive_location,'
+            " db_schema_version, checksum, encryption_key_ref, state, verified_at)"
+            " VALUES (%s, %s, %s, %s, %s, %s, 'verified', now()) RETURNING id",
+            (job, object_id, location, manifest['schema_head'], stored.sha256, ref)).fetchone()[0]
+    return str(backup_id)
 
 
 # ---- restore ------------------------------------------------------------------------
@@ -231,31 +393,60 @@ def known_heads() -> set[str]:
     return {r.revision for r in ScriptDirectory.from_config(config).walk_revisions()}
 
 
-def preflight(manifest_path: Path, pg_restore: str = 'pg_restore') -> dict:
-    """Read-only checks before anything is restored; ``ok`` only if all pass."""
+def preflight(manifest_path: Path, pg_restore: str = 'pg_restore',
+              secret: str | None = None) -> dict:
+    """Read-only checks before anything is restored; ``ok`` only if all pass. An encrypted
+    backup is decrypted in full (to a temporary copy) as part of the check."""
     checks: list[dict] = []
 
     def check(name: str, ok: bool, detail: str = '') -> None:
         checks.append({'name': name, 'ok': ok, 'detail': detail})
 
     manifest, root = load_manifest(manifest_path)
-    dump = root / manifest['database']['file']
+    try:
+        key = _key_for(manifest, secret)
+        if key is not None:
+            check('encryption', True, f"key {key.key_id[:8]}… matches")
+    except BackupError as exc:
+        check('encryption', False, str(exc))
+        return {'ok': False, 'backup': manifest['name'], 'created_at': manifest['created_at'],
+                'checks': checks}
+    meta = manifest['database']
+    dump = root / meta['file']
     if not dump.is_file():
-        check('database_dump', False, 'db.dump is missing')
+        check('database_dump', False, f"{meta['file']} is missing")
+    elif key is not None and _sha256_file(dump) != meta['stored_sha256']:
+        check('database_dump', False, 'encrypted dump checksum differs from the manifest')
     else:
-        same = _sha256_file(dump) == manifest['database']['sha256']
-        check('database_dump', same, '' if same else 'checksum differs from the manifest')
-        if same:
-            try:
-                _tool(pg_restore, ['--list', str(dump)], timeout=600)
-                check('database_archive', True)
-            except BackupError as exc:
-                check('database_archive', False, str(exc))
+        digest = hashlib.sha256()
+        listed = None
+        try:
+            # One pass: decrypt, hash and let pg_restore read the table of contents.
+            _tool_fed(pg_restore, ['--list'], _plain_chunks(dump, key, 'db.dump', digest),
+                      timeout=600)
+        except ArchiveError as exc:
+            check('database_dump', False, str(exc))
+        except BackupError as exc:
+            listed = str(exc)
+        else:
+            listed = ''
+        if listed is not None:
+            same = digest.hexdigest() == meta['sha256']
+            check('database_dump', same, '' if same else 'checksum differs from the manifest')
+            if same:
+                check('database_archive', not listed, listed)
     bad = []
     for item in manifest['objects']['items']:
         path = root / validate_key(item['key'])
-        if not path.is_file() or path.stat().st_size != item['size_bytes'] \
-                or _sha256_file(path) != item['sha256']:
+        if not path.is_file():
+            bad.append(item['key'])
+            continue
+        try:
+            digest = (key.plaintext_sha256(path, item['key']) if key is not None
+                      else _sha256_file(path))
+        except ArchiveError:
+            digest = None
+        if digest != item['sha256'] or (key is None and path.stat().st_size != item['size_bytes']):
             bad.append(item['key'])
     check('objects', not bad, f'{len(bad)} missing or corrupt, e.g. {bad[0]}' if bad
           else f"{manifest['objects']['count']} verified")
@@ -265,10 +456,13 @@ def preflight(manifest_path: Path, pg_restore: str = 'pg_restore') -> dict:
             'created_at': manifest['created_at'], 'checks': checks}
 
 
-def _restore_blobs(manifest: dict, root: Path, store: ObjectStore) -> int:
+def _restore_blobs(manifest: dict, root: Path, store: ObjectStore,
+                   key: BackupKey | None = None) -> int:
     copied = 0
     for item in manifest['objects']['items']:
-        with open(root / validate_key(item['key']), 'rb') as handle:
+        source = root / validate_key(item['key'])
+        handle = key.reader(source, item['key']) if key is not None else open(source, 'rb')
+        with handle:
             stored = store.put_if_absent(handle, expected_sha256=item['sha256'],
                                          namespace=item['key'].split('/', 1)[0])
         if stored.key != item['key']:
@@ -306,8 +500,55 @@ def reapply_ledger(db: Database, ledger: dict, since: datetime) -> int:
     return len(entries)
 
 
+def post_restore_checks(db: Database, store: ObjectStore) -> dict:
+    """Runbook step 4 (docs/12) on the restored system, with evidence for the report:
+    cited spans still match their page text, chart facts match their hash, the active
+    release is ready, book sources hash to their records, and what the watchdog will
+    resume. Raises VERIFY_FAILED on the first three kinds of mismatch."""
+    with psycopg.connect(db.conninfo()) as conn:
+        spans, bad_spans = conn.execute(
+            'SELECT count(*), count(*) FILTER (WHERE e.quote_hash <> bazi_sha256_text(substr('
+            'r.normalized_text, e.start_offset + 1, e.end_offset - e.start_offset)))'
+            ' FROM evidence_spans e JOIN page_revisions r ON r.id = e.page_revision_id').fetchone()
+        charts, bad_charts = conn.execute(
+            'SELECT count(*), count(*) FILTER (WHERE facts_hash <> bazi_sha256_text(facts::text))'
+            ' FROM bazi_charts').fetchone()
+        release = conn.execute(
+            "SELECT r.state FROM active_corpus a JOIN corpus_releases r ON r.id = a.release_id"
+            " WHERE a.slot = 'default'").fetchone()
+        sources = conn.execute(
+            'SELECT o.object_key, o.sha256 FROM book_versions v JOIN objects o ON o.id = v.object_id'
+        ).fetchall()
+        unfinished = conn.execute(
+            "SELECT count(*) FROM ingestion_jobs WHERE state IN ('queued', 'running', 'retry_wait')"
+        ).fetchone()[0]
+    bad_sources = []
+    for key, expected in sources:
+        digest = hashlib.sha256()
+        for chunk in store.get_stream(key):
+            digest.update(chunk)
+        if digest.hexdigest() != expected.strip():
+            bad_sources.append(key)
+    problems = []
+    if bad_spans:
+        problems.append(f'{bad_spans} cited spans differ from their page text')
+    if bad_charts:
+        problems.append(f'{bad_charts} charts differ from their facts hash')
+    if release is not None and release[0] != 'active':
+        problems.append(f'the active pointer names a {release[0]} release')
+    if bad_sources:
+        problems.append(f'{len(bad_sources)} book sources do not hash to their record')
+    if problems:
+        raise BackupError('VERIFY_FAILED', 'the restored system failed its checks', problems)
+    return {'evidence_spans_verified': spans, 'charts_verified': charts,
+            'book_sources_verified': len(sources),
+            'active_release': release[0] if release else None,
+            'unfinished_jobs_to_resume': unfinished}
+
+
 def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
-            pg_restore: str = 'pg_restore', ledger: dict | None = None) -> dict:
+            pg_restore: str = 'pg_restore', ledger: dict | None = None,
+            secret: str | None = None) -> dict:
     """Restore into an empty database and object store; returns a report (RTO/RPO). With the
     live system's deletion ledger, erasures made after the backup are applied again."""
     started = time.monotonic()
@@ -315,7 +556,7 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
     if confirm != manifest['name']:
         raise BackupError('CONFIRMATION_MISMATCH', f"type the backup name {manifest['name']!r}"
                           ' to confirm')
-    checked = preflight(manifest_path, pg_restore)
+    checked = preflight(manifest_path, pg_restore, secret)
     if not checked['ok']:
         raise BackupError('PREFLIGHT_FAILED', 'preflight failed; nothing was restored',
                           [c for c in checked['checks'] if not c['ok']])
@@ -332,9 +573,12 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
         need = manifest['objects']['total_bytes'] * 1.05
         if shutil.disk_usage(store.root).free < need:
             raise BackupError('DISK_FULL', f'the object store needs {int(need)} free bytes')
-    blobs = _restore_blobs(manifest, root, store)
-    _tool(pg_restore, ['--dbname', db.dbname, '--exit-on-error', '--single-transaction',
-                       '--no-password', str(root / manifest['database']['file'])], env=db.env())
+    key = _key_for(manifest, secret)
+    blobs = _restore_blobs(manifest, root, store, key)
+    _tool_fed(pg_restore, ['--dbname', db.dbname, '--exit-on-error', '--single-transaction',
+                           '--no-password'],
+              _plain_chunks(root / manifest['database']['file'], key, 'db.dump',
+                            hashlib.sha256()), env=db.env())
     problems = []
     with psycopg.connect(db.conninfo()) as conn:
         facts = _facts(conn)
@@ -354,6 +598,7 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
         raise BackupError('VERIFY_FAILED', 'restored data does not match the backup', problems)
     created = datetime.fromisoformat(manifest['created_at'])
     erasures = reapply_ledger(db, ledger, created) if ledger is not None else None
+    verified = post_restore_checks(db, store)
     return {
         'backup': manifest['name'], 'restored_at': datetime.now(timezone.utc).isoformat(
             timespec='seconds'),
@@ -361,7 +606,7 @@ def restore(manifest_path: Path, db: Database, store: ObjectStore, confirm: str,
         'backup_age_hours': round((datetime.now(timezone.utc) - created).total_seconds() / 3600, 2),
         'tables': len(facts['counts']), 'rows': sum(facts['counts'].values()),
         'objects': len(facts['objects']), 'objects_written': blobs,
-        'erasures_reapplied': erasures,
+        'erasures_reapplied': erasures, 'checks': verified,
         'schema_head': facts['schema_head'], 'active_corpus': facts['active_corpus'],
         'next_steps': ['create-runtime-login for the API login role',
                        'alembic upgrade head if this application is newer than the backup',

@@ -184,12 +184,19 @@ def _print(payload: dict) -> None:
 
 
 def run_backup(args) -> int:
-    from .ops.backup import BackupError, create_backup
+    from .ops.backup import BackupError, create_backup, prune, record_backup
     from .storage import build_store
     settings = load_settings()
     try:
-        manifest = create_backup(_owner_database(settings), build_store(settings),
-                                 Path(args.dest), args.name, args.pg_dump, args.pg_restore)
+        secret = (settings.backup_encryption_key.get_secret_value()
+                  if settings.backup_encryption_key else None)
+        store = build_store(settings)
+        manifest = create_backup(_owner_database(settings), store, Path(args.dest), args.name,
+                                 args.pg_dump, args.pg_restore, encryption_secret=secret)
+        recorded = record_backup(_owner_database(settings), store, manifest,
+                                 str(Path(args.dest) / manifest['name']))
+        pruned = (prune(Path(args.dest), args.keep_daily, args.keep_weekly)
+                  if args.prune else None)
     except BackupError as exc:
         _print({'ok': False, 'code': exc.code, 'message': str(exc), 'details': exc.details})
         return 1
@@ -198,6 +205,8 @@ def run_backup(args) -> int:
             'objects': manifest['objects']['count'],
             'object_bytes': manifest['objects']['total_bytes'],
             'database_bytes': manifest['database']['size_bytes'],
+            'encrypted': isinstance(manifest.get('encryption'), dict),
+            'recorded': recorded, 'pruned': pruned,
             'duration_seconds': manifest['duration_seconds']})
     return 0
 
@@ -261,7 +270,10 @@ def run_restore(args) -> int:
     from .storage.local import LocalObjectStore
     if args.command == 'restore-preflight':
         try:
-            result = preflight(Path(args.manifest), args.pg_restore)
+            settings = load_settings()
+            secret = (settings.backup_encryption_key.get_secret_value()
+                      if settings.backup_encryption_key else None)
+            result = preflight(Path(args.manifest), args.pg_restore, secret)
         except BackupError as exc:
             result = {'ok': False, 'code': exc.code, 'message': str(exc)}
         _print(result)
@@ -273,8 +285,10 @@ def run_restore(args) -> int:
     try:
         ledger = (json.loads(Path(args.deletion_ledger).read_text('utf-8'))
                   if args.deletion_ledger else None)
+        secret = (settings.backup_encryption_key.get_secret_value()
+                  if settings.backup_encryption_key else None)
         report = restore(Path(args.manifest), _owner_database(settings), store, args.confirm,
-                         args.pg_restore, ledger)
+                         args.pg_restore, ledger, secret)
     except BackupError as exc:
         _print({'ok': False, 'code': exc.code, 'message': str(exc), 'details': exc.details})
         return 1
@@ -319,6 +333,9 @@ def main(argv: list[str] | None = None) -> int:
     back.add_argument('--name', help='default bazi-<UTC timestamp>')
     back.add_argument('--pg-dump', default='pg_dump')
     back.add_argument('--pg-restore', default='pg_restore')
+    back.add_argument('--prune', action='store_true', help='then apply the retention policy')
+    back.add_argument('--keep-daily', type=int, default=7)
+    back.add_argument('--keep-weekly', type=int, default=4)
     pre = commands.add_parser('restore-preflight', help='verify a backup without restoring')
     pre.add_argument('--manifest', required=True)
     pre.add_argument('--pg-restore', default='pg_restore')

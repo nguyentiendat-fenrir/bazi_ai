@@ -136,7 +136,10 @@ khác tra tại bảng cuối file này.
 - T051 ✅ (phần máy dev): metrics + cảnh báo vận hành (M016, `/operations/metrics`, UI),
   `scripts/bench.py` PERF01–PERF03 trên DB tạm; số đo tổng hợp ghi ở docs/13. Chờ: đo trên
   Ubuntu với OCR/model thật, 1.000 tài liệu, PERF05.
-- Việc kế tiếp: T052–T056.
+- T052 ✅ backup mã hóa AES-256-GCM theo khối (khóa riêng `BACKUP_ENCRYPTION_KEY`), lưu giữ
+  7 ngày + 4 tuần, ghi nhận vào `backups` + `GET /operations/backups`; T053 ✅ kiểm tra sau
+  restore theo runbook, `scripts/dev drill` (diễn tập trên máy dev qua Compose, gỡ sạch).
+- Việc kế tiếp: T054–T056.
 
 ## Các giai đoạn
 
@@ -283,8 +286,8 @@ trước khi trình duyệt.
 | T049 | Security hardening và privacy deletion | K7 | ✅ |
 | T050 | Evaluation harness và quality regression | K7 | harness ✅; số đo chờ T025/T036 |
 | T051 | Benchmark throughput, storage và observability | K7 | ✅ dev; số đo Ubuntu chờ T002/T036 |
-| T052 | Backup service và CLI | K5/K7 | T052.1 ✅ |
-| T053 | Restore drill và disaster recovery | K5/K7 | T053.1 ✅ |
+| T052 | Backup service và CLI | K5/K7 | ✅ |
+| T053 | Restore drill và disaster recovery | K5/K7 | ✅ dev; đo RTO trên Ubuntu chờ T002 |
 | T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | |
 | T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | |
 | T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | |

@@ -33,6 +33,7 @@ class BackupCommandTests(unittest.TestCase):
         self.assertEqual(login[-1], 'create-runtime-login')
         [preflight] = dev.preflight_commands('docker', manifest)
         self.assertEqual(preflight[:6], ['docker', 'run', '--rm', '--network', 'none', '--read-only'])
+        self.assertEqual(preflight[6:8], ['-e', 'BACKUP_ENCRYPTION_KEY'])   # by name, no value
         self.assertNotIn('compose', preflight)
 
     def test_deletion_ledger_is_exported_and_passed_read_only_to_a_restore(self):
@@ -45,6 +46,14 @@ class BackupCommandTests(unittest.TestCase):
                                              'bazi-restore', ledger=ledger)
         self.assertIn(f'{ledger.resolve()}:/ledger.json:ro', restore)
         self.assertEqual(restore[-2:], ['--deletion-ledger', '/ledger.json'])
+
+    def test_a_drill_restores_into_its_own_project_and_removes_only_that(self):
+        steps, teardown = dev.drill_commands('docker', Path('/srv/b/n/manifest.json'), 'n')
+        for command in (*steps, teardown):
+            self.assertEqual(command[command.index('-p') + 1], dev.DRILL_PROJECT)
+        self.assertNotEqual(dev.DRILL_PROJECT, dev.LIVE_PROJECT)
+        self.assertEqual(teardown[-5:], ['--profile', 'app', 'down', '-v', '--remove-orphans'])
+        self.assertIn('restore', steps[1])
 
 
 if __name__ == '__main__':

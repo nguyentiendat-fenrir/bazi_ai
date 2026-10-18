@@ -915,6 +915,75 @@
         "title": "AuthorRef",
         "type": "object"
       },
+      "BackupDTO": {
+        "properties": {
+          "archive_location": {
+            "description": "path on the backup host, as the CLI saw it",
+            "title": "Archive Location",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "db_schema_version": {
+            "title": "Db Schema Version",
+            "type": "string"
+          },
+          "encrypted": {
+            "title": "Encrypted",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "running",
+              "succeeded",
+              "failed",
+              "verified"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "state",
+          "created_at",
+          "verified_at",
+          "archive_location",
+          "db_schema_version",
+          "encrypted",
+          "manifest_sha256"
+        ],
+        "title": "BackupDTO",
+        "type": "object"
+      },
       "BatchDTO": {
         "properties": {
           "auto_publish": {
@@ -7048,6 +7117,29 @@
           "meta"
         ],
         "title": "ListEnvelope[AssertionDTO]",
+        "type": "object"
+      },
+      "ListEnvelope_BackupDTO_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/BackupDTO"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[BackupDTO]",
         "type": "object"
       },
       "ListEnvelope_BookDTO_": {
@@ -34747,6 +34839,195 @@
           "knowledge"
         ],
         "x-permission": "R"
+      }
+    },
+    "/api/v1/operations/backups": {
+      "get": {
+        "description": "Backups recorded by the CLI, newest first. A restore never depends on this table:\nit reads the manifest beside the archive (docs/12 · Restore runbook).",
+        "operationId": "list_backups_api_v1_operations_backups_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "archive_location": "example",
+                      "created_at": "2026-10-18T08:00:00Z",
+                      "db_schema_version": "example",
+                      "encrypted": true,
+                      "id": "example",
+                      "manifest_sha256": "example",
+                      "name": "example",
+                      "state": "running",
+                      "verified_at": "2026-10-18T08:00:00Z"
+                    }
+                  ],
+                  "meta": {
+                    "request_id": "example"
+                  },
+                  "page": {
+                    "has_more": false,
+                    "next_cursor": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_BackupDTO_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Backups",
+        "tags": [
+          "operations"
+        ],
+        "x-permission": "A"
       }
     },
     "/api/v1/operations/metrics": {

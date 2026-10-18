@@ -11,7 +11,8 @@ import unittest
 
 import psycopg
 
-from backend.app.ops.backup import BackupError, Database, create_backup, preflight, restore
+from backend.app.ops.backup import (BackupError, Database, create_backup, preflight, record_backup,
+                                    restore)
 from backend.app.storage.gc import MAINTENANCE_LOCK, collect
 from backend.app.storage.local import LocalObjectStore
 from tests.integration.db import create_database, database_url, drop_database
@@ -64,6 +65,8 @@ class BackupRestoreTests(PipelineTestCase):
         self.assertEqual((report['objects'], report['schema_head'], report['active_corpus']),
                          (manifest['objects']['count'], manifest['schema_head'],
                           manifest['active_corpus']))
+        self.assertEqual(report['checks']['active_release'], 'active')
+        self.assertEqual(report['checks']['book_sources_verified'], manifest['counts']['book_versions'])
         # The restored system serves the same source page text and bytes.
         with psycopg.connect(target.conninfo()) as conn:
             restored = conn.execute(
@@ -106,6 +109,60 @@ class BackupRestoreTests(PipelineTestCase):
         (folder / 'manifest.json').write_text(json.dumps(newer), 'utf-8')
         failed = {c['name'] for c in preflight(folder / 'manifest.json')['checks'] if not c['ok']}
         self.assertIn('schema', failed)
+
+    def test_an_encrypted_backup_needs_its_key_and_restores(self):
+        version, gen = self.ready()
+        self.assertEqual(self.publish(gen).status_code, 201)
+        secret = 'k' * 48
+        manifest = create_backup(self.owner(), self.store, self.dest, 'sealed-1',
+                                 encryption_secret=secret)
+        folder = self.dest / 'sealed-1'
+        self.assertEqual((manifest['encryption']['scheme'], manifest['database']['file']),
+                         ('aes-256-gcm-chunked-1', 'db.dump.enc'))
+        self.assertNotIn(secret, (folder / 'manifest.json').read_text('utf-8'))
+        self.assertFalse((folder / 'db.dump').exists())
+        source = self.sql('SELECT o.object_key FROM book_versions v JOIN objects o'
+                          ' ON o.id = v.object_id WHERE v.id = %s', version)[0][0]
+        sealed = (folder / source).read_bytes()
+        self.assertTrue(sealed.startswith(b'BAZIENC1'))
+        self.assertNotEqual(sealed, b''.join(self.store.get_stream(source)))
+
+        missing = preflight(folder / 'manifest.json')
+        self.assertEqual([c['name'] for c in missing['checks'] if not c['ok']], ['encryption'])
+        wrong = preflight(folder / 'manifest.json', secret='w' * 48)
+        self.assertIn('not the key', wrong['checks'][0]['detail'])
+        checked = preflight(folder / 'manifest.json', secret=secret)
+        self.assertTrue(checked['ok'], checked)
+
+        target, store = self.empty_target()
+        with self.assertRaises(BackupError) as caught:
+            restore(folder / 'manifest.json', target, store, confirm='sealed-1', secret='w' * 48)
+        self.assertEqual(caught.exception.code, 'PREFLIGHT_FAILED')
+        report = restore(folder / 'manifest.json', target, store, confirm='sealed-1',
+                         secret=secret)
+        self.assertEqual(report['objects'], manifest['objects']['count'])
+        self.assertEqual(b''.join(store.get_stream(source)), b''.join(self.store.get_stream(source)))
+
+        damaged = folder / source
+        damaged.write_bytes(sealed[:-1] + bytes([sealed[-1] ^ 1]))
+        failed = [c['name'] for c in preflight(folder / 'manifest.json', secret=secret)['checks']
+                  if not c['ok']]
+        self.assertEqual(failed, ['objects'])
+
+    def test_a_backup_is_recorded_and_pruned_by_policy(self):
+        self.ready()
+        self.client('admin')
+        manifest = create_backup(self.owner(), self.store, self.dest, 'kept-1')
+        backup_id = record_backup(self.owner(), self.store, manifest, str(self.dest / 'kept-1'))
+        row = self.sql('SELECT state, encryption_key_ref, db_schema_version FROM backups'
+                       ' WHERE id = %s', backup_id)[0]
+        self.assertEqual(row, ('verified', 'none', manifest['schema_head']))
+        admin, _ = self.client('admin')
+        metrics = admin.get('/api/v1/operations/metrics').json()['data']
+        self.assertIsNotNone(metrics['database']['last_backup_at'])
+        self.assertNotIn('BACKUP_MISSING', [a['code'] for a in metrics['alerts']])
+        listed = admin.get('/api/v1/operations/backups').json()['data']
+        self.assertEqual(listed[0]['name'], 'kept-1')
 
 
 

@@ -26,6 +26,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -180,14 +181,20 @@ def compose(docker: str, project: str | None, *args: str, env_file: Path = ENV_F
     return command + (['-p', project] if project else []) + list(args)
 
 
+def use_env_file(env_file: Path) -> None:
+    # --env-file only feeds Compose's own interpolation; containers read APP_ENV_FILE.
+    os.environ['APP_ENV_FILE'] = str(Path(env_file).resolve())
+
+
 def cli(*args: str) -> list[str]:
     return ['python', '-m', 'backend.app.cli', *args]
 
 
 def backup_commands(docker: str, dest: Path, name: str | None, project: str | None = None,
-                    env_file: Path = ENV_FILE) -> list[list[str]]:
+                    env_file: Path = ENV_FILE, prune: bool = False) -> list[list[str]]:
     """The worker container has the objects volume and the database network."""
-    args = ['--dest', '/backups'] + (['--name', name] if name else [])
+    args = (['--dest', '/backups'] + (['--name', name] if name else [])
+            + (['--prune'] if prune else []))
     return [compose(docker, project, 'run', '--rm', '-T', '-v', f'{dest.resolve()}:/backups',
                     'worker', *cli('backup', *args), env_file=env_file)]
 
@@ -195,11 +202,25 @@ def backup_commands(docker: str, dest: Path, name: str | None, project: str | No
 APP_IMAGE = 'bazi-ai-app:local'
 
 
+def env_value(env_file: Path, name: str) -> str | None:
+    """One value from an env file, without printing or exporting the rest."""
+    try:
+        lines = Path(env_file).read_text(encoding='utf-8').splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        key, _, value = line.partition('=')
+        if key.strip() == name and value.strip():
+            return value.strip().strip('"').strip("'")
+    return None
+
+
 def preflight_commands(docker: str, manifest: Path) -> list[list[str]]:
-    # Read-only check: no Compose project, network, volume or .env is involved.
-    return [[docker, 'run', '--rm', '--network', 'none', '--read-only', '-v',
-             f'{manifest.resolve().parent}:/backup:ro', APP_IMAGE,
-             *cli('restore-preflight', '--manifest', '/backup/manifest.json')]]
+    # Read-only check: no Compose project, network or volume. Only the backup key passes,
+    # by name (its value comes from this process's environment, not the command line).
+    return [[docker, 'run', '--rm', '--network', 'none', '--read-only',
+             '-e', 'BACKUP_ENCRYPTION_KEY', '-v', f'{manifest.resolve().parent}:/backup:ro',
+             APP_IMAGE, *cli('restore-preflight', '--manifest', '/backup/manifest.json')]]
 
 
 def ledger_commands(docker: str, dest: Path, project: str | None = None,
@@ -229,6 +250,22 @@ def restore_commands(docker: str, manifest: Path, confirm: str, project: str,
                     env_file=env_file)]
 
 
+DRILL_PROJECT = 'bazi-drill'
+
+
+def drill_commands(docker: str, manifest: Path, confirm: str, env_file: Path = ENV_FILE,
+                   ledger: Path | None = None) -> tuple[list[list[str]], list[str]]:
+    """A restore drill (docs/12, E2E-08): restore into the throwaway project, whose own
+    checks and report are the result; then remove only that project and its volumes."""
+    up, restore, _ = restore_commands(docker, manifest, confirm, DRILL_PROJECT, env_file, ledger)
+    # --profile app: the objects volume belongs to profile services and stays otherwise.
+    teardown = compose(docker, DRILL_PROJECT, '--profile', 'app', 'down', '-v',
+                       '--remove-orphans', env_file=env_file)
+    if DRILL_PROJECT == LIVE_PROJECT or '-v' not in teardown:
+        raise SystemExit('refusing: a drill never removes the live project')
+    return [up, restore], teardown
+
+
 def run_all(commands: list[list[str]]) -> int:
     for command in commands:
         result = subprocess.run(command, cwd=ROOT, check=False)
@@ -250,32 +287,57 @@ def main(argv=None) -> int:
                       help='encrypted storage, writable by uid 10001; outside the volumes')
     back.add_argument('--name')
     back.add_argument('--project', help='Compose project to back up (default: the live one)')
+    back.add_argument('--prune', action='store_true',
+                      help='afterwards keep 7 daily + 4 weekly backups in --dest')
     pre = commands.add_parser('restore-preflight', help='verify a backup, change nothing')
     pre.add_argument('--manifest', type=Path, required=True)
+    pre.add_argument('--env-file', type=Path, default=ENV_FILE,
+                     help='where BACKUP_ENCRYPTION_KEY is read for an encrypted backup')
     rest = commands.add_parser('restore', help='restore into a NEW Compose project and volumes')
     rest.add_argument('--manifest', type=Path, required=True)
     rest.add_argument('--confirm', required=True, help='the backup name, typed again')
     rest.add_argument('--project', default=RESTORE_PROJECT)
     rest.add_argument('--deletion-ledger', type=Path,
                       help='from `deletion-ledger`: erasures after the backup are applied again')
+    drill = commands.add_parser('drill', help='restore drill into a throwaway project, then'
+                                ' remove that project and its volumes')
+    drill.add_argument('--manifest', type=Path, required=True)
+    drill.add_argument('--confirm', required=True, help='the backup name, typed again')
+    drill.add_argument('--deletion-ledger', type=Path)
+    drill.add_argument('--keep', action='store_true', help='keep the drill project to inspect it')
     led = commands.add_parser('deletion-ledger', help='export erasures of the live system')
     led.add_argument('--dest', type=Path, required=True)
     led.add_argument('--project', help='Compose project (default: the live one)')
-    for sub in (back, rest, led):
+    for sub in (back, rest, led, drill):
         sub.add_argument('--env-file', type=Path, default=ENV_FILE)
     args = parser.parse_args(argv)
-    if args.command in ('backup', 'restore-preflight', 'restore', 'deletion-ledger'):
+    if args.command in ('backup', 'restore-preflight', 'restore', 'deletion-ledger', 'drill'):
         docker = docker_executable()
         if not docker:
             print('Docker is required for backup/restore.', file=sys.stderr)
             return 2
+        if getattr(args, 'env_file', None):
+            use_env_file(args.env_file)
+            key = env_value(args.env_file, 'BACKUP_ENCRYPTION_KEY')
+            if key:
+                os.environ['BACKUP_ENCRYPTION_KEY'] = key
         if args.command == 'backup':
             return run_all(backup_commands(docker, args.dest, args.name, args.project,
-                                           args.env_file))
+                                           args.env_file, args.prune))
         if args.command == 'restore-preflight':
             return run_all(preflight_commands(docker, args.manifest))
         if args.command == 'deletion-ledger':
             return run_all(ledger_commands(docker, args.dest, args.project, args.env_file))
+        if args.command == 'drill':
+            steps, teardown = drill_commands(docker, args.manifest, args.confirm, args.env_file,
+                                             args.deletion_ledger)
+            started = time.monotonic()
+            code = run_all(steps)
+            print(f'Drill {"passed" if code == 0 else "FAILED"} in'
+                  f' {time.monotonic() - started:.0f} s (project {DRILL_PROJECT!r}).')
+            if not args.keep:
+                run_all([teardown])
+            return code
         up, restore, login = restore_commands(docker, args.manifest, args.confirm, args.project,
                                               args.env_file, args.deletion_ledger)
         code = run_all([up, restore])

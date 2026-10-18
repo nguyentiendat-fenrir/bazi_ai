@@ -56,6 +56,9 @@ class Settings(BaseSettings):
 
     session_signing_key: SecretStr | None = None
     field_encryption_key: SecretStr | None = None
+    # Encrypts backup archives (T052); without it backups are written in clear and must sit
+    # on encrypted storage. Kept apart from the field key so either can rotate alone.
+    backup_encryption_key: SecretStr | None = None
 
     llm_provider: Literal['openai_compatible'] = 'openai_compatible'
     llm_base_url: str | None = None
@@ -64,7 +67,8 @@ class Settings(BaseSettings):
     embedding_model: str | None = None
 
     @field_validator('postgres_password', 'postgres_app_user', 'postgres_app_password',
-                     'session_signing_key', 'field_encryption_key', 'llm_api_key', 'llm_base_url',
+                     'session_signing_key', 'field_encryption_key', 'backup_encryption_key',
+                     'llm_api_key', 'llm_base_url',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
                      's3_access_key_id', 's3_secret_access_key', mode='before')
     @classmethod
@@ -137,7 +141,8 @@ class Settings(BaseSettings):
     def secret_values(self) -> list[str]:
         """Configured secret strings, used by the log redactor."""
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
-                   self.field_encryption_key, self.llm_api_key, self.s3_secret_access_key)
+                   self.field_encryption_key, self.backup_encryption_key, self.llm_api_key,
+                   self.s3_secret_access_key)
         return [s.get_secret_value() for s in secrets if s is not None]
 
 

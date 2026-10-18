@@ -1216,6 +1216,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/operations/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Backups
+         * @description Backups recorded by the CLI, newest first. A restore never depends on this table:
+         *     it reads the manifest beside the archive (docs/12 · Restore runbook).
+         */
+        get: operations["list_backups_api_v1_operations_backups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/operations/metrics": {
         parameters: {
             query?: never;
@@ -2116,6 +2137,36 @@ export interface components {
             name: string;
             /** Role */
             role: string;
+        };
+        /** BackupDTO */
+        BackupDTO: {
+            /**
+             * Archive Location
+             * @description path on the backup host, as the CLI saw it
+             */
+            archive_location: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Db Schema Version */
+            db_schema_version: string;
+            /** Encrypted */
+            encrypted: boolean;
+            /** Id */
+            id: string;
+            /** Manifest Sha256 */
+            manifest_sha256: string;
+            /** Name */
+            name: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "running" | "succeeded" | "failed" | "verified";
+            /** Verified At */
+            verified_at: string | null;
         };
         /** BatchDTO */
         BatchDTO: {
@@ -4518,6 +4569,13 @@ export interface components {
         ListEnvelope_AssertionDTO_: {
             /** Data */
             data: components["schemas"]["AssertionDTO"][];
+            meta: components["schemas"]["Meta"];
+            page?: components["schemas"]["Page"];
+        };
+        /** ListEnvelope[BackupDTO] */
+        ListEnvelope_BackupDTO_: {
+            /** Data */
+            data: components["schemas"]["BackupDTO"][];
             meta: components["schemas"]["Meta"];
             page?: components["schemas"]["Page"];
         };
@@ -27982,6 +28040,190 @@ export interface operations {
                      *       "status": 404,
                      *       "title": "Not Found",
                      *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    list_backups_api_v1_operations_backups_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "archive_location": "example",
+                     *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "db_schema_version": "example",
+                     *           "encrypted": true,
+                     *           "id": "example",
+                     *           "manifest_sha256": "example",
+                     *           "name": "example",
+                     *           "state": "running",
+                     *           "verified_at": "2026-10-18T08:00:00Z"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       },
+                     *       "page": {
+                     *         "has_more": false,
+                     *         "next_cursor": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ListEnvelope_BackupDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
                      *     }
                      */
                     "application/problem+json": unknown;
