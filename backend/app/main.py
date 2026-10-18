@@ -9,8 +9,8 @@ from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
 from .api import (assertions, auth, books, cases, charts, chat, evaluation, health, jobs, knowledge,
-                  models, ontology, openapi, pages, pipelines, releases, reviews, rules, rulesets,
-                  search, settings as settings_api, uploads, users)
+                  models, ontology, openapi, operations, pages, pipelines, releases, reviews, rules,
+                  rulesets, search, settings as settings_api, uploads, users)
 from .auth.ratelimit import LoginLimiter
 from .core.config import Settings, load_settings
 from .core.crypto import FieldCipher
@@ -56,7 +56,8 @@ def create_app(settings: Settings | None = None,
                    uploads.router, pages.router, releases.router, jobs.router, reviews.router,
                    knowledge.router, assertions.router, rules.router, cases.router,
                    ontology.router, search.router, evaluation.router, models.router,
-                   pipelines.router, charts.router, rulesets.router, chat.router):
+                   pipelines.router, charts.router, rulesets.router, chat.router,
+                   operations.router):
         app.include_router(router, prefix=API_PREFIX)
     openapi.install(app)
     return app

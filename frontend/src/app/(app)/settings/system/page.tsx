@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, call, ifMatch, type Schemas } from '@/api/client'
+import { OperationsAlerts } from '@/components/OperationsPanel'
 import { SettingsTabs } from '@/components/SettingsTabs'
 import { UsageTable } from '@/components/UsageTable'
 import { Badge, ErrorState, Facts, Forbidden, FormError, Loading, PageHeader } from '@/components/ui'
@@ -87,6 +88,10 @@ export default function SystemPage() {
       <title>Hệ thống · Cài đặt</title>
       <PageHeader title="Cài đặt" />
       <SettingsTabs />
+      <section className="panel">
+        <h2>Vận hành</h2>
+        <OperationsAlerts />
+      </section>
       <div className="grid">
         <section className="panel">
           <h2>Cấu hình chạy</h2>

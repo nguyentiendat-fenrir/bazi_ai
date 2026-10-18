@@ -50,6 +50,8 @@ test('an admin edits a system setting and manages users', async ({ page }) => {
   await signIn(page, 'admin')
   await page.goto('/settings/system')
   await expect(page.getByText('Cấu hình chạy')).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Cảnh báo vận hành' })).toContainText('BACKUP_MISSING')
+  await expect(page.getByText(/Ổ lưu tệp/)).toBeVisible()
   const days = page.getByRole('spinbutton', { name: 'Giữ nhật ký (ngày)' })
   await days.fill('45')
   await page.getByRole('button', { name: 'Lưu Giữ nhật ký (ngày)' }).click()

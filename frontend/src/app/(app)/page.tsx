@@ -2,6 +2,7 @@
 import Link from 'next/link'
 
 import { api, call } from '@/api/client'
+import { OperationsAlerts } from '@/components/OperationsPanel'
 import { Empty, ErrorState, Loading, PageHeader } from '@/components/ui'
 import { formatDateTime, formatNumber, shortId } from '@/lib/format'
 import { useQuery } from '@/lib/query'
@@ -130,6 +131,7 @@ function AdminPanel() {
             {usage.data && <><br />{over.length === 0 ? 'Chi phí hôm nay trong ngân sách.' : <strong>{over.length} profile đã dùng ≥ 80% ngân sách ngày.</strong>}</>}
           </p>
         )}
+      <OperationsAlerts compact />
     </section>
   )
 }

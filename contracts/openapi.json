@@ -157,6 +157,34 @@
         "title": "ActivePointer",
         "type": "object"
       },
+      "Alert": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "Alert",
+        "type": "object"
+      },
       "AnalysisAnswer": {
         "properties": {
           "as_of": {
@@ -4688,6 +4716,22 @@
         "title": "Envelope[OntologyReleaseDTO]",
         "type": "object"
       },
+      "Envelope_OperationsMetrics_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OperationsMetrics"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[OperationsMetrics]",
+        "type": "object"
+      },
       "Envelope_PageImpactDTO_": {
         "properties": {
           "data": {
@@ -8352,6 +8396,42 @@
           "pinned_by_active_corpus"
         ],
         "title": "OntologyReleaseDTO",
+        "type": "object"
+      },
+      "OperationsMetrics": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "collected_at": {
+            "format": "date-time",
+            "title": "Collected At",
+            "type": "string"
+          },
+          "database": {
+            "additionalProperties": true,
+            "description": "counts across owners: queues, failures, leases, pages, chat runs, rejected claims, rule outcomes, usage, backups",
+            "title": "Database",
+            "type": "object"
+          },
+          "process": {
+            "additionalProperties": true,
+            "description": "this API process: retrieval latency window, DB pool, disk",
+            "title": "Process",
+            "type": "object"
+          }
+        },
+        "required": [
+          "collected_at",
+          "database",
+          "process",
+          "alerts"
+        ],
+        "title": "OperationsMetrics",
         "type": "object"
       },
       "Page": {
@@ -34667,6 +34747,175 @@
           "knowledge"
         ],
         "x-permission": "R"
+      }
+    },
+    "/api/v1/operations/metrics": {
+      "get": {
+        "operationId": "operations_metrics_api_v1_operations_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "alerts": [
+                      {
+                        "code": "example",
+                        "message": "example",
+                        "severity": "low"
+                      }
+                    ],
+                    "collected_at": "2026-10-18T08:00:00Z",
+                    "database": {},
+                    "process": {}
+                  },
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_OperationsMetrics_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Operations Metrics",
+        "tags": [
+          "operations"
+        ],
+        "x-permission": "A"
       }
     },
     "/api/v1/page-revisions/{revision_id}": {

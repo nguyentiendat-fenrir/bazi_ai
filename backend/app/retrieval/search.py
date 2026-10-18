@@ -356,4 +356,6 @@ def search(conn: Connection, principal: Principal, spec: Spec, app_env: str = 'd
                                           active['visibility_epoch'], normalized, bundle)
         result['bundle'] = bundle
     result['took_ms'] = round((time.perf_counter() - started) * 1000, 1)
+    from ..ops.metrics import record_search
+    record_search(result['took_ms'])
     return result
