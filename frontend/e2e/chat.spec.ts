@@ -16,6 +16,15 @@ test('a user asks a question and gets a checked answer over the event stream', a
   await expect(page.locator('.message-assistant .answer').last()).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('button', { name: 'Gửi' })).toBeVisible()
   await expectNoHorizontalOverflow(page)
+
+  // Rate the answer: private, kept after a reload.
+  const rating = page.getByRole('group', { name: 'Đánh giá câu trả lời' }).last()
+  await rating.getByRole('button', { name: 'Chưa đúng…' }).click()
+  await rating.getByLabel('Thiếu nguồn').check()
+  await rating.getByRole('button', { name: 'Gửi đánh giá' }).click()
+  await expect(rating.getByText('Bạn đã báo chưa đúng.')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('group', { name: 'Đánh giá câu trả lời' }).last().getByText('Bạn đã báo chưa đúng.')).toBeVisible()
 })
 
 test('context changes are saved and survive a reload', async ({ page }) => {

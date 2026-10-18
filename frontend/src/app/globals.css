@@ -305,3 +305,5 @@ mark.quoted { background: #fff1a8; color: inherit; padding: 0 1px; border-radius
 .passage-text { white-space: pre-wrap; margin: 8px 0; }
 .book-limit summary { cursor: pointer; padding-top: 22px; }
 .book-limit fieldset { border: 0; padding: 6px 0 0; margin: 0; display: grid; gap: 4px; max-height: 180px; overflow: auto; }
+.feedback { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 6px; }
+.feedback-form { display: grid; gap: 6px; margin-top: 6px; }

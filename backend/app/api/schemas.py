@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Generic, Literal, TypeVar
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar('T')
 
@@ -54,6 +54,24 @@ def problem_responses(*statuses: int) -> dict:
 # Errors any route can return; routes add their specific ones.
 COMMON_ERRORS = problem_responses(422, 500)
 AUTHENTICATED_ERRORS = problem_responses(401, 403, 422, 500)
+
+
+FeedbackCategory = Literal['wrong_source', 'missing_source', 'wrong_school', 'calculation',
+                           'too_certain', 'unclear', 'other']
+
+
+class FeedbackInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    rating: Literal[-1, 0, 1] = Field(description='1 helpful, -1 not helpful, 0 withdraws')
+    categories: list[FeedbackCategory] = Field(default=[], max_length=7)
+    comment: str | None = Field(default=None, max_length=1000)
+
+
+class FeedbackDTO(BaseModel):
+    rating: Literal[-1, 0, 1]
+    categories: list[FeedbackCategory]
+    comment: str | None
+    updated_at: datetime
 
 
 IDEMPOTENCY_PARAMETER = {

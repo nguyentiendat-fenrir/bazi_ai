@@ -8,7 +8,7 @@
 // Playwright build on Linux after `npx playwright install chromium`).
 import { defineConfig } from '@playwright/test'
 
-const API_PORT = Number(process.env.E2E_API_PORT ?? 8765)
+const API_PORT = Number(process.env.E2E_API_PORT ?? 18765)
 const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3100)
 const WEB = `http://127.0.0.1:${WEB_PORT}`
 const python = process.env.E2E_PYTHON

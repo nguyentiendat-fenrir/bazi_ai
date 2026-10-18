@@ -17,6 +17,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analyses/{analysis_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rate Analysis
+         * @description Rate one of your rule analyses; rating again replaces it. Private to you.
+         */
+        put: operations["rate_analysis_api_v1_analyses__analysis_id__feedback_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analyses/{analysis_id}/reevaluate": {
         parameters: {
             query?: never;
@@ -1060,6 +1080,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/messages/{message_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rate Answer
+         * @description Rate one of your answers; rating again replaces it. Private to you.
+         */
+        put: operations["rate_answer_api_v1_messages__message_id__feedback_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/methods": {
         parameters: {
             query?: never;
@@ -1920,6 +1960,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** @description your rating of this analysis */
+            feedback?: components["schemas"]["FeedbackDTO"] | null;
             /**
              * Id
              * Format: uuid
@@ -3571,6 +3613,11 @@ export interface components {
             data: components["schemas"]["EvidenceDTO"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[FeedbackDTO] */
+        Envelope_FeedbackDTO_: {
+            data: components["schemas"]["FeedbackDTO"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[GenerationDTO] */
         Envelope_GenerationDTO_: {
             data: components["schemas"]["GenerationDTO"];
@@ -4044,6 +4091,39 @@ export interface components {
             school_key: string;
             /** Variants */
             variants: string[];
+        };
+        /** FeedbackDTO */
+        FeedbackDTO: {
+            /** Categories */
+            categories: ("wrong_source" | "missing_source" | "wrong_school" | "calculation" | "too_certain" | "unclear" | "other")[];
+            /** Comment */
+            comment: string | null;
+            /**
+             * Rating
+             * @enum {integer}
+             */
+            rating: -1 | 0 | 1;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FeedbackInput */
+        FeedbackInput: {
+            /**
+             * Categories
+             * @default []
+             */
+            categories: ("wrong_source" | "missing_source" | "wrong_school" | "calculation" | "too_certain" | "unclear" | "other")[];
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Rating
+             * @description 1 helpful, -1 not helpful, 0 withdraws
+             * @enum {integer}
+             */
+            rating: -1 | 0 | 1;
         };
         /** FieldError */
         FieldError: {
@@ -4832,6 +4912,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** @description your rating of this answer */
+            feedback?: components["schemas"]["FeedbackDTO"] | null;
             /**
              * Id
              * Format: uuid
@@ -7024,6 +7106,14 @@ export interface operations {
                      *         },
                      *         "chart_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "created_at": "2026-10-18T08:00:00Z",
+                     *         "feedback": {
+                     *           "categories": [
+                     *             "wrong_source"
+                     *           ],
+                     *           "comment": "example",
+                     *           "rating": -1,
+                     *           "updated_at": "2026-10-18T08:00:00Z"
+                     *         },
                      *         "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "ruleset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "stale_reason": "example",
@@ -7210,6 +7300,256 @@ export interface operations {
             };
         };
     };
+    rate_analysis_api_v1_analyses__analysis_id__feedback_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "categories": [],
+                 *       "comment": "example",
+                 *       "rating": -1
+                 *     }
+                 */
+                "application/json": components["schemas"]["FeedbackInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "categories": [
+                     *           "wrong_source"
+                     *         ],
+                     *         "comment": "example",
+                     *         "rating": -1,
+                     *         "updated_at": "2026-10-18T08:00:00Z"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_FeedbackDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     reevaluate_api_v1_analyses__analysis_id__reevaluate_post: {
         parameters: {
             query?: never;
@@ -7271,6 +7611,14 @@ export interface operations {
                      *           },
                      *           "chart_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "feedback": {
+                     *             "categories": [
+                     *               "wrong_source"
+                     *             ],
+                     *             "comment": "example",
+                     *             "rating": -1,
+                     *             "updated_at": "2026-10-18T08:00:00Z"
+                     *           },
                      *           "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "ruleset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "stale_reason": "example",
@@ -16784,6 +17132,14 @@ export interface operations {
                      *           },
                      *           "chart_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "feedback": {
+                     *             "categories": [
+                     *               "wrong_source"
+                     *             ],
+                     *             "comment": "example",
+                     *             "rating": -1,
+                     *             "updated_at": "2026-10-18T08:00:00Z"
+                     *           },
                      *           "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "ruleset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "stale_reason": "example",
@@ -17043,6 +17399,14 @@ export interface operations {
                      *         },
                      *         "chart_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "created_at": "2026-10-18T08:00:00Z",
+                     *         "feedback": {
+                     *           "categories": [
+                     *             "wrong_source"
+                     *           ],
+                     *           "comment": "example",
+                     *           "rating": -1,
+                     *           "updated_at": "2026-10-18T08:00:00Z"
+                     *         },
                      *         "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "ruleset_id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *         "stale_reason": "example",
@@ -19695,6 +20059,14 @@ export interface operations {
                      *           "answer": {},
                      *           "content": "example",
                      *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "feedback": {
+                     *             "categories": [
+                     *               "wrong_source"
+                     *             ],
+                     *             "comment": "example",
+                     *             "rating": -1,
+                     *             "updated_at": "2026-10-18T08:00:00Z"
+                     *           },
                      *           "id": "0b6e6600-2026-4a10-8000-00000000b471",
                      *           "role": "user",
                      *           "run_id": "0b6e6600-2026-4a10-8000-00000000b471",
@@ -25378,6 +25750,256 @@ export interface operations {
                      *       "status": 404,
                      *       "title": "Not Found",
                      *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    rate_answer_api_v1_messages__message_id__feedback_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "categories": [],
+                 *       "comment": "example",
+                 *       "rating": -1
+                 *     }
+                 */
+                "application/json": components["schemas"]["FeedbackInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "categories": [
+                     *           "wrong_source"
+                     *         ],
+                     *         "comment": "example",
+                     *         "rating": -1,
+                     *         "updated_at": "2026-10-18T08:00:00Z"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_FeedbackDTO_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "CONFLICT",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 409,
+                     *       "title": "Conflict",
+                     *       "type": "urn:bazi:problem:conflict"
                      *     }
                      */
                     "application/problem+json": unknown;

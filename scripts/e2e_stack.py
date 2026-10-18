@@ -2,7 +2,7 @@
 """Throwaway backend for frontend E2E (docs/13 · Frontend E2E): real API, real PostgreSQL.
 
     BAZI_TEST_DATABASE_URL="host=127.0.0.1 port=55432 dbname=postgres user=... password=..." \
-        python scripts/e2e_stack.py --port 8765 --origin http://127.0.0.1:3100
+        python scripts/e2e_stack.py --port 18765 --origin http://127.0.0.1:3100
 
 Creates database ``bazi_e2e_<hex>`` on the *test* server (never the dev database), a
 runtime login, three users (admin/reviewer/reader) with a fixed test password, a fixture
@@ -176,7 +176,7 @@ def run_worker(engine, store, broker: InlineBroker, stop: threading.Event) -> No
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('--port', type=int, default=8765)
+    parser.add_argument('--port', type=int, default=18765)
     parser.add_argument('--origin', action='append', default=[],
                         help='frontend origin allowed for unsafe requests (repeatable)')
     parser.add_argument('--cleanup', action='store_true', help='drop leftovers and exit')

@@ -13,9 +13,11 @@ from sqlalchemy.engine import Connection
 from ..auth.deps import current_principal, db, require_role
 from ..auth.service import Principal
 from ..charts import analyses
+from ..chat import feedback
 from ..knowledge import rulesets
 from .health import envelope
-from .schemas import AUTHENTICATED_ERRORS, Envelope, ListEnvelope, permission, problem_responses
+from .schemas import (AUTHENTICATED_ERRORS, Envelope, FeedbackDTO, FeedbackInput, ListEnvelope,
+                      permission, problem_responses)
 
 router = APIRouter(tags=['rulesets'])
 NOT_FOUND = problem_responses(404)
@@ -121,6 +123,7 @@ class AnalysisDTO(BaseModel):
     answer: AnalysisAnswer | None
     created_at: datetime
     updated_at: datetime
+    feedback: FeedbackDTO | None = Field(default=None, description='your rating of this analysis')
 
 
 class RuleTraceDTO(BaseModel):
@@ -196,14 +199,27 @@ def analyse_chart(chart_id: uuid.UUID, body: AnalysisInput,
             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('O'))
 def chart_analyses(chart_id: uuid.UUID, _: Principal = Depends(current_principal),
                    conn: Connection = Depends(db)) -> dict:
-    return envelope(analyses.list_analyses(conn, chart_id))
+    return envelope([{**a, 'feedback': feedback.for_analysis(conn, a['id'])}
+                     for a in analyses.list_analyses(conn, chart_id)])
+
+
+@router.put('/analyses/{analysis_id}/feedback', response_model=Envelope[FeedbackDTO],
+            responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
+            openapi_extra=permission('O'))
+def rate_analysis(analysis_id: uuid.UUID, body: FeedbackInput,
+                  principal: Principal = Depends(current_principal),
+                  conn: Connection = Depends(db)) -> dict:
+    """Rate one of your rule analyses; rating again replaces it. Private to you."""
+    return envelope(feedback.rate(conn, principal.user_id, body.rating, body.categories,
+                                  body.comment, analysis_id=analysis_id))
 
 
 @router.get('/analyses/{analysis_id}', response_model=Envelope[AnalysisDTO],
             responses={**AUTHENTICATED_ERRORS, **NOT_FOUND}, openapi_extra=permission('O'))
 def get_analysis(analysis_id: uuid.UUID, _: Principal = Depends(current_principal),
                  conn: Connection = Depends(db)) -> dict:
-    return envelope(analyses.get_analysis(conn, analysis_id))
+    found = analyses.get_analysis(conn, analysis_id)
+    return envelope({**found, 'feedback': feedback.for_analysis(conn, analysis_id)})
 
 
 @router.get('/analyses/{analysis_id}/trace', response_model=ListEnvelope[RuleTraceDTO],

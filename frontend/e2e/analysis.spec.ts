@@ -83,6 +83,8 @@ test('a reader runs a rule analysis, reads its sources, then re-evaluates a stal
   await expect(section.getByText('hợp nghề gỗ', { exact: true })).toBeVisible()
   await section.getByRole('button', { name: 'Xem nguồn (1)' }).first().click()
   await expect(section.locator('.citations blockquote').first()).toContainText('mẫu C')
+  await section.getByRole('group', { name: 'Đánh giá câu trả lời' }).getByRole('button', { name: 'Hữu ích' }).click()
+  await expect(section.getByText('Bạn thấy hữu ích.')).toBeVisible()
   await section.getByText('Từng quy tắc đã xét (trace)').click()
   const trace = section.getByRole('table', { name: 'Từng quy tắc đã xét' })
   await expect(trace).toContainText('kích hoạt')

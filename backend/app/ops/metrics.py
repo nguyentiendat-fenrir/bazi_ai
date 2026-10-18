@@ -98,6 +98,8 @@ def collect(conn: Connection, engine: Engine, storage_root: str | None,
             admin_id) -> dict:
     now = datetime.now(timezone.utc)
     database = conn.execute(text('SELECT bazi_operations_metrics()')).scalar_one()
+    database['feedback_7d'] = conn.execute(text(
+        "SELECT bazi_feedback_totals(now() - interval '7 days')")).scalar_one()
     process = process_metrics(engine, storage_root)
     today = datetime.combine(now.date(), datetime.min.time(), timezone.utc)
     budgets = budget.summary(conn, admin_id, today, today + timedelta(days=1))['budgets']

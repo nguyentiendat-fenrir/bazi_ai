@@ -23,6 +23,7 @@ Quyền: R=reader authenticated; V=reviewer; A=admin; O=owner của dữ liệu.
 | GET /auth/me | R | — | UserDTO, role, capabilities |
 | POST /auth/erasure | O | confirm (email), password, delete_account | ErasureResult counts; xóa cứng dữ liệu riêng (T049) |
 | POST /users/{id}/erasure | A | confirm (email người đó), delete_account | ErasureResult counts |
+| PUT /messages/{id}/feedback, PUT /analyses/{id}/feedback | O | rating −1/0/1, categories, comment ≤ 1000 | FeedbackDTO; một bản mỗi người/mục, đánh giá lại thì thay; chỉ câu trả lời xong/kết quả có nội dung (409 `NOT_RATEABLE`); MessageDTO/AnalysisDTO kèm `feedback` của chính người gọi |
 | GET/POST /users | A | create email,password,role | list/201 UserDTO, không password_hash |
 | PATCH /users/{id} | A | role,enabled | 200 ETag; không disable last active admin |
 | GET/PATCH /settings | R (own) / A (system) | scope, values allowlist | redacted config; key values không secret |

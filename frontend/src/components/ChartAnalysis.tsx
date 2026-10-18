@@ -8,6 +8,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, call, type Schemas } from '@/api/client'
+import { FeedbackBar } from '@/components/FeedbackBar'
 import { Badge, Empty, ErrorState, FormError, Loading, Notice, StateBadge } from '@/components/ui'
 import { formatDateTime } from '@/lib/format'
 import { RULE_STATUS } from '@/lib/knowledge'
@@ -142,6 +143,7 @@ function AnalysisView({ analysis, onReplaced }: { analysis: Analysis, onReplaced
               Hệ thống không tự chọn bên nào; đọc nguồn của từng quy tắc.
             </Notice>
           )}
+          <FeedbackBar target={{ kind: 'analysis', id: analysis.id }} initial={analysis.feedback} />
           <details>
             <summary>Từng quy tắc đã xét (trace)</summary>
             <Trace analysisId={analysis.id} />

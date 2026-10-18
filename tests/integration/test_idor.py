@@ -21,6 +21,8 @@ BODIES = {
     ('post', '/api/v1/conversations/{conversation_id}/messages'): {'content': 'câu hỏi'},
     ('post', '/api/v1/cases/{case_id}/revisions'): {'base_revision': 1, 'reason': 'thử',
                                                     'narrative': 'khác'},
+    ('put', '/api/v1/messages/{message_id}/feedback'): {'rating': -1},
+    ('put', '/api/v1/analyses/{analysis_id}/feedback'): {'rating': -1},
 }
 
 
@@ -60,7 +62,8 @@ class IdorTests(PipelineTestCase):
                 'year': {'stem': 'jia', 'branch': 'zi'}, 'month': {'stem': 'bing', 'branch': 'yin'},
                 'day': {'stem': 'wu', 'branch': 'chen'}, 'hour': None}}}).json()['data']
         return {'profile_id': profile['id'], 'chart_id': chart['id'], 'analysis_id': analysis['id'],
-                'conversation_id': conversation['id'], 'run_id': run['id'], 'case_id': case['id']}
+                'conversation_id': conversation['id'], 'run_id': run['id'], 'case_id': case['id'],
+                'message_id': run['assistant_message_id']}
 
     def test_strangers_get_404_on_every_owner_route(self):
         ids = self.resources()

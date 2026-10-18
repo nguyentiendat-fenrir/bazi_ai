@@ -21,12 +21,13 @@ from sqlalchemy.engine import Connection, Engine
 
 from ..auth.deps import current_principal, db, engine
 from ..auth.service import Principal
-from ..chat import conversations as chat
+from ..chat import conversations as chat, feedback
 from ..core.concurrency import claim_idempotency, etag
 from ..core.db import transaction
 from ..core.errors import AppError
 from .health import envelope
-from .schemas import AUTHENTICATED_ERRORS, Envelope, ListEnvelope, permission, problem_responses
+from .schemas import (AUTHENTICATED_ERRORS, Envelope, FeedbackDTO, FeedbackInput, ListEnvelope,
+                      permission, problem_responses)
 
 router = APIRouter(tags=['chat'])
 NOT_FOUND = problem_responses(404)
@@ -78,6 +79,7 @@ class MessageDTO(BaseModel):
     run_id: uuid.UUID | None
     answer: dict | None
     created_at: datetime
+    feedback: FeedbackDTO | None = Field(default=None, description='your rating of this answer')
 
 
 class MessageInput(BaseModel):
@@ -179,7 +181,20 @@ def list_messages(conversation_id: uuid.UUID, after_seq: int = Query(default=0, 
                   limit: int = Query(default=100, ge=1, le=500),
                   _: Principal = Depends(current_principal),
                   conn: Connection = Depends(db)) -> dict:
-    return envelope(chat.messages(conn, conversation_id, after_seq, limit))
+    rows = chat.messages(conn, conversation_id, after_seq, limit)
+    rated = feedback.mine(conn, [m['id'] for m in rows if m['role'] == 'assistant'])
+    return envelope([{**m, 'feedback': rated.get(m['id'])} for m in rows])
+
+
+@router.put('/messages/{message_id}/feedback', response_model=Envelope[FeedbackDTO],
+            responses={**AUTHENTICATED_ERRORS, **NOT_FOUND, **problem_responses(409)},
+            openapi_extra=permission('O'))
+def rate_answer(message_id: uuid.UUID, body: FeedbackInput,
+                principal: Principal = Depends(current_principal),
+                conn: Connection = Depends(db)) -> dict:
+    """Rate one of your answers; rating again replaces it. Private to you."""
+    return envelope(feedback.rate(conn, principal.user_id, body.rating, body.categories,
+                                  body.comment, message_id=message_id))
 
 
 @router.post('/conversations/{conversation_id}/messages', status_code=202,

@@ -9,6 +9,7 @@ import type { FormEvent } from 'react'
 import { api, call, idempotencyKey, ifMatch, type Schemas } from '@/api/client'
 import { AnswerView, type AnswerClaim, type AnswerData } from '@/components/AnswerView'
 import { Dialog } from '@/components/Dialog'
+import { FeedbackBar } from '@/components/FeedbackBar'
 import { Empty, ErrorState, FormError, Loading, Notice } from '@/components/ui'
 import { pairLabel } from '@/lib/bazi'
 import { formatDateTime } from '@/lib/format'
@@ -201,7 +202,12 @@ function Thread({ conversationId, onTitle }: { conversationId: string, onTitle()
         {messages.data.data.map((m: Message) => (
           <li key={m.id} className={`message message-${m.role}`}>
             {m.role === 'user' ? <p>{m.content}</p>
-              : m.status === 'completed' && m.answer ? <AnswerView answer={m.answer as unknown as AnswerData} onFollowUp={setDraft} />
+              : m.status === 'completed' && m.answer ? (
+                <>
+                  <AnswerView answer={m.answer as unknown as AnswerData} onFollowUp={setDraft} />
+                  <FeedbackBar target={{ kind: 'message', id: m.id }} initial={m.feedback} />
+                </>
+              )
               : m.status === 'pending' ? (
                 <div className="progress">
                   <p className="muted">Đang trả lời… {live?.steps.at(-1) ?? ''}</p>
