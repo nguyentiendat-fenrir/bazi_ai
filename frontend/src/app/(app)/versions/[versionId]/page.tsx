@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react'
 import { api, call, idempotencyKey, type Schemas } from '@/api/client'
 import { Dialog } from '@/components/Dialog'
 import { JobRow } from '@/components/JobRow'
+import { SchoolScopesPanel } from '@/components/SchoolScopesPanel'
 import { Empty, ErrorState, Facts, FormError, Loading, Notice, PageHeader, StateBadge } from '@/components/ui'
 import {
   GENERATION_STATES, PAGE_STATES, RIGHTS, VERSION_STATUS, formatBytes, formatDateTime, percent, shortId,
@@ -220,6 +221,10 @@ export default function VersionPage() {
           ['SHA-256', <code key="sha" title={v.sha256}>{shortId(v.sha256, 16)}</code>],
           ['Trang đạt', v.coverage.total ? `${v.coverage.accepted}/${v.coverage.total}` : 'Chưa xử lý'],
         ]} />
+      </section>
+      <section className="panel" aria-labelledby="schools-heading">
+        <h2 id="schools-heading">Trường phái</h2>
+        <SchoolScopesPanel versionId={v.id} pageCount={v.coverage.total || null} />
       </section>
       {reviewer && (
         <section className="panel" aria-labelledby="generation-heading">

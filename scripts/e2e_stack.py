@@ -128,6 +128,7 @@ def fixtures(target: Path) -> dict:
             'clean_c': book('sach-mau-c.pdf', 'mẫu C', 2, False),
             'knowledge': book('sach-tri-thuc.pdf', 'tri thức', 1, False),
             'search': book('sach-tra-cuu.pdf', 'tra cứu', 2, False),
+            'shared': book('sach-chia-se.pdf', 'chia sẻ', 2, False),
             'scan': book('sach-co-trang-quet.pdf', 'có trang quét', 2, True),
             'corrupt': str(corrupt), 'not_pdf': str(not_pdf)}
 

@@ -148,6 +148,9 @@ khác tra tại bảng cuối file này.
   không còn thông điệp exception và URL của httpx.
 - T056 ⛔: bảng trạng thái tám kịch bản ở docs/13 — release candidate chưa nghiệm thu; chặn
   bởi T002 (Ubuntu), T025 (gold), T029/T033 (chuyên gia), T036 (model thật).
+- Cải tiến sau K7 (18/10/2026): luận lá số theo quy tắc trên trang lá số, trích dẫn mở đúng
+  đoạn, trang Tra cứu + giới hạn sách trong chat, phản hồi câu trả lời (M017), checklist
+  khởi động, chia sẻ sách và gán trường phái trên UI — T043/T046 ✅.
 - Việc kế tiếp: những gì cần môi trường Ubuntu, chuyên gia và mô hình thật (xem trên).
 
 ## Các giai đoạn
@@ -286,10 +289,10 @@ trước khi trình duyệt.
 | T040 | Multi-turn conversations và search/delete | K6 | ✅ |
 | T041 | SSE validated claims và cancellation | K6 | ✅ |
 | T042 | API integration và generated client hoàn chỉnh | K6 | ✅ |
-| T043 | Frontend shell, auth, navigation và empty states | K5/K6 | T043.1 ✅ |
+| T043 | Frontend shell, auth, navigation và empty states | K5/K6 | ✅ |
 | T044 | Giao diện lập/xem/lưu lá số | K6 | ✅ |
 | T045 | Chat UI, nguồn và so sánh | K6 | ✅ |
-| T046 | Library upload/jobs/OCR review dashboard | K5/K6 | T046.1 ✅ |
+| T046 | Library upload/jobs/OCR review dashboard | K5/K6 | ✅ |
 | T047 | Knowledge/rules/cases admin UI | K6 | ✅ |
 | T048 | Evaluation/settings/dashboard UI | K6 | ✅ |
 | T049 | Security hardening và privacy deletion | K7 | ✅ |

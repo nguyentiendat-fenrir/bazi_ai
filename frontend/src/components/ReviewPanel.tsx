@@ -25,7 +25,9 @@ const ALLOWED: Record<string, Decision[]> = {
 }
 
 type Impact = Pick<Schemas['KnowledgeImpactDTO'], 'counts'> & { dependents?: Schemas['Dependents'] }
-export interface ReviewOutcome { state: string, analyses_stale?: number | null, terms_approved?: number | null }
+export interface ReviewOutcome {
+  state: string, analyses_stale?: number | null, terms_approved?: number | null, job_id?: string | null
+}
 
 export function ReviewPanel({ kind, id, revision, state, checklist, onDone, compact, subject }: {
   kind: Kind, id: string, revision: number, state: string,

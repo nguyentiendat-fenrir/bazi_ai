@@ -6,6 +6,7 @@ import type { FormEvent } from 'react'
 
 import { api, call, ifMatch, type Schemas } from '@/api/client'
 import { ApiError } from '@/api/problem'
+import { BookAccessPanel } from '@/components/BookAccessPanel'
 import { Empty, ErrorState, Facts, FormError, Loading, Notice, PageHeader, StateBadge } from '@/components/ui'
 import { authorLine } from '@/lib/books'
 import { RIGHTS, VERSION_STATUS, formatBytes, percent, shortId } from '@/lib/format'
@@ -131,6 +132,12 @@ export default function BookPage() {
               : 'Chưa publish'],
             ['Mô tả', b.description || '—'],
           ]} />
+        </section>
+      )}
+      {reviewer && (
+        <section className="panel" aria-labelledby="access-heading">
+          <h2 id="access-heading">Ai được xem</h2>
+          <BookAccessPanel bookId={b.id} revision={b.revision} onChanged={book.reload} />
         </section>
       )}
       <section className="panel" aria-labelledby="versions-heading">
