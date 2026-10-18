@@ -146,7 +146,9 @@ khác tra tại bảng cuối file này.
 - T055 ✅ (phần máy dev): quét IDOR sinh từ contract, test log không lộ dữ liệu, test header
   bảo mật; ma trận SEC01–SEC07 ở docs/13. Sửa: analyses của lá số người khác → 404, log
   không còn thông điệp exception và URL của httpx.
-- Việc kế tiếp: T056 (cần Ubuntu thật, chuyên gia, gold đã duyệt).
+- T056 ⛔: bảng trạng thái tám kịch bản ở docs/13 — release candidate chưa nghiệm thu; chặn
+  bởi T002 (Ubuntu), T025 (gold), T029/T033 (chuyên gia), T036 (model thật).
+- Việc kế tiếp: những gì cần môi trường Ubuntu, chuyên gia và mô hình thật (xem trên).
 
 ## Các giai đoạn
 
@@ -297,7 +299,7 @@ trước khi trình duyệt.
 | T053 | Restore drill và disaster recovery | K5/K7 | ✅ dev; đo RTO trên Ubuntu chờ T002 |
 | T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | ✅ runbook + công cụ; chạy Ubuntu chờ T002 |
 | T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | ✅ dev; pentest ngoài chưa có |
-| T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | |
+| T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | ⛔ chờ T002/T025/T029/T033/T036 |
 
 ## Không nằm trong release
 

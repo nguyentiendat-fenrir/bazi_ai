@@ -120,6 +120,23 @@ PERF01 đo empty/startup; PERF02 ingest 10/100/1.000 manifest; PERF03 query 10/1
 
 Đã đo (T051, `scripts/bench.py`, 18/10/2026, máy dev Windows 11, 24 CPU, PostgreSQL 17 trong Docker Desktop; DB tạm trên server test; PDF **tổng hợp**, không OCR, embedding `fixture-hashing` 32 chiều, không LLM, client ASGI trong process — không qua mạng): PERF01 tạo app 1,3 ms, live đầu tiên 154 ms, ready 11 ms. PERF02 100 tài liệu × 3 trang, một worker: 100/100 job thành công và publish, 25,4 s (11,8 trang/s), mỗi tài liệu p50 253 ms / p95 277 ms; tăng ~32 KB DB + ~197 KB object mỗi trang. PERF03 `/search` không rerank trên 600 chunk, 3 lần × 100 truy vấn sau warmup: 1 client p50 8,5 / p95 ~9,3 ms (~116 q/s); 10 client p50 ~44 / p95 54–81 ms (~220 q/s); 100 client p50 ~233 / p95 323–382 ms (~230 q/s). Chưa đo: PERF02 1.000 tài liệu, OCR thật, embedding/reranker thật (T036), Ubuntu; PERF04 (job recovery, fencing, disk-low) đang được phủ bằng test tích hợp watchdog chứ chưa có số đo; PERF05 (recall khi lọc vector) chờ model thật. Báo cáo JSON ở `.artifacts/bench/` (không vào git).
 
+## Trạng thái nghiệm thu (T056)
+
+Cập nhật 18/10/2026. Trạng thái hiện tại: **release candidate chưa nghiệm thu** — chưa kịch bản nào chạy trên Ubuntu 22.04 thật, và E2E-04 cần chuyên gia.
+
+| Kịch bản | Đã có trên máy dev (bằng chứng) | Còn thiếu để nghiệm thu |
+|---|---|---|
+| E2E-01 hệ thống trống | E2E Playwright: thư viện trống, chat trên kho trống, lá số, cài đặt; diễn tập Compose dựng project mới (migrate, admin, backup) | chạy đủ chuỗi doctor→build→migrate→bootstrap→up trên Ubuntu (T002), quay video |
+| E2E-02 nhập ba PDF | pipeline chạy sách thật trong bộ test (Tử Bình 583 mục, Manh phái), E2E upload → job → publish | Ubuntu + OCR thật; đối chiếu 9 trang mẫu bằng mắt người; embedding thật (T036) |
+| E2E-03 hỏi đáp có nguồn | test tích hợp suy luận + citation + injection, E2E chat qua SSE | gold G01–G09 đã duyệt (T025), mô hình thật, chấm điểm |
+| E2E-04 luận lá số | engine + ruleset + phân tích + stale đã có test với quy tắc tổng hợp | ⛔ quy tắc thật từ sách do chuyên gia duyệt (T033); oracle HKO (T029) |
+| E2E-05 thêm 100 tài liệu | `scripts/bench.py` 100 PDF tổng hợp: 100/100 thành công, publish, tìm được | bộ 100 tệp thật trộn PDF/scan/DOCX + bản trùng, trên Ubuntu; 1.000 tài liệu |
+| E2E-06 lỗi và hồi phục | `test_job_recovery`, worker chết/lease/fencing, tệp hỏng, E2E job lỗi → thử lại | chạy trên Ubuntu với Redis restart thật và disk-low |
+| E2E-07 cập nhật tri thức | test sửa OCR (rebuild gia tăng), alias, quy tắc mới → analysis stale → đánh giá lại, 412 đồng thời | chạy end-to-end trên dữ liệu thật |
+| E2E-08 backup/restore | test trong image (mã hóa, khóa sai, tệp hỏng, kiểm sau restore, ledger), diễn tập Compose `drill` | Ubuntu với 3 sách + lá số + hội thoại thật; đo RTO/RPO |
+
+Mục chung còn mở: gold đã duyệt và ngưỡng retrieval (T025/T050), chuyên gia ký duyệt quy tắc, runbook chạy thật trên Ubuntu (T054), kiểm thử thâm nhập bên ngoài.
+
 ## Release Definition of Done
 
 Các chức năng trong phạm vi release đã được kiểm thử, không blocked calculation oracle/rights xử lý external được dùng, E2E-01…08 pass, retrieval gold đạt gate, specialist review signed, no secrets/data leak, restore drill pass, runbook Windows dev → Ubuntu thực chạy, versions locked, code+docs trong git. Nếu gate chưa đạt, ghi trạng thái **release candidate chưa nghiệm thu**, không gọi phần mềm hoàn chỉnh.
