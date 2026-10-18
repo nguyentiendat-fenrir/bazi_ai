@@ -55,6 +55,28 @@ class BackupCommandTests(unittest.TestCase):
         self.assertEqual(teardown[-5:], ['--profile', 'app', 'down', '-v', '--remove-orphans'])
         self.assertIn('restore', steps[1])
 
+    def test_migrations_need_a_recent_backup(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertIsNone(dev.recent_backup(root))
+            (root / 'old').mkdir()
+            (root / 'old' / 'manifest.json').write_text(json.dumps(
+                {'name': 'old', 'created_at': '2026-10-16T00:00:00+00:00', 'schema_head': 'h'}))
+            now = 1792281600.0                      # 2026-10-18T00:00:00Z
+            self.assertIsNone(dev.recent_backup(root, now))          # 48 h old
+            (root / 'new').mkdir()
+            (root / 'new' / 'manifest.json').write_text(json.dumps(
+                {'name': 'new', 'created_at': '2026-10-17T20:00:00+00:00', 'schema_head': 'h2'}))
+            self.assertEqual(dev.recent_backup(root, now)['name'], 'new')
+        [upgrade] = dev.migrate_commands('docker', None, dev.ENV_FILE, status=False)
+        self.assertEqual(upgrade[-7:], ['python', '-m', 'alembic', '-c', 'backend/alembic.ini',
+                                        'upgrade', 'head'])
+        login, admin = dev.bootstrap_commands('docker', None, dev.ENV_FILE, 'a@example.test')
+        self.assertEqual(login[-1], 'create-runtime-login')
+        self.assertIn('BAZI_BOOTSTRAP_PASSWORD', admin)              # by name, never a value
+        self.assertNotIn('-T', admin)                                # may prompt
+
 
 if __name__ == '__main__':
     unittest.main()

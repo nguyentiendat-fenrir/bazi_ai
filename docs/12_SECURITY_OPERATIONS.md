@@ -16,6 +16,8 @@ Service chỉ được thêm cùng implementation và tests. Profiles cho OCR/mo
 test là optional. Volumes: pgdata, objects, model_cache, staging; backup mã hóa ở
 đường dẫn ngoài các volumes này. Redis state không là nguồn duy nhất cần restore.
 
+Runbook từng bước (T054) ở README · Ubuntu 22.04: `scripts/dev migrate --status`; `scripts/dev migrate --backup-dest <dir>` từ chối khi không có backup < 24 giờ (`--without-backup` chỉ cho DB trống); `scripts/dev bootstrap --email …` (mật khẩu admin từ `BAZI_BOOTSTRAP_PASSWORD` hoặc nhập, không trên dòng lệnh); `doctor --target deploy` coi `POSTGRES_PASSWORD`, `POSTGRES_APP_PASSWORD`, `SESSION_SIGNING_KEY`, `FIELD_ENCRYPTION_KEY` là thiết yếu, thiếu `BACKUP_ENCRYPTION_KEY` chỉ cảnh báo.
+
 `.env.example` chỉ placeholder; `.env` gitignored. Startup: DB health → migration
 one-shot → bootstrap admin → app/workers; không tự migrate destructive khi container
 restart. `scripts/dev` hiện có `doctor --target dev|deploy` và `inspect-books`; các

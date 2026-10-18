@@ -101,47 +101,94 @@ WinRAR trên Windows; không nhầm test skip là đã kiểm. Không chạy ven
 
 ## Ubuntu 22.04
 
-Cài Docker Engine và Compose plugin theo [hướng dẫn chính thức](https://docs.docker.com/engine/install/ubuntu/).
-Clone vào filesystem Linux. Không chép `.venv`, secrets, DB hoặc model qua Git.
+Runbook triển khai (T054). Mọi lệnh chạy ở thư mục repo trên filesystem Linux; Python hệ
+thống chỉ dùng cho `scripts/dev`, ứng dụng chạy trong image Python 3.12. Không chép `.venv`,
+`.env`, DB hay model qua Git.
+
+### 1. Cài lần đầu
 
 ```bash
-git clone https://github.com/nguyentiendat-fenrir/bazi_ai.git
-cd bazi_ai
-cp .env.example .env
-# Điền POSTGRES_PASSWORD; BOOKS_DIR là đường dẫn tuyệt đối tới sách trên Ubuntu.
-# Chép sách riêng bằng scp/rsync, giữ nguyên bytes/tên, không git add -f inputs.
+# Docker Engine + Compose plugin: https://docs.docker.com/engine/install/ubuntu/
+git clone https://github.com/nguyentiendat-fenrir/bazi_ai.git && cd bazi_ai
+cp .env.example .env && chmod 600 .env
+# Điền: POSTGRES_PASSWORD, POSTGRES_APP_PASSWORD, SESSION_SIGNING_KEY, FIELD_ENCRYPTION_KEY,
+# BACKUP_ENCRYPTION_KEY (mỗi khóa ≥ 32 ký tự ngẫu nhiên: openssl rand -base64 48),
+# APP_ENV=production, BOOKS_DIR (đường dẫn tuyệt đối tới sách). Chép FIELD_ENCRYPTION_KEY và
+# BACKUP_ENCRYPTION_KEY ra nơi ngoại tuyến: mất chúng thì lá số và backup không giải mã được.
+python3 scripts/dev doctor --target deploy          # phải READY
 docker compose --env-file .env -f infra/compose.yaml config --quiet
-docker compose --env-file .env -f infra/compose.yaml build corpus-inspect
-docker compose --env-file .env -f infra/compose.yaml run --rm --no-deps corpus-inspect
+docker compose --env-file .env -f infra/compose.yaml build
 docker compose --env-file .env -f infra/compose.yaml up -d --wait postgres redis
-python3 scripts/dev doctor --target deploy
+python3 scripts/dev migrate --without-backup         # DB trống, chưa có gì để backup
+read -s BAZI_BOOTSTRAP_PASSWORD && export BAZI_BOOTSTRAP_PASSWORD   # không ghi vào history
+python3 scripts/dev bootstrap --email admin@example.com
+unset BAZI_BOOTSTRAP_PASSWORD
+docker compose --env-file .env -f infra/compose.yaml --profile app up -d
 ```
 
-Python hệ thống Ubuntu chỉ chạy doctor; image dùng Python 3.12. Inspector không
-mạng, mount sách read-only, không cần DB. Compose vẫn cần POSTGRES_PASSWORD để
-resolve cấu hình. DB/Redis không publish cổng host. Doctor pass chỉ là preflight.
-
-Cập nhật: Windows chạy tests, xem diff, stage đúng file, commit, `git push origin main`.
-Ubuntu chạy `git pull --ff-only`, build lại image và kiểm kê lại. Khi backend có
-migrations mới bổ sung backup/migrate/restart có kiểm thử. Không `reset --hard`,
-không `compose down -v`; giữ volume `bazi-ai_*` qua các lần pull.
-
-Ứng dụng đầy đủ (API, worker, watchdog, UI qua gateway `127.0.0.1:${GATEWAY_PORT:-3000}`)
-sau khi đã migrate, tạo runtime login và admin:
-`docker compose --env-file .env -f infra/compose.yaml --profile app up -d --build`.
-
-Backup/restore (Ubuntu; thư mục đích trên ổ mã hóa, ngoài volume, uid 10001 ghi được):
-
-```bash
-sudo install -d -m 700 -o 10001 -g 10001 /srv/bazi-backups
-python3 scripts/dev backup --dest /srv/bazi-backups
-python3 scripts/dev restore-preflight --manifest /srv/bazi-backups/<tên>/manifest.json
-python3 scripts/dev restore --manifest /srv/bazi-backups/<tên>/manifest.json --confirm <tên>
-```
-
-Restore luôn vào project `bazi-restore` với volume mới, không ghi đè hệ thống đang chạy.
+UI qua gateway `http://127.0.0.1:${GATEWAY_PORT:-3000}` (chỉ loopback; mở ra mạng qua reverse
+proxy có TLS). Đăng nhập admin, vào Cài đặt → Hệ thống & ngân sách xem "Vận hành": không có
+cảnh báo nào ngoài `BACKUP_MISSING` cho tới backup đầu tiên. Sách: Thư viện → Tải sách lên.
 
 Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
 `LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.
 Chưa biết URL/model/VRAM nên để trống, không khởi Gemma thứ hai. Embedding dùng
 model/profile riêng. Xem [kết nối llama.cpp](docs/12_SECURITY_OPERATIONS.md#kết-nối-gemma-llamacpp).
+
+### 2. Backup hằng ngày
+
+```bash
+sudo install -d -m 700 -o 10001 -g 10001 /srv/bazi-backups   # ổ khác ổ chạy DB nếu có
+python3 scripts/dev backup --dest /srv/bazi-backups --prune   # mã hóa nếu có BACKUP_ENCRYPTION_KEY
+```
+
+Lịch (crontab của user chạy Docker): `30 2 * * * cd /srv/bazi_ai && python3 scripts/dev backup
+--dest /srv/bazi-backups --prune >> /var/log/bazi-backup.log 2>&1`. `--prune` giữ 7 ngày + 4
+tuần. Chép thêm một bản ra máy/ổ khác (rsync thư mục đã mã hóa). Cảnh báo `BACKUP_OVERDUE`
+hiện khi bản gần nhất quá 26 giờ.
+
+### 3. Cập nhật phiên bản
+
+Trên Windows: chạy đủ test, commit, `git push origin main`. Trên Ubuntu:
+
+```bash
+mkdir -p .cache && git rev-parse HEAD > .cache/previous-commit       # để quay lại
+docker image tag bazi-ai-app:local bazi-ai-app:previous             # image đang chạy
+python3 scripts/dev backup --dest /srv/bazi-backups                 # bắt buộc trước migrate
+git pull --ff-only
+python3 scripts/dev doctor --target deploy
+docker compose --env-file .env -f infra/compose.yaml build
+python3 scripts/dev migrate --status                                # current vs head
+python3 scripts/dev migrate --backup-dest /srv/bazi-backups         # từ chối nếu backup > 24 h
+docker compose --env-file .env -f infra/compose.yaml --profile app up -d
+```
+
+Kiểm sau cập nhật: `/api/v1/health/ready` = ok (admin), trang Vận hành không có cảnh báo mới,
+mở một sách và một lá số cũ. Không `reset --hard`, không `compose down -v`; giữ volume
+`bazi-ai_*`.
+
+Quay lại khi lỗi: nếu chưa migrate, `git checkout $(cat .cache/previous-commit)`, tag lại
+`bazi-ai-app:previous` thành `:local` và `up -d`. Nếu đã migrate, migration mới có thể
+`downgrade` (mỗi migration ghi bước rollback trong docs/15), nhưng an toàn nhất là restore
+backup vừa tạo vào project mới (mục 4), kiểm, rồi chuyển.
+
+### 4. Restore và diễn tập
+
+```bash
+python3 scripts/dev restore-preflight --manifest /srv/bazi-backups/<tên>/manifest.json
+python3 scripts/dev deletion-ledger --dest /srv/bazi-backups        # người đã bị xóa từ đó
+python3 scripts/dev restore --manifest /srv/bazi-backups/<tên>/manifest.json --confirm <tên> \
+    --deletion-ledger /srv/bazi-backups/deletion-ledger.json
+python3 scripts/dev drill --manifest /srv/bazi-backups/<tên>/manifest.json --confirm <tên>
+```
+
+Restore luôn vào project `bazi-restore` với volume mới, không ghi đè hệ thống đang chạy;
+chạy thử ở cổng khác (`GATEWAY_PORT=3001 … -p bazi-restore --profile app up -d`), chuyển khi
+kiểm xong, giữ volume cũ một thời gian. `drill` làm cùng việc vào `bazi-drill` rồi gỡ project
+đó; nên chạy hằng tháng và ghi thời gian (RTO) báo ra. Chi tiết: [docs/12](docs/12_SECURITY_OPERATIONS.md#restore-runbook-bắt-buộc-kiểm-thử).
+
+### 5. Theo dõi
+
+Trang Cài đặt → Hệ thống & ngân sách (admin): cảnh báo ổ đĩa, backup, job lỗi lặp, hàng đợi
+kẹt, ngân sách, embedding; số liệu hàng đợi/lỗi/độ trễ tra cứu. `GET /api/v1/operations/metrics`
+cho công cụ ngoài. Log là JSON trên stdout của từng container (`docker compose logs api`).

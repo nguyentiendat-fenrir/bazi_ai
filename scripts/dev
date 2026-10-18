@@ -30,7 +30,11 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_SECRETS = ('POSTGRES_PASSWORD', 'SESSION_SIGNING_KEY', 'FIELD_ENCRYPTION_KEY')
+REQUIRED_SECRETS = ('POSTGRES_PASSWORD', 'POSTGRES_APP_PASSWORD', 'SESSION_SIGNING_KEY',
+                    'FIELD_ENCRYPTION_KEY', 'BACKUP_ENCRYPTION_KEY')
+# The app refuses to start in production without these; the backup key is advised only.
+DEPLOY_ESSENTIAL = ('POSTGRES_PASSWORD', 'POSTGRES_APP_PASSWORD', 'SESSION_SIGNING_KEY',
+                    'FIELD_ENCRYPTION_KEY')
 DEPENDENCY_HOSTS = ('pypi.org', 'registry-1.docker.io')
 
 
@@ -141,7 +145,8 @@ def doctor(root: Path = ROOT, target: str = 'dev') -> dict:
     add('env_template', template.is_file(), '.env.example must exist')
     add('env_file', env.is_file(), '.env must be created locally and ignored by Git', essential=deploy)
     for key, present in read_env_presence(env).items():
-        add('env_' + key.lower(), present, key + ' must be set locally; value never printed', essential=deploy and key == 'POSTGRES_PASSWORD')
+        add('env_' + key.lower(), present, key + ' must be set locally; value never printed',
+            essential=deploy and key in DEPLOY_ESSENTIAL)
 
     add('compose_file', (root / 'infra/compose.yaml').is_file(), 'infra/compose.yaml must exist')
     add('python_lock', (root / 'uv.lock').is_file(), 'uv.lock must exist')
@@ -266,6 +271,50 @@ def drill_commands(docker: str, manifest: Path, confirm: str, env_file: Path = E
     return [up, restore], teardown
 
 
+BACKUP_MAX_AGE_HOURS = 24
+
+
+def recent_backup(dest: Path, now: float | None = None) -> dict | None:
+    """The newest complete backup under ``dest`` if it is younger than 24 hours."""
+    from datetime import datetime, timezone
+    newest = None
+    for manifest in Path(dest).glob('*/manifest.json') if Path(dest).is_dir() else []:
+        if manifest.parent.name.startswith('.'):
+            continue
+        try:
+            data = json.loads(manifest.read_text(encoding='utf-8'))
+            created = datetime.fromisoformat(data['created_at'])
+        except (OSError, ValueError, KeyError):
+            continue
+        if newest is None or created > newest[0]:
+            newest = (created, data)
+    if newest is None:
+        return None
+    age = ((now or datetime.now(timezone.utc).timestamp()) - newest[0].timestamp()) / 3600
+    return {'name': newest[1]['name'], 'schema_head': newest[1].get('schema_head'),
+            'age_hours': round(age, 1)} if age <= BACKUP_MAX_AGE_HOURS else None
+
+
+def migrate_commands(docker: str, project: str | None, env_file: Path, status: bool
+                     ) -> list[list[str]]:
+    alembic = ['python', '-m', 'alembic', '-c', 'backend/alembic.ini']
+    run = ['run', '--rm', '-T', 'worker']
+    if status:
+        return [compose(docker, project, *run, *alembic, 'current', env_file=env_file),
+                compose(docker, project, *run, *alembic, 'heads', env_file=env_file)]
+    return [compose(docker, project, *run, *alembic, 'upgrade', 'head', env_file=env_file)]
+
+
+def bootstrap_commands(docker: str, project: str | None, env_file: Path, email: str
+                       ) -> list[list[str]]:
+    """API login role, then the first admin (password from BAZI_BOOTSTRAP_PASSWORD or a
+    prompt; never on the command line)."""
+    return [compose(docker, project, 'run', '--rm', '-T', 'worker',
+                    *cli('create-runtime-login'), env_file=env_file),
+            compose(docker, project, 'run', '--rm', '-e', 'BAZI_BOOTSTRAP_PASSWORD', 'worker',
+                    *cli('bootstrap-admin', '--email', email), env_file=env_file)]
+
+
 def run_all(commands: list[list[str]]) -> int:
     for command in commands:
         result = subprocess.run(command, cwd=ROOT, check=False)
@@ -305,13 +354,25 @@ def main(argv=None) -> int:
     drill.add_argument('--confirm', required=True, help='the backup name, typed again')
     drill.add_argument('--deletion-ledger', type=Path)
     drill.add_argument('--keep', action='store_true', help='keep the drill project to inspect it')
+    mig = commands.add_parser('migrate', help='database migrations (status, or upgrade after'
+                              ' a recent backup)')
+    mig.add_argument('--status', action='store_true', help='show current and head revisions')
+    mig.add_argument('--backup-dest', type=Path,
+                     help='backup directory; upgrade needs a backup younger than 24 hours')
+    mig.add_argument('--without-backup', action='store_true',
+                     help='upgrade an empty or disposable database without a backup')
+    mig.add_argument('--project', help='Compose project (default: the live one)')
+    boot = commands.add_parser('bootstrap', help='API login role and the first admin')
+    boot.add_argument('--email', required=True)
+    boot.add_argument('--project', help='Compose project (default: the live one)')
     led = commands.add_parser('deletion-ledger', help='export erasures of the live system')
     led.add_argument('--dest', type=Path, required=True)
     led.add_argument('--project', help='Compose project (default: the live one)')
-    for sub in (back, rest, led, drill):
+    for sub in (back, rest, led, drill, mig, boot):
         sub.add_argument('--env-file', type=Path, default=ENV_FILE)
     args = parser.parse_args(argv)
-    if args.command in ('backup', 'restore-preflight', 'restore', 'deletion-ledger', 'drill'):
+    if args.command in ('backup', 'restore-preflight', 'restore', 'deletion-ledger', 'drill',
+                        'migrate', 'bootstrap'):
         docker = docker_executable()
         if not docker:
             print('Docker is required for backup/restore.', file=sys.stderr)
@@ -328,6 +389,19 @@ def main(argv=None) -> int:
             return run_all(preflight_commands(docker, args.manifest))
         if args.command == 'deletion-ledger':
             return run_all(ledger_commands(docker, args.dest, args.project, args.env_file))
+        if args.command == 'migrate':
+            if not args.status and not args.without_backup:
+                found = recent_backup(args.backup_dest) if args.backup_dest else None
+                if found is None:
+                    print('Refusing to migrate: no backup younger than 24 hours in --backup-dest.'
+                          ' Run `scripts/dev backup --dest <dir>` first (or --without-backup for'
+                          ' an empty database).', file=sys.stderr)
+                    return 4
+                print(f"Latest backup {found['name']} ({found['age_hours']} h old,"
+                      f" schema {found['schema_head']}).")
+            return run_all(migrate_commands(docker, args.project, args.env_file, args.status))
+        if args.command == 'bootstrap':
+            return run_all(bootstrap_commands(docker, args.project, args.env_file, args.email))
         if args.command == 'drill':
             steps, teardown = drill_commands(docker, args.manifest, args.confirm, args.env_file,
                                              args.deletion_ledger)

@@ -139,7 +139,11 @@ khác tra tại bảng cuối file này.
 - T052 ✅ backup mã hóa AES-256-GCM theo khối (khóa riêng `BACKUP_ENCRYPTION_KEY`), lưu giữ
   7 ngày + 4 tuần, ghi nhận vào `backups` + `GET /operations/backups`; T053 ✅ kiểm tra sau
   restore theo runbook, `scripts/dev drill` (diễn tập trên máy dev qua Compose, gỡ sạch).
-- Việc kế tiếp: T054–T056.
+- T054 ✅ (phần viết + công cụ): README runbook Ubuntu (cài lần đầu, backup hằng ngày,
+  cập nhật có kiểm migration + quay lại, restore/diễn tập, theo dõi); `scripts/dev migrate`
+  (status; upgrade chỉ khi có backup < 24 h) và `bootstrap`; doctor deploy đòi đủ khóa
+  production. Chạy thật trên Ubuntu chờ T002.
+- Việc kế tiếp: T055–T056.
 
 ## Các giai đoạn
 
@@ -288,7 +292,7 @@ trước khi trình duyệt.
 | T051 | Benchmark throughput, storage và observability | K7 | ✅ dev; số đo Ubuntu chờ T002/T036 |
 | T052 | Backup service và CLI | K5/K7 | ✅ |
 | T053 | Restore drill và disaster recovery | K5/K7 | ✅ dev; đo RTO trên Ubuntu chờ T002 |
-| T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | |
+| T054 | Windows dev/Ubuntu deployment runbook và update/migration checks | K7 | ✅ runbook + công cụ; chạy Ubuntu chờ T002 |
 | T055 | Tích hợp hồi phục và test bảo mật cuối | K7 | |
 | T056 | Nghiệm thu tám kịch bản và bàn giao đầy đủ | K7 | |
 
