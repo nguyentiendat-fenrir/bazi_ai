@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { api, call, type Schemas } from '@/api/client'
+import { ChartAnalysis } from '@/components/ChartAnalysis'
 import { Dialog } from '@/components/Dialog'
 import { ErrorState, Facts, FormError, Loading, Notice, PageHeader } from '@/components/ui'
 import {
@@ -223,6 +224,10 @@ export default function ChartPage() {
           <p className="muted small">Quan hệ là cấu hình tính được, chưa phải đã “hóa” hay sự kiện đời sống.</p>
         </section>
       </div>
+      <section className="panel" aria-labelledby="analysis-heading">
+        <h2 id="analysis-heading">Luận theo quy tắc</h2>
+        <ChartAnalysis chartId={c.id} />
+      </section>
       <section className="panel" aria-labelledby="luck-heading">
         <h2 id="luck-heading">Đại vận và lưu niên</h2>
         <Luck facts={facts} />

@@ -13,7 +13,7 @@ export interface AnswerCitation {
   pages: number[]
   printed_pages?: string[]
   quote: string
-  viewer?: { page_revision_id: string }[]
+  viewer?: { page_revision_id: string, start_offset?: number, end_offset?: number }[]
 }
 
 export interface AnswerClaim {
@@ -85,7 +85,7 @@ export function AnswerView({ answer, onFollowUp }: { answer: AnswerData, onFollo
                         <span className="muted small">«{c.book_title}»{c.section_title ? ` · ${c.section_title}` : ''} · trang {c.pages.join(', ')}
                           {c.speaker_layer ? ` · ${SPEAKERS[c.speaker_layer] ?? c.speaker_layer}` : ''}</span>
                         <blockquote>{c.quote}</blockquote>
-                        {c.viewer?.[0] && <a className="small" href={`/pages/${c.viewer[0].page_revision_id}`}>Mở trang nguồn</a>}
+                        {c.viewer?.[0] && <a className="small" href={`/pages/${c.viewer[0].page_revision_id}?from=${c.viewer[0].start_offset ?? ''}&to=${c.viewer[0].end_offset ?? ''}`}>Mở trang nguồn</a>}
                       </li>
                     ))}
                   </ul>

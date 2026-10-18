@@ -296,3 +296,4 @@ td.wrap { white-space: normal; min-width: 280px; }
 .setting-row .actions { padding-top: 22px; }
 tr.selected td { background: var(--teal-weak); }
 .gates { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+mark.quoted { background: #fff1a8; color: inherit; padding: 0 1px; border-radius: 2px; box-shadow: 0 0 0 1px #e8cf4a; }

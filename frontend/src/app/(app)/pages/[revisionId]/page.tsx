@@ -136,6 +136,15 @@ function ResolvePanel({ itemId, rev, dirty, onResolved }: {
   )
 }
 
+/** The block's text with the cited part marked; offsets are into the revision text. */
+function highlight(text: string, start: number, quoted: { from: number, to: number } | null) {
+  if (!quoted) return text
+  const from = Math.max(0, quoted.from - start)
+  const to = Math.min(text.length, quoted.to - start)
+  if (to <= 0 || from >= text.length || to <= from) return text
+  return <>{text.slice(0, from)}<mark className="quoted">{text.slice(from, to)}</mark>{text.slice(to)}</>
+}
+
 export default function PageWorkspace() {
   const { revisionId } = useParams<{ revisionId: string }>()
   const router = useRouter()
@@ -143,6 +152,11 @@ export default function PageWorkspace() {
   const reviewer = can('library:review')
   const search = useSearchParams()
   const itemId = search.get('item')
+  // A citation opens the page with the quoted span (offsets into this revision's text).
+  const quoteFrom = Number(search.get('from') ?? NaN)
+  const quoteTo = Number(search.get('to') ?? NaN)
+  const quoted = Number.isFinite(quoteFrom) && Number.isFinite(quoteTo) && quoteTo > quoteFrom
+    ? { from: quoteFrom, to: quoteTo } : null
   const savedNotice = search.get('saved')
   const [rev, setRev] = useState<Revision | null>(null)
   const [loadError, setLoadError] = useState<unknown>(null)
@@ -198,6 +212,15 @@ export default function PageWorkspace() {
     setSelected(ordinal)
     cards.current.get(ordinal)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
+
+  // Bring the quoted block into view once the revision is on screen.
+  const quotedBlock = quoted && rev
+    ? rev.blocks.find((b) => b.start_offset < quoted.to && b.end_offset > quoted.from) ?? null : null
+  useEffect(() => {
+    if (!quotedBlock) return
+    setSelected(quotedBlock.ordinal)
+    cards.current.get(quotedBlock.ordinal)?.scrollIntoView({ block: 'center' })
+  }, [quotedBlock?.ordinal, rev?.id])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const setField = (block: Block, field: keyof Edit, value: string) => {
     setEdits((current) => {
@@ -347,7 +370,7 @@ export default function PageWorkspace() {
                               rows={Math.min(12, Math.max(2, Math.ceil(text.length / 70) + text.split('\n').length - 1))}
                               aria-invalid={text.trim() === '' || undefined}
                               onChange={(e) => setField(b, 'text', e.target.value)} />
-                  ) : <p className="block-text" lang="vi">{b.text}</p>}
+                  ) : <p className="block-text" lang="vi">{highlight(b.text, b.start_offset, quoted)}</p>}
                   {edit && (
                     <div className="block-foot">
                       {edit.text !== undefined && <Diff before={blocks.get(b.ordinal)?.text ?? ''} after={edit.text} />}
