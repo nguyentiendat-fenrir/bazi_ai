@@ -134,3 +134,16 @@ test('pages are served with the security headers and no framework banner', async
   expect(headers['referrer-policy']).toBe('same-origin')
   expect(headers['x-powered-by']).toBeUndefined()
 })
+
+test('admins get a first-steps checklist read from the real state; readers do not', async ({ page }) => {
+  await signIn(page, 'admin')
+  const setup = page.getByRole('region', { name: 'Bắt đầu' })
+  await expect(setup).toBeVisible()
+  const backup = setup.getByRole('listitem').filter({ hasText: 'Tạo backup đầu tiên' })
+  await expect(backup).toContainText('chưa')                    // the E2E stack never backs up
+  await backup.getByRole('link', { name: 'Xem vận hành' }).click()
+  await expect(page).toHaveURL(/\/settings\/system$/)
+  await page.getByRole('button', { name: 'Đăng xuất' }).click()
+  await signIn(page, 'reader')
+  await expect(page.getByRole('region', { name: 'Bắt đầu' })).toHaveCount(0)
+})

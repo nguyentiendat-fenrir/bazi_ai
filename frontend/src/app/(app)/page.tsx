@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { api, call } from '@/api/client'
 import { OperationsAlerts } from '@/components/OperationsPanel'
+import { SetupChecklist } from '@/components/SetupChecklist'
 import { Empty, ErrorState, Loading, PageHeader } from '@/components/ui'
 import { formatDateTime, formatNumber, shortId } from '@/lib/format'
 import { useQuery } from '@/lib/query'
@@ -142,6 +143,7 @@ export default function DashboardPage() {
     <>
       <title>Tổng quan · Kho Bát Tự</title>
       <PageHeader title="Tổng quan" description={`Xin chào ${user?.email ?? ''}`} />
+      {can('library:review') && <SetupChecklist />}
       {can('library:review') && <OperationsPanels />}
       {can('system:admin') && <AdminPanel />}
       <LibraryPanel canUpload={can('library:review')} />
