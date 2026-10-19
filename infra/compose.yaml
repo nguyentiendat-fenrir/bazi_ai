@@ -181,6 +181,9 @@ services:
     read_only: true
     tmpfs: [/data, /config]
     cap_drop: [ALL]
+    # The official image marks /usr/bin/caddy with cap_net_bind_service; with every
+    # capability dropped the kernel refuses to exec it, so keep exactly that one.
+    cap_add: [NET_BIND_SERVICE]
     security_opt: [no-new-privileges:true]
     pids_limit: 64
     mem_limit: 256m
