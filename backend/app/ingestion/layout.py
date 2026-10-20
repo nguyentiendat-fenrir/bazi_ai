@@ -114,3 +114,14 @@ def heading(text: str, size: float | None, weight: int | None, body_size: float 
     if weight and weight >= 600 and len(stripped) <= 80 and not stripped.endswith(('.', ',', ';')):
         return 2, 'bold'
     return None
+
+
+# Closing punctuation (Latin and CJK, with closing quotes/brackets after it).
+CLOSED = re.compile(r'[.!?…:;。！？」』》〉)\]"”’»]\s*$')
+LOWER_START = re.compile(r'^\s*[a-zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũ'
+                          r'ưừứựửữỳýỵỷỹđ]')
+
+
+def continues(previous: str, current: str) -> bool:
+    """``current`` carries on the sentence ``previous`` left open."""
+    return not CLOSED.search(previous) and bool(LOWER_START.match(current))

@@ -64,6 +64,30 @@ class PlanTests(unittest.TestCase):
         for prev, nxt in zip(chunks, chunks[1:]):
             self.assertEqual(prev.pieces[-1].block['id'], nxt.pieces[0].block['id'])
 
+    def test_a_sentence_split_over_two_blocks_is_never_cut(self):
+        # The PDF ended the block mid-sentence (page turn, symbol); the next block goes on.
+        first = words(55, 'a') + ' và câu này còn tiếp'
+        blocks = [block(0, words(70, 'z')), block(1, first), block(2, 'sang trang sau mới hết câu.'),
+                  block(3, words(70, 'y'))]
+        chunks = self.plan(blocks, target=100, max=300, overlap=0)
+        holders = [[p.block['id'] for p in c.pieces] for c in chunks]
+        together = [ids for ids in holders if 'b1' in ids]
+        self.assertTrue(together and all('b2' in ids for ids in together), holders)
+
+    def test_overlap_never_starts_with_the_end_of_a_sentence(self):
+        blocks = [block(0, words(70, 'm')), block(1, words(20, 'n') + ' còn tiếp'),
+                  block(2, 'phần cuối của câu.'), block(3, words(90, 'o'))]
+        chunks = self.plan(blocks, target=110, max=300, overlap=60)
+        for chunk in chunks[1:]:
+            self.assertNotEqual(chunk.pieces[0].block['id'], 'b2')
+
+    def test_an_oversized_sentence_run_is_cut_after_a_sentence_end(self):
+        blocks = [block(0, words(100, 'q') + ' mở'), block(1, 'tiếp theo ' + words(100, 'r')),
+                  block(2, 'nữa ' + words(100, 's') + ' kết thúc.'), block(3, 'cuối ' + words(30, 't'))]
+        chunks = self.plan(blocks, target=150, max=250, overlap=0)
+        for chunk in chunks[:-1]:
+            self.assertLessEqual(chunk.tokens, 250)
+
     def test_chunk_text_is_pieces_joined(self):
         blocks = [block(i, f'Đoạn {i} có nội dung.') for i in range(3)]
         chunk = self.plan(blocks)[0]

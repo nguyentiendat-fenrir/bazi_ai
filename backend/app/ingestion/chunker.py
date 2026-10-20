@@ -5,7 +5,11 @@ Rules:
 * pillar tables (consecutive ``chart_row`` blocks) and "Thí dụ / Ví dụ" case
   windows are atomic units — split only if a single unit exceeds the maximum;
 * a block longer than the maximum is split at sentence ends;
-* consecutive chunks of one section/speaker overlap by whole trailing pieces;
+* a sentence the PDF split over two blocks (it runs onto the next page, or a symbol or
+  font change broke the paragraph) stays one unit: a block that ends without closing
+  punctuation followed by one that starts in lower case are never cut apart;
+* consecutive chunks of one section/speaker overlap by whole trailing pieces, starting at
+  the beginning of a sentence;
 * every piece of chunk text is a span ``[chunk_start, chunk_end)`` that equals
   ``normalized_text[start_offset:end_offset]`` of its page revision — a chunk on
   two pages has spans on both revisions;
@@ -27,15 +31,17 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..knowledge import scopes
+from .layout import CLOSED as _CLOSED, LOWER_START as _LOWER_START, continues
 from .structure import BlockRef, build_sections
 from .worker import JobContext, Unit
 
 TOKENIZER = 'syllable-approx-1'
-CHUNKER_VERSION = f'chunker-1/{TOKENIZER}'
+CHUNKER_VERSION = f'chunker-2/{TOKENIZER}'
 DEFAULTS = {'target': 500, 'max': 700, 'overlap': 80}
 SEPARATOR = '\n\n'
 CASE_HEADING = re.compile(r'^\(?\s*(thí dụ|ví dụ|mệnh lệ|lệ)\b', re.IGNORECASE)
 _SENTENCE = re.compile(r'(?<=[.!?…;:])\s+')
+
 _TOKEN = re.compile(r'\w+|[^\w\s]', re.UNICODE)
 
 TOPIC_KEYWORDS = {
@@ -118,6 +124,26 @@ def _split_block(block: dict, maximum: int) -> list[Piece]:
     return trimmed
 
 
+def _sentence_units(group: Group, maximum: int) -> list[Group]:
+    """An oversized group split into units of whole pieces, cut only after a piece that
+    closes a sentence when possible."""
+    units, current = [], []
+    for piece in group.pieces:
+        if current and sum(p.tokens for p in current) + piece.tokens > maximum:
+            # Move back to the last sentence end inside the current unit, if there is one.
+            cut = max((i for i, p in enumerate(current) if _CLOSED.search(p.text)), default=None)
+            if cut is not None and cut < len(current) - 1:
+                units.append(Group(current[:cut + 1], group.kind))
+                current = current[cut + 1:]
+            else:
+                units.append(Group(current, group.kind))
+                current = []
+        current.append(piece)
+    if current:
+        units.append(Group(current, group.kind))
+    return units
+
+
 def plan_chunks(blocks: list[dict], config: dict) -> list[ChunkSpec]:
     """Pure planning step: blocks (reading order, with section_path) → chunk specs."""
     target, maximum, overlap = config['target'], config['max'], config['overlap']
@@ -132,7 +158,10 @@ def plan_chunks(blocks: list[dict], config: dict) -> list[ChunkSpec]:
         last = groups[-1] if groups else None
         joinable = last and (last[0], last[1]) == key and (
             (kind == 'table' and last[2].kind == 'table') or
-            (kind == 'case' and last[2].kind in ('case', 'table') and case_until_heading))
+            (kind == 'case' and last[2].kind in ('case', 'table') and case_until_heading) or
+            # One sentence split over two blocks: keep it in one unit.
+            (kind == 'text' and last[2].kind == 'text'
+             and continues(last[2].pieces[-1].text, block['text'])))
         if joinable:
             last[2].pieces.extend(_split_block(block, maximum))
             if kind == 'case':
@@ -142,7 +171,7 @@ def plan_chunks(blocks: list[dict], config: dict) -> list[ChunkSpec]:
 
     chunks: list[ChunkSpec] = []
     for section, speaker, group in groups:
-        units = [group] if group.tokens <= maximum else [Group([p], group.kind) for p in group.pieces]
+        units = [group] if group.tokens <= maximum else _sentence_units(group, maximum)
         for unit in units:
             current = chunks[-1] if chunks else None
             same_scope = current and (current.section_path, current.speaker) == (section, speaker)
@@ -160,6 +189,12 @@ def plan_chunks(blocks: list[dict], config: dict) -> list[ChunkSpec]:
                         break
                     carried.insert(0, piece)
                     size += piece.tokens
+                # Never open a chunk with the second half of a sentence.
+                while carried:
+                    index = current.pieces.index(carried[0])
+                    if index == 0 or not continues(current.pieces[index - 1].text, carried[0].text):
+                        break
+                    size -= carried.pop(0).tokens
                 if carried and size + unit.tokens <= maximum:
                     spec.pieces.extend(carried)
             spec.pieces.extend(unit.pieces)

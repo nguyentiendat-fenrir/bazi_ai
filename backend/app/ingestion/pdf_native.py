@@ -21,7 +21,7 @@ import pypdfium2.raw as pdfium_c
 from . import layout
 from .normalize import normalize
 
-PARSER_VERSION = f'pdfium-native-5/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
+PARSER_VERSION = f'pdfium-native-6/{pdfium.PYPDFIUM_INFO}/{pdfium.PDFIUM_INFO}'
 MAX_PAGES = 3000
 _DIGITS = re.compile(r'^(\d{1,4}|[ivxlcdm]{1,7})$', re.IGNORECASE)
 
@@ -266,8 +266,24 @@ def document_profile(doc: pdfium.PdfDocument) -> dict:
         if layout.is_toc_page(lines):
             toc_pages.append(index + 1)
     body = sizes.most_common(1)[0][0] if sizes else None
-    return {'body_size': body, 'repeated': sorted(layout.repeated_patterns(pages_lines)),
-            'toc_pages': toc_pages, 'pages': len(doc)}
+    profile = {'body_size': body, 'repeated': sorted(layout.repeated_patterns(pages_lines)),
+               'toc_pages': toc_pages, 'pages': len(doc)}
+    profile['carry_in'] = _speaker_carry(doc, profile)
+    return profile
+
+
+def _speaker_carry(doc: pdfium.PdfDocument, profile: dict) -> dict[str, dict]:
+    """For each page, the speaker of a sentence the previous page left open, so a page
+    can be read on its own and still keep "nguyên văn" and "bình chú" apart across a
+    page turn. Pages are read in order once more; carry only passes one page at a time."""
+    carry: dict[str, dict] = {}
+    for index in range(len(doc) - 1):
+        page = extract_page(doc, index, {**profile, 'carry_in': carry})
+        content = [b for b in page.blocks if not b.attributes.get('role') and b.kind != 'heading']
+        last = content[-1] if content else None
+        if last is not None and last.speaker != 'unknown' and not layout.CLOSED.search(last.text):
+            carry[str(index + 2)] = {'layer': last.speaker, 'text': last.text[-200:]}
+    return carry
 
 
 def _classify_blocks(blocks: list[Block], profile: dict, number: int) -> None:
@@ -275,6 +291,9 @@ def _classify_blocks(blocks: list[Block], profile: dict, number: int) -> None:
     repeated = set(profile.get('repeated', []))
     toc = number in set(profile.get('toc_pages', []))
     layer, color = None, None
+    # The previous page ended inside a sentence of a known speaker (document profile).
+    carry = (profile.get('carry_in') or {}).get(str(number))
+    first_content = True
     for block in blocks:
         attrs = block.attributes
         stripped = block.text.strip()
@@ -296,6 +315,11 @@ def _classify_blocks(blocks: list[Block], profile: dict, number: int) -> None:
             block.kind = 'heading'
             attrs['level'], attrs['heading_rule'] = found
         marker_layer, marker = layout.speaker_marker(stripped)
+        if first_content and carry and not marker_layer and block.kind != 'heading'                 and layout.continues(carry['text'], stripped):
+            # The sentence runs on from the previous page: so does its speaker, and the
+            # same-colour rule below carries it further down this page.
+            layer, color = carry['layer'], attrs.get('color')
+        first_content = False
         if marker_layer:
             block.speaker, attrs['marker'] = marker_layer, marker
             layer, color = marker_layer, attrs.get('color')
@@ -304,6 +328,24 @@ def _classify_blocks(blocks: list[Block], profile: dict, number: int) -> None:
             block.speaker, attrs['speaker_inherited'] = layer, True
         else:
             layer, color = None, None
+    _demote_open_headings(blocks)
+
+
+# Rules that also match the first line of an ordinary numbered or bold paragraph.
+_WEAK_HEADING_RULES = {'decimal1', 'decimal2', 'bold'}
+
+
+def _demote_open_headings(blocks: list[Block]) -> None:
+    """A numbered or bold "heading" whose sentence goes on in the next block ("1. Ấn tinh
+    tuy cực vượng, nhưng kề bên nhật chủ" / "sinh cho nhật chủ rất tốt…") is the first line
+    of a paragraph: making it a section title would cut the sentence in two."""
+    content = [b for b in blocks if not b.attributes.get('role')]
+    for block, following in zip(content, content[1:]):
+        if (block.kind == 'heading' and block.attributes.get('heading_rule') in _WEAK_HEADING_RULES
+                and following.kind != 'heading' and layout.continues(block.text, following.text)):
+            block.kind = 'paragraph'
+            block.attributes['heading_demoted'] = block.attributes.pop('heading_rule')
+            block.attributes.pop('level', None)
 
 
 def extract_page(doc: pdfium.PdfDocument, index: int,
