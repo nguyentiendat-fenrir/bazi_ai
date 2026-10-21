@@ -14,6 +14,7 @@ Ontology seed chỉ chứa mã Can/Chi, taxonomy trường phái, loại thực 
 
 - Concept identity: `(school_id, canonical_key)`; label tiếng Việt, chữ Hán nullable, description revision, aliases có scope/source.
 - Term form: NFC exact, folded no-accent search; quan hệ `same_concept`, `translation_variant`, `related`, `contrasts_with`. Chỉ `same_concept/translation_variant` đã duyệt được expansion, theo selected school/method.
+- Danh sách thuật ngữ đã duyệt (`knowledge/data/glossary_v1.json`, 21/10/2026) nạp bằng `python -m backend.app.cli load-glossary --as <reviewer> --publish`: tạo nháp rồi duyệt qua luồng review, chạy lại an toàn (chỉ thêm alias thiếu; đổi label/mô tả thành revision mới). Khóa `<nhóm>.<tên không dấu>`, trường phái `tu_tru` (chung) / `tu_binh` / `manh_phai`.
 - Assertion: một phát biểu có `claim_type`, `school_id`, `method_id`, `speaker_layer`, applicability, exception_text, revision, evidence spans và review state. Phân biệt `source_explicit`, `editor_interpretation`, `ai_inferred`.
 - Các lớp phát ngôn: `original_author`, `commentator`, `translator`, `editor`, `unknown`; tên speaker chỉ ghi khi tài liệu xác nhận. Tử Bình có Nguyên văn/Nguyên chú, Từ chú và các chú giải khác: không gán mọi chữ vào Thẩm Hiếu Chiêm.
 - Relations giữa assertions: supports, disputes, qualifies, exception_to, derives_from. Quan hệ do AI gợi ý cũng phải review. Chỉ quan hệ đúng revision mới đưa vào run.

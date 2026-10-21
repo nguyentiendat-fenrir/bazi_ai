@@ -12,6 +12,7 @@
     python -m backend.app.cli embedding-profile --provider openai_compatible --model bge-m3 \
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
+    python -m backend.app.cli load-glossary --as reviewer@example.test --publish   # term list
     python -m backend.app.cli pipeline-profile --name "Sách in"         --embedding-profile <id> --ocr-languages vie+eng
 
 RAG pilot (backend/app/rag/admin.py):
@@ -272,6 +273,43 @@ def run_evaluate(args) -> int:
     return 0 if ok else 1
 
 
+def load_glossary(args) -> int:
+    """Load the reviewed term list as approved concepts/aliases, optionally publish it."""
+    import uuid
+
+    from .auth.service import Principal
+    from .core.errors import AppError
+    from .knowledge import glossary, ontology_release
+    settings = load_settings()
+    data = glossary.read(Path(args.file)) if args.file else glossary.read()
+    engine = create_engine(settings.database_url, poolclass=pool.NullPool)
+    with engine.begin() as conn:
+        user = conn.execute(text(
+            "SELECT id, email, role FROM users WHERE email = :e AND enabled"
+            " AND role IN ('reviewer', 'admin')"), {'e': args.as_user}).mappings().first()
+        if user is None:
+            _print({'ok': False, 'code': 'USER_NOT_FOUND',
+                    'message': 'load as an enabled reviewer or admin (--as)'})
+            return 2
+        conn.execute(text("SELECT set_config('app.user_id', :u, true)"), {'u': str(user['id'])})
+        principal = Principal(user['id'], user['email'], user['role'], uuid.UUID(int=0), '')
+        try:
+            report = glossary.load(conn, principal, data).as_dict()
+            if args.publish:
+                try:
+                    report['ontology_release'] = ontology_release.publish(
+                        conn, user['id'], None, None)['release']['version']
+                except AppError as exc:
+                    if exc.code != 'NO_CHANGE':
+                        raise
+                    report['ontology_release'] = 'unchanged'
+        except AppError as exc:
+            _print({'ok': False, 'code': exc.code, 'message': str(exc)})
+            return 2
+    _print({'ok': not report['missing_schools'], **report})
+    return 0 if not report['missing_schools'] else 1
+
+
 def run_restore(args) -> int:
     from .ops.backup import BackupError, preflight, restore
     from .storage import build_store
@@ -382,6 +420,11 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument('--baseline', help="'latest' (same strategy and split) or a run id")
     ev.add_argument('--tolerance', type=float, default=0.02)
     ev.add_argument('--gates', action='store_true', help='also fail when a release gate fails')
+    glo = commands.add_parser('load-glossary', help='load the reviewed term list (concepts, aliases)')
+    glo.add_argument('--as', dest='as_user', required=True, help='the reviewer or admin who reviewed it')
+    glo.add_argument('--file', help='default: backend/app/knowledge/data/glossary_v1.json')
+    glo.add_argument('--publish', action='store_true',
+                     help='then publish an ontology release (repins the corpus)')
     commands.add_parser('fetch-models', help='download the pinned RAG/OCR models (network)')
     commands.add_parser('rag-setup', help='RAG pilot embedding profile, collection, pipeline')
     ingest = commands.add_parser('ingest-folder', help='upload every PDF/DOCX of a folder tree')
@@ -415,6 +458,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_restore(args)
         if args.command == 'evaluate':
             return run_evaluate(args)
+        if args.command == 'load-glossary':
+            return load_glossary(args)
         if args.command == 'deletion-ledger':
             from .ops.backup import export_ledger
             ledger = export_ledger(_owner_database(load_settings()))
