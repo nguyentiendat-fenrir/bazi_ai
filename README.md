@@ -1,13 +1,19 @@
 # BAZI AI — Kho tri thức Bát Tự
 
 Ưu tiên: **sách → trích xuất/OCR → kiểm duyệt → kho nguồn → RAG có dẫn chứng**.
-Dev trên Windows, commit/push Git, Ubuntu 22.04 pull và chạy containers.
-Gemma dùng container `ghcr.io/ggml-org/llama.cpp:server-cuda` đã có trên Ubuntu.
+Dev trên Windows, commit/push Git, Ubuntu 22.04 pull và chạy containers (LLM Qwen3-8B trên vLLM, GPU 4090).
 
-Hiện có backend kho tri thức (upload, trích xuất native/OCR/DOCX, duyệt nguồn,
-chunk/embed, publish release, tra cứu hybrid có citation, adapter LLM) và web app
-quản trị kho bước đầu (`frontend/`). **Chưa có lá số, chat hay Gemma thật đã smoke.** Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md);
-mục lục tài liệu: [docs/README.md](docs/README.md).
+📐 **Tài liệu kiến trúc, review code và tiến độ bàn giao (artifact):**
+<https://claude.ai/artifact/HnuZ5upbo42eQ97fZ69dao>
+
+Hiện có:
+- **Kho tri thức:** upload, trích xuất native/OCR/DOCX, duyệt nguồn, chunk cha/con, embed, publish release, tra cứu hybrid có citation; web app quản trị (`frontend/`), trang chấm `/judge`.
+- **Thuật ngữ đã duyệt** ([glossary_v1.json](backend/app/knowledge/data/glossary_v1.json), 1.293 khái niệm theo Tứ Trụ chung / Tử Bình / Manh phái). Mỗi nguồn là *link mềm* (mã sách + trang + câu neo) theo danh bạ [books.json](backend/app/knowledge/data/books.json); mỗi máy tự tra trong thư viện của mình, sách không vào Git.
+- **Dữ kiện lá số** ([pillar_facts.py](backend/app/calc/pillar_facts.py)): đọc tứ trụ + đại vận viết trong câu hỏi, tính bằng bảng tra (thập thần, tàng can, trường sinh, Lộc/Kình Dương/Thiên Mã, hợp–xung–hình–hại, ám hợp, tự hợp; không xét hợp hóa).
+- **Harness trả lời** ([answering/](backend/app/answering/)): tách ý → vòng kiểm đủ kiến thức (tối đa 7 vòng, bắt câu trích nguyên văn) → phân tích B3–B7 → tổng hợp có dẫn `[P#]`, tách Tử Bình / Manh phái.
+- **MCP server của RAG** tại `/api/v1/mcp/` (bearer token) hoặc stdio: `search_books`, `answer_question`, `chart_facts`, `lookup_terms`. Xem [docs/09](docs/09_AI_REASONING.md).
+
+Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md); mục lục tài liệu: [docs/README.md](docs/README.md).
 
 ## RAG pilot: chatbot hỏi đáp từ sách và trang chấm
 
@@ -36,7 +42,16 @@ $C --profile app up -d
 $C run --rm -v "$PWD/inputs/books:/books:ro" worker \
     python -m backend.app.cli ingest-folder /books --admin admin@example.test
 BAZI_EVAL_EMAIL=admin@example.test python3 scripts/rag_eval.py run   # 20 câu → /judge
+# Thuật ngữ đã duyệt: kiểm nguồn với sách của máy này rồi nạp vào kho
+python3 scripts/glossary_sources.py --books inputs/books --check
+$C run --rm api python -m backend.app.cli load-glossary --as admin@example.test --publish
+# Harness trả lời trên Qwen: 20 câu trong test_questions.txt, kết quả markdown + vết từng bước
+$C run --rm api python -m backend.app.answering.run test_questions.txt --as admin@example.test \n    --publish harness-1     # --publish: đưa lên /judge để chấm
 ```
+
+**MCP:** đặt `MCP_TOKEN` (≥ 32 ký tự) và `MCP_USER_EMAIL` (tài khoản mà tool chạy dưới quyền) trong `.env`, rồi khai báo trong client MCP với URL `http://<máy>:3000/api/v1/mcp/` và header `Authorization: Bearer <MCP_TOKEN>`. Chạy cục bộ qua stdio: `python -m backend.app.mcpserver`.
+
+**Nguồn sách (link mềm):** `GET /api/v1/sources/open?book=<mã>&page=<trang>&q=<câu neo>` mở đúng trang trong thư viện của máy đang chạy, tô sáng câu neo; `/sources/resolve` trả JSON. Danh bạ sách: [books.json](backend/app/knowledge/data/books.json).
 
 **Chạy dưới đường dẫn con.** Ví dụ Tailscale Funnel `--set-path=/bazi`:
 - Đặt `PUBLIC_BASE_PATH=/bazi` trong `.env`.
@@ -167,10 +182,9 @@ UI qua gateway `http://127.0.0.1:${GATEWAY_PORT:-3000}` (chỉ loopback; mở ra
 proxy có TLS). Đăng nhập admin, vào Cài đặt → Hệ thống & ngân sách xem "Vận hành": không có
 cảnh báo nào ngoài `BACKUP_MISSING` cho tới backup đầu tiên. Sách: Thư viện → Tải sách lên.
 
-Gemma dùng `LLM_PROVIDER=openai_compatible`. Cấu hình `LLM_BASE_URL` kết thúc `/v1`,
-`LLM_MODEL` theo model ID/alias thực và key nếu có trong `.env` trên Ubuntu.
-Chưa biết URL/model/VRAM nên để trống, không khởi Gemma thứ hai. Embedding dùng
-model/profile riêng. Xem [kết nối llama.cpp](docs/12_SECURITY_OPERATIONS.md#kết-nối-gemma-llamacpp).
+LLM là container `qwen3-8b` (vLLM) có sẵn trên máy, ngoài Compose: `LLM_PROVIDER=openai_compatible`,
+`LLM_BASE_URL=http://host.docker.internal:8000/v1`, `LLM_MODEL=qwen3-8b`. Lệnh chạy, VRAM và lý do
+các tham số ở [infra/qwen.md](infra/qwen.md). Embedding/reranker Jina chạy CPU, model riêng.
 
 ### 2. Backup hằng ngày
 
