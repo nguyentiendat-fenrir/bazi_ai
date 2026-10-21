@@ -170,6 +170,10 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 
 POST charts analyses tạo conversation nội bộ gắn analysis để dùng cùng run model; DB giữ conversation_id và privacy, UI không cần hiện thread tự động trong chat list (`context.origin=analysis`). Hoặc triển khai service tạo explicit analysis thread và trả conversation_id; contract response luôn có ID này. Research không chart vẫn có source statements; chart mode không source trả facts và limitations.
 
+## MCP (RAG cho agent)
+
+`POST /api/v1/mcp/` — Streamable HTTP của MCP (JSON-RPC 2.0, không giữ phiên, trả JSON), `Authorization: Bearer <MCP_TOKEN>`; 401 khi thiếu/sai token, 404 khi chưa cấu hình. Không nằm trong OpenAPI. Tool chỉ đọc: `search_books(query, school?, k)`, `answer_question(question, max_rounds?, include_trace?)`, `chart_facts(text)`, `lookup_terms(text, school?)`; kết quả nằm ở `structuredContent`, lỗi nghiệp vụ là `isError` kèm thông điệp. Chạy cục bộ qua stdio: `python -m backend.app.mcpserver`.
+
 ## Evaluation và operations
 
 | Method/path | Quyền | Request / response |

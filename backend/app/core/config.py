@@ -94,6 +94,12 @@ class Settings(BaseSettings):
     # Shared judging password (argon2 hash, never the password) and its cookie lifetime.
     judge_password_hash: SecretStr | None = None
     judge_session_hours: int = Field(8, ge=1, le=72)
+    # MCP server of the RAG (backend/app/mcpserver): off unless a token is set. Tools search as
+    # MCP_USER_EMAIL, so they see exactly that account's library.
+    mcp_token: SecretStr | None = None
+    mcp_user_email: str | None = None
+    mcp_answer_rounds: int = Field(7, ge=1, le=7)
+    mcp_time_budget: float | None = Field(None, gt=0)
     # Sub-path the UI and API are published under ("/bazi"), for cookie paths the browser sees.
     public_base_path: str = Field('', pattern=r'^(/[A-Za-z0-9._-]+)*$')
 
@@ -101,7 +107,8 @@ class Settings(BaseSettings):
                      'session_signing_key', 'field_encryption_key', 'backup_encryption_key',
                      'llm_api_key', 'llm_base_url', 'judge_password_hash',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
-                     's3_access_key_id', 's3_secret_access_key', mode='before')
+                     's3_access_key_id', 's3_secret_access_key', 'mcp_token', 'mcp_user_email',
+                     mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".
@@ -120,6 +127,16 @@ class Settings(BaseSettings):
     def s3_complete(self) -> 'Settings':
         if self.storage_backend == 's3' and not self.s3_bucket:
             raise ValueError('storage_backend s3 requires s3_bucket')
+        return self
+
+    @model_validator(mode='after')
+    def mcp_complete(self) -> 'Settings':
+        if self.mcp_token is None:
+            return self
+        if len(self.mcp_token.get_secret_value()) < MIN_SECRET_LENGTH:
+            raise ValueError(f'mcp_token must be at least {MIN_SECRET_LENGTH} characters')
+        if not self.mcp_user_email:
+            raise ValueError('mcp_token requires mcp_user_email (the account the tools search as)')
         return self
 
     @model_validator(mode='after')
@@ -173,8 +190,12 @@ class Settings(BaseSettings):
         """Configured secret strings, used by the log redactor."""
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
                    self.field_encryption_key, self.backup_encryption_key, self.llm_api_key,
-                   self.s3_secret_access_key, self.judge_password_hash)
+                   self.s3_secret_access_key, self.judge_password_hash, self.mcp_token)
         return [s.get_secret_value() for s in secrets if s is not None]
+
+    @property
+    def mcp_enabled(self) -> bool:
+        return bool(self.mcp_token and self.mcp_user_email)
 
 
 def load_settings(**overrides) -> Settings:

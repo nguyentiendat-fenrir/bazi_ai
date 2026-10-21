@@ -22,6 +22,7 @@ from .core.errors import install_error_handlers
 from .core.health import ReadinessCheck, default_checks
 from .core.logging import configure_logging
 from .core.middleware import OriginGuardMiddleware, RequestContextMiddleware
+from .mcpserver import http as mcp_http
 from .rag import deps as rag_deps
 from .storage import ObjectStore, build_store, storage_check
 
@@ -30,7 +31,8 @@ API_PREFIX = '/api/v1'
 
 def create_app(settings: Settings | None = None,
                readiness_checks: list[ReadinessCheck] | None = None,
-               engine: Engine | None = None, store: ObjectStore | None = None) -> FastAPI:
+               engine: Engine | None = None, store: ObjectStore | None = None,
+               mcp_backend=None) -> FastAPI:
     settings = settings or load_settings()
     configure_logging(settings.log_level, settings.secret_values())
     public_docs = settings.app_env != 'production'
@@ -39,7 +41,8 @@ def create_app(settings: Settings | None = None,
     async def lifespan(app: FastAPI):
         # Shared clients and CPU models live for the process, never per request (docs/09).
         await rag_deps.install(app, settings)
-        yield
+        async with mcp_http.lifespan(app):
+            yield
         await rag_deps.uninstall(app)
 
     app = FastAPI(
@@ -74,4 +77,6 @@ def create_app(settings: Settings | None = None,
                    operations.router, ask.router, judge.router):
         app.include_router(router, prefix=API_PREFIX)
     openapi.install(app)
+    # MCP server of the RAG at /api/v1/mcp/ (bearer token), off unless configured.
+    mcp_http.install(app, settings, API_PREFIX, mcp_backend)
     return app

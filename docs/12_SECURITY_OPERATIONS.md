@@ -63,6 +63,8 @@ Bảo vệ profiles bằng application-level authenticated encryption (AES-GCM q
 
 RLS và service ACL ở 04; per-job principal/rights snapshot được re-check trước publish; đừng để worker chạy admin bỏ qua quyền của requester. Source download và citations không bypass ACL qua signed URLs dài hạn; localhost dùng authenticated proxy, S3 presigned nếu dùng ≤60s và không đưa key gốc ra UI. Database/storage không public ports.
 
+MCP server của RAG (`/api/v1/mcp/`) tắt mặc định; bật khi có `MCP_TOKEN` (≥ 32 ký tự, so sánh thời gian hằng, ghi vào danh sách che log) và `MCP_USER_EMAIL`. Mọi tool chỉ đọc và chạy với quyền của tài khoản đó: tra lại tài khoản ở mỗi lần gọi (khóa tài khoản là tool dừng ngay), RLS và quyền xem sách áp dụng như trong web. Route nằm sau gateway như phần còn lại của `/api/*`; token đổi bằng cách sửa `.env` và khởi động lại `api`.
+
 ## Upload sandbox và prompt injection
 
 Ảnh trang cho duyệt (T046.1) được API render bằng PDFium: chỉ cho trang đã tồn tại, tức nguồn đã được worker trong sandbox mở thành công; một khóa tuần tự hóa mọi lời gọi PDFium trong process, trần 8 triệu pixel; bản sao nguồn tạm có kiểm sha256, giữ tối đa 8 tệp. Magic bytes + extension/MIME cross-check, size/page/pixel/uncompressed limits trước parse. Worker không root, read-only filesystem trừ scratch, drop capabilities, hạn chế CPU/RAM/PIDs/runtime, tắt network cho OCR/parser; model downloader riêng allowlist. Tệp gốc lưu quarantine tới validation. Không active PDF JS, macros, DOCX relationships fetch mạng, shell filename interpolation. Antivirus adapter optional thêm phòng thủ, không thay validation/sandbox.

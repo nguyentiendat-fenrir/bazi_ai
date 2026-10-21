@@ -68,3 +68,21 @@ Một câu hỏi đi qua: chặn câu hỏi rủi ro (sinh tử, bệnh, tai n�
 - **Vết:** mỗi bước, vòng, truy vấn, đoạn đã xem, câu trích được nhận/bị loại, lý do dừng và số lần gọi model nằm trong `Result.trace`.
 - **Cổng:** `ports.Model` (Qwen qua `adapters.QwenModel`: JSON schema, thinking tắt trừ các bước được bật, bóc `<think>`, sửa JSON một lần) và `ports.Retriever` (`adapters.RagRetriever`: truy xuất RAG pilot không có bước sinh). Chạy bộ câu hỏi: `python -m backend.app.answering.run test_questions.txt --as <email>` → `.artifacts/answering/run-*.json` và `.md`.
 
+## MCP server của RAG (`backend/app/mcpserver`)
+
+Server "bazi-rag" đưa thư viện và harness ra cho mọi MCP client (agent dùng Qwen, Claude Code/Desktop…), bằng SDK `mcp` chính thức. Bốn tool chỉ đọc:
+
+| Tool | Làm gì |
+|---|---|
+| `search_books` | Tìm đoạn sách (dense + BM25, rerank, đoạn cha), lọc trường phái; trả sách, trang, trường phái, nội dung |
+| `answer_question` | Chạy answering harness với Qwen (bước 3–8), trả câu trả lời, nhận định đã kiểm, ý cần biết, nguồn, lý do dừng; tùy chọn kèm vết |
+| `chart_facts` | Dữ kiện lá số tính bằng bảng từ tứ trụ viết sẵn |
+| `lookup_terms` | Thuật ngữ đã duyệt (glossary-1) theo trường phái |
+
+Hai đường vào, cùng bộ tool: HTTP gắn trong service `api` (`/api/v1/mcp/`, bearer token, không thêm container; tool dùng chung RagService và model CPU đã nạp của API) và stdio (`python -m backend.app.mcpserver`). Ví dụ cấu hình Claude Code (`.mcp.json`):
+
+```json
+{"mcpServers": {"bazi-rag": {"type": "http", "url": "http://127.0.0.1:3000/api/v1/mcp/",
+  "headers": {"Authorization": "Bearer ${MCP_TOKEN}"}}}}
+```
+
