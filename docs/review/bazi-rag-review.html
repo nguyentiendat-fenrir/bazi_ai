@@ -1,0 +1,1591 @@
+<title>BAZI-AI RAG Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (~70ch) under a sticky tab bar; wide tables scroll inside their own box. */
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --ink: #1d2124;
+  --muted: #5d6468;
+  --line: #dedbd2;
+  --line-2: #bdb8ab;
+  --seal: #a8322a;        /* cinnabar seal: the accent */
+  --seal-soft: #f6e4e1;
+  --jade: #2f6b5a;
+  --jade-soft: #e2efe9;
+  --amber: #8a5a00;
+  --amber-soft: #f7ecd4;
+  --crit: #9b1c1c;
+  --crit-soft: #fbe3e3;
+  --code-bg: #efede6;
+  --f-display: "Lora", Georgia, "Times New Roman", serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181a; --surface: #1c2023; --ink: #e8e6e1; --muted: #a2a8ab; --line: #31373b; --line-2: #4d555a;
+    --seal: #e0675c; --seal-soft: #3a2220; --jade: #6cc0a5; --jade-soft: #1d3029;
+    --amber: #e3b25a; --amber-soft: #352a15; --crit: #f08a8a; --crit-soft: #3d1f1f; --code-bg: #262b2e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181a; --surface: #1c2023; --ink: #e8e6e1; --muted: #a2a8ab; --line: #31373b; --line-2: #4d555a;
+  --seal: #e0675c; --seal-soft: #3a2220; --jade: #6cc0a5; --jade-soft: #1d3029;
+  --amber: #e3b25a; --amber-soft: #352a15; --crit: #f08a8a; --crit-soft: #3d1f1f; --code-bg: #262b2e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15.5px; line-height: 1.65; }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+header.top { display: grid; gap: 6px; padding-block: 8px 18px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--seal); font-weight: 600; }
+h1 { font-family: var(--f-display); font-size: clamp(26px, 4vw, 34px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 70ch; margin: 0; }
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 26px; flex-wrap: wrap; }
+nav.tabs button { font: inherit; font-weight: 600; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 12px 14px 10px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--seal); }
+nav.tabs button:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
+section.panel { display: grid; gap: 34px; }
+h2 { font-family: var(--f-display); font-size: 23px; margin: 0 0 10px; text-wrap: balance; }
+h3 { font-size: 16.5px; margin: 18px 0 8px; }
+p, li { max-width: 72ch; }
+p { margin: 0 0 10px; }
+ul, ol { margin: 0 0 10px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.summary { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--seal); padding: 16px 18px; border-radius: 6px; }
+.summary ul { margin: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.card h3 { margin-top: 0; }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip { display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .03em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.c-crit { background: var(--crit-soft); color: var(--crit); }
+.c-high { background: var(--seal-soft); color: var(--seal); }
+.c-mid { background: var(--amber-soft); color: var(--amber); }
+.c-low { background: var(--code-bg); color: var(--muted); }
+.c-keep { background: var(--jade-soft); color: var(--jade); }
+.ok { color: var(--jade); font-weight: 700; }
+.note { color: var(--muted); font-size: 13.5px; }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; overflow-x: auto; margin: 6px 0 12px; }
+.steps { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 10px; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; max-width: none; }
+.steps > li::before { content: counter(s); font-family: var(--f-mono); font-weight: 600; color: var(--seal); border: 1px solid var(--line); border-radius: 50%; width: 28px; height: 28px; display: grid; place-items: center; font-size: 13px; background: var(--surface); }
+.steps > li > div { min-width: 0; }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; }
+details + details { margin-top: 8px; }
+summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 8px; }
+
+/* ---- architecture tab ---- */
+.keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.key { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.key p { margin: 0; font-size: 14.5px; }
+.k-tag { flex: none; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; padding: 3px 10px; border-radius: 999px; }
+.k-keep { background: var(--jade-soft); color: var(--jade); }
+.k-fix { background: var(--amber-soft); color: var(--amber); }
+.k-new { background: var(--seal-soft); color: var(--seal); }
+.blk { display: grid; gap: 12px; }
+.blk h2 { margin: 0; }
+figure { margin: 0; display: grid; gap: 8px; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 80ch; }
+.figbox { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.dg { display: block; width: 100%; min-width: 700px; height: auto; }
+.dg text { font-family: var(--f-body); font-size: 13px; fill: var(--ink); }
+.dg .t { font-weight: 600; }
+.dg .s { font-size: 11.5px; fill: var(--muted); }
+.dg .gl { font-size: 11px; font-weight: 700; letter-spacing: .07em; fill: var(--muted); }
+.dg .lab { font-size: 11.5px; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.dg .red-t { fill: var(--seal); }
+.dg .muted-t { fill: var(--muted); }
+.dg .in { font-size: 12px; font-weight: 600; fill: var(--ink); }
+.dg .tt { font-size: 11.5px; font-weight: 600; }
+.dg .bx { fill: var(--surface); stroke: var(--line-2); stroke-width: 1.3; }
+.dg .bx.big { stroke-width: 1.6; }
+.dg .grp { fill: var(--bg); stroke: var(--line-2); stroke-dasharray: 4 4; }
+.dg .ghost { fill: none; stroke: var(--line-2); stroke-dasharray: 4 3; }
+.dg .gpu { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 1.3; }
+.dg .cpu { fill: var(--jade-soft); stroke: var(--jade); stroke-width: 1.3; }
+.dg .gm { fill: var(--code-bg); stroke: var(--line-2); }
+.dg .q { fill: var(--seal-soft); stroke: var(--seal); }
+.dg .chg { stroke: var(--seal); stroke-width: 2.4; }
+.dg .hotf { fill: var(--seal-soft); stroke: var(--seal); stroke-width: 1.3; }
+.dg .ex { fill: var(--bg); stroke: var(--line-2); stroke-dasharray: 5 3; }
+.dg .pil { fill: var(--surface); stroke: var(--line-2); }
+.dg .dot { fill: var(--seal); }
+.dg .tree { stroke: var(--line-2); stroke-width: 1.4; }
+.dg .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.dg .ln.red { stroke: var(--seal); }
+.dg .ln.dash { stroke-dasharray: 6 4; }
+.dg .axis { stroke: var(--line); stroke-width: 1; }
+.dg .ah { fill: var(--muted); }
+.dg .ah.red { fill: var(--seal); }
+.dg .bdg { stroke: none; }
+.dg .b-keep { fill: var(--jade-soft); } .dg .bt-keep { fill: var(--jade); }
+.dg .b-fix { fill: var(--amber-soft); } .dg .bt-fix { fill: var(--amber); }
+.dg .b-new { fill: var(--seal-soft); } .dg .bt-new { fill: var(--seal); }
+.dg .bt { font-size: 10.5px; font-weight: 700; }
+.dg .tag-o { fill: var(--jade-soft); stroke: var(--jade); } .dg .tt-o { fill: var(--jade); }
+.dg .tag-t { fill: var(--amber-soft); stroke: var(--amber); } .dg .tt-t { fill: var(--amber); }
+.dg .tag-l { fill: var(--seal-soft); stroke: var(--seal); } .dg .tt-l { fill: var(--seal); }
+.dg .dn { fill: var(--jade); }
+.dg .sp { fill: var(--amber); }
+.dg .win { fill: var(--seal); } .dg .wt { font-size: 11px; font-weight: 700; fill: var(--surface); }
+.chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.mini { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; font-size: 13.5px; min-width: 0; }
+.mini b { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--amber); }
+.formula { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.f-part { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; display: grid; gap: 4px; min-width: 0; flex: 1 1 200px; }
+.f-l { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.f-plus { align-self: center; font-weight: 700; color: var(--muted); }
+.f-eq { align-self: center; font-weight: 600; color: var(--seal); flex-basis: 100%; }
+.road { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; counter-reset: none; }
+.road li { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--seal); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; max-width: none; margin: 0; min-width: 0; }
+.road .rn { font-family: var(--f-mono); font-weight: 600; color: var(--seal); font-size: 13px; }
+.road b { font-size: 15px; }
+.road span:last-child { font-size: 13px; color: var(--muted); }
+.dg .vn-d { fill: var(--jade-soft); stroke: var(--jade); stroke-width: 1.5; fill-opacity: .75; }
+.dg .vn-s { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 1.5; fill-opacity: .75; }
+.dg .pt { fill: var(--ink); }
+.dg .pt.hot { fill: var(--seal); }
+.explain { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.ex-step { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; min-width: 0; font-size: 14px; }
+.ex-step .rn { font-family: var(--f-mono); font-weight: 600; color: var(--muted); font-size: 13px; }
+.ex-step b { font-size: 15px; }
+.ex-step span:last-child { color: var(--muted); }
+.ex-step.bad { border-top: 3px solid var(--seal); }
+.ex-step.good { border-top: 3px solid var(--jade); }
+.h-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.tier { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; min-width: 0; font-size: 14px; }
+.tier .rn { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tier b { font-size: 15px; }
+.tier span:last-child { color: var(--muted); }
+.rule { background: var(--seal-soft); border-radius: 8px; padding: 12px 14px; font-size: 14.5px; max-width: none; }
+.dg .lane { fill: var(--bg); stroke: var(--line); }
+.decomp { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.dc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.dc-q { font-weight: 600; }
+.dc-q .rn { font-family: var(--f-mono); color: var(--seal); margin-right: 6px; }
+.dc-l { display: grid; grid-template-columns: 96px 1fr; gap: 8px; font-size: 14px; }
+.dc-l ul { margin: 0; padding-left: 18px; }
+.dc-l li { margin: 0 0 2px; }
+.lv { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.dc-n { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.dc s { color: var(--muted); }
+.card .chip { margin-bottom: 8px; }
+ul.tight { margin: 0; padding-left: 18px; font-size: 14px; }
+ul.tight li { margin-bottom: 6px; }
+table.ck .q { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-style: italic; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 2px; }
+.stat b { font-family: var(--f-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+pre.code { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.55; white-space: pre; margin: 8px 0; max-width: 100%; }
+table.mini-t td, table.mini-t th { padding: 6px 10px; font-size: 13.5px; }
+table.mini-t td:nth-child(odd) { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">BAZI-AI · RAG pilot · commit 85d5df5</div>
+    <h1>Kiến trúc đề xuất và review code</h1>
+    <p class="lede">Tab đầu: kiến trúc đề xuất bằng sơ đồ. Tab sau: review code, mỗi lỗi kèm file và dòng. <span class="ok">✓</span> = đã mở code kiểm trực tiếp.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Nội dung">
+    <button role="tab" id="tab-arch" aria-controls="arch" aria-selected="true">Kiến trúc đề xuất</button>
+    <button role="tab" id="tab-review" aria-controls="review" aria-selected="false">Review code hiện tại</button>
+    <button role="tab" id="tab-progress" aria-controls="progress" aria-selected="false">Tiến độ &amp; bàn giao</button>
+  </nav>
+
+  <!-- ===================================================== TAB 1 -->
+  <section class="panel" id="arch" role="tabpanel" aria-labelledby="tab-arch">
+
+    <div class="keys">
+      <div class="key"><span class="k-tag k-keep">Giữ</span><p>Code hiện tại đã làm khoảng 80% kế hoạch. Không viết lại.</p></div>
+      <div class="key"><span class="k-tag k-fix">Sửa</span><p>Một đường RAG duy nhất. 6 lỗi nặng sửa trước vòng chấm sau.</p></div>
+      <div class="key"><span class="k-tag k-new">VRAM</span><p>Qwen 4-bit trả lại 3–5 GB, đủ chỗ cho OCR.</p></div>
+    </div>
+
+    <!-- 1. Overview -->
+    <div class="blk">
+      <h2>Toàn cảnh</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 466" role="img" aria-label="API và Worker cùng dùng ba nhóm: GPU gồm Qwen và OCR, một model server CPU cho Jina, và dữ liệu Postgres, Redis.">
+          <defs>
+            <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="20" y="30" width="150" height="56" rx="8"/>
+          <text class="t" x="95" y="54" text-anchor="middle">Người dùng</text>
+          <text class="s" x="95" y="72" text-anchor="middle">chat · chấm điểm</text>
+          <rect class="bx" x="210" y="30" width="150" height="56" rx="8"/>
+          <text class="t" x="285" y="54" text-anchor="middle">Gateway</text>
+          <text class="s" x="285" y="72" text-anchor="middle">Caddy · cổng 3000</text>
+          <rect class="bx" x="210" y="130" width="150" height="56" rx="8"/>
+          <text class="t" x="285" y="154" text-anchor="middle">Frontend</text>
+          <text class="s" x="285" y="172" text-anchor="middle">Next.js</text>
+          <rect class="bx" x="400" y="30" width="560" height="56" rx="8"/>
+          <text class="t" x="680" y="54" text-anchor="middle">API</text>
+          <text class="s" x="680" y="72" text-anchor="middle">/ask · /judge · /chat · chạy toàn bộ luồng hỏi đáp</text>
+          <line class="ln" x1="170" y1="58" x2="207" y2="58" marker-end="url(#m1)"/>
+          <line class="ln" x1="360" y1="58" x2="397" y2="58" marker-end="url(#m1)"/>
+          <line class="ln" x1="285" y1="86" x2="285" y2="127" marker-end="url(#m1)"/>
+
+          <rect class="grp" x="400" y="150" width="230" height="190" rx="10"/>
+          <text class="gl" x="414" y="170">GPU · RTX 4090</text>
+          <rect class="gpu" x="414" y="182" width="202" height="46" rx="6"/>
+          <text class="t" x="515" y="201" text-anchor="middle">Qwen3-8B</text>
+          <text class="s" x="515" y="218" text-anchor="middle">vLLM · ngoài compose</text>
+          <rect class="gpu" x="414" y="236" width="202" height="46" rx="6"/>
+          <text class="t" x="515" y="255" text-anchor="middle">SenOCR-Vi</text>
+          <text class="s" x="515" y="272" text-anchor="middle">OCR · nạp khi cần</text>
+          <rect class="ghost" x="414" y="290" width="202" height="38" rx="6"/>
+          <text class="s" x="515" y="314" text-anchor="middle">Gemma · việc khác</text>
+
+          <rect class="grp" x="650" y="150" width="140" height="190" rx="10"/>
+          <text class="gl" x="664" y="170">CPU</text>
+          <rect class="cpu chg" x="664" y="182" width="112" height="146" rx="6"/>
+          <text class="t" x="720" y="212" text-anchor="middle">Model server</text>
+          <text class="s" x="720" y="230" text-anchor="middle">(reasoner)</text>
+          <text x="720" y="262" text-anchor="middle">Jina embed</text>
+          <text x="720" y="282" text-anchor="middle">Jina rerank</text>
+          <text class="s" x="720" y="312" text-anchor="middle">1 bản dùng chung</text>
+
+          <rect class="grp" x="810" y="150" width="150" height="190" rx="10"/>
+          <text class="gl" x="824" y="170">DỮ LIỆU</text>
+          <rect class="bx" x="824" y="182" width="122" height="70" rx="6"/>
+          <text class="t" x="885" y="212" text-anchor="middle">Postgres</text>
+          <text class="s" x="885" y="230" text-anchor="middle">pgvector</text>
+          <rect class="bx" x="824" y="262" width="122" height="66" rx="6"/>
+          <text class="t" x="885" y="290" text-anchor="middle">Redis</text>
+          <text class="s" x="885" y="308" text-anchor="middle">hàng đợi job</text>
+
+          <line class="ln" x1="515" y1="86" x2="515" y2="147" marker-end="url(#m1)"/>
+          <text class="lab" x="522" y="122">trả lời</text>
+          <line class="ln" x1="720" y1="86" x2="720" y2="147" marker-end="url(#m1)"/>
+          <text class="lab" x="727" y="122">embed · rerank</text>
+          <line class="ln" x1="885" y1="86" x2="885" y2="147" marker-end="url(#m1)"/>
+          <text class="lab" x="892" y="122">đọc · tìm</text>
+
+          <rect class="bx" x="400" y="390" width="560" height="56" rx="8"/>
+          <text class="t" x="680" y="414" text-anchor="middle">Worker</text>
+          <text class="s" x="680" y="432" text-anchor="middle">nạp sách: extract · OCR · chunk · tóm tắt · embed</text>
+          <line class="ln" x1="515" y1="390" x2="515" y2="343" marker-end="url(#m1)"/>
+          <text class="lab" x="522" y="370">OCR · tóm tắt</text>
+          <line class="ln" x1="720" y1="390" x2="720" y2="343" marker-end="url(#m1)"/>
+          <text class="lab" x="727" y="370">embed chunk</text>
+          <line class="ln" x1="885" y1="390" x2="885" y2="343" marker-end="url(#m1)"/>
+          <text class="lab" x="892" y="370">ghi · lấy job</text>
+
+          <rect class="gpu" x="24" y="262" width="18" height="13" rx="3"/>
+          <text class="s" x="52" y="273">GPU</text>
+          <rect class="cpu" x="24" y="288" width="18" height="13" rx="3"/>
+          <text class="s" x="52" y="299">CPU</text>
+          <rect class="bx chg" x="24" y="314" width="18" height="13" rx="3"/>
+          <text class="s" x="52" y="325">đổi so với hiện tại</text>
+        </svg>
+        </div>
+        <figcaption>Viền đỏ là chỗ thay đổi duy nhất: <code>reasoner</code> thành model server CPU, Jina chỉ còn một bản thay vì ba.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 2. Ingestion -->
+    <div class="blk">
+      <h2>Nạp sách</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 300" role="img" aria-label="Mười bước nạp sách từ upload tới publish; bước mới là gán lớp người nói trên toàn sách; mọi bước dài cần heartbeat.">
+          <defs>
+            <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <!-- row 1 -->
+          <rect class="bx" x="5" y="20" width="170" height="74" rx="8"/>
+          <text class="t" x="17" y="50">Upload</text><text class="s" x="17" y="72">PDF · DOCX</text>
+          <rect class="bdg b-keep" x="129" y="28" width="38" height="18" rx="9"/><text class="bt bt-keep" x="148" y="41" text-anchor="middle">giữ</text>
+
+          <rect class="bx" x="200" y="20" width="170" height="74" rx="8"/>
+          <text class="t" x="212" y="50">Extract</text><text class="s" x="212" y="72">pdfium · DOCX XML</text>
+          <rect class="bdg b-fix" x="324" y="28" width="38" height="18" rx="9"/><text class="bt bt-fix" x="343" y="41" text-anchor="middle">sửa</text>
+
+          <rect class="bx" x="395" y="20" width="170" height="74" rx="8"/>
+          <text class="t" x="407" y="50">OCR</text><text class="s" x="407" y="72">trang scan · vùng ảnh</text>
+          <rect class="bdg b-fix" x="519" y="28" width="38" height="18" rx="9"/><text class="bt bt-fix" x="538" y="41" text-anchor="middle">sửa</text>
+
+          <rect class="bx chg" x="590" y="20" width="170" height="74" rx="8"/>
+          <text class="t" x="602" y="50">Lớp người nói</text><text class="s" x="602" y="72">1 lượt trên cả sách</text>
+          <rect class="bdg b-new" x="714" y="28" width="38" height="18" rx="9"/><text class="bt bt-new" x="733" y="41" text-anchor="middle">mới</text>
+
+          <rect class="bx" x="785" y="20" width="170" height="74" rx="8"/>
+          <text class="t" x="797" y="50">Cấu trúc</text><text class="s" x="797" y="72">cây chương + mục lục</text>
+          <rect class="bdg b-fix" x="909" y="28" width="38" height="18" rx="9"/><text class="bt bt-fix" x="928" y="41" text-anchor="middle">sửa</text>
+
+          <line class="ln" x1="175" y1="57" x2="197" y2="57" marker-end="url(#m2)"/>
+          <line class="ln" x1="370" y1="57" x2="392" y2="57" marker-end="url(#m2)"/>
+          <line class="ln" x1="565" y1="57" x2="587" y2="57" marker-end="url(#m2)"/>
+          <line class="ln" x1="760" y1="57" x2="782" y2="57" marker-end="url(#m2)"/>
+          <path class="ln" d="M870,94 V127 H90 V157" marker-end="url(#m2)"/>
+
+          <!-- row 2 -->
+          <rect class="bx" x="5" y="160" width="170" height="74" rx="8"/>
+          <text class="t" x="17" y="190">Chất lượng</text><text class="s" x="17" y="212">cờ cần duyệt</text>
+          <rect class="bdg b-keep" x="129" y="168" width="38" height="18" rx="9"/><text class="bt bt-keep" x="148" y="181" text-anchor="middle">giữ</text>
+
+          <rect class="bx" x="200" y="160" width="170" height="74" rx="8"/>
+          <text class="t" x="212" y="190">Chunk</text><text class="s" x="212" y="212">unit → child → parent</text>
+          <rect class="bdg b-fix" x="324" y="168" width="38" height="18" rx="9"/><text class="bt bt-fix" x="343" y="181" text-anchor="middle">sửa</text>
+
+          <rect class="bx" x="395" y="160" width="170" height="74" rx="8"/>
+          <text class="t" x="407" y="190">Tóm tắt</text><text class="s" x="407" y="212">parent · Qwen · theo đợt</text>
+          <rect class="bdg b-fix" x="519" y="168" width="38" height="18" rx="9"/><text class="bt bt-fix" x="538" y="181" text-anchor="middle">sửa</text>
+
+          <rect class="bx" x="590" y="160" width="170" height="74" rx="8"/>
+          <text class="t" x="602" y="190">Embed</text><text class="s" x="602" y="212">Jina · có ngữ cảnh</text>
+          <rect class="bdg b-fix" x="714" y="168" width="38" height="18" rx="9"/><text class="bt bt-fix" x="733" y="181" text-anchor="middle">sửa</text>
+
+          <rect class="bx" x="785" y="160" width="170" height="74" rx="8"/>
+          <text class="t" x="797" y="190">Publish</text><text class="s" x="797" y="212">release bất biến</text>
+          <rect class="bdg b-keep" x="909" y="168" width="38" height="18" rx="9"/><text class="bt bt-keep" x="928" y="181" text-anchor="middle">giữ</text>
+
+          <line class="ln" x1="175" y1="197" x2="197" y2="197" marker-end="url(#m2)"/>
+          <line class="ln" x1="370" y1="197" x2="392" y2="197" marker-end="url(#m2)"/>
+          <line class="ln" x1="565" y1="197" x2="587" y2="197" marker-end="url(#m2)"/>
+          <line class="ln" x1="760" y1="197" x2="782" y2="197" marker-end="url(#m2)"/>
+
+          <line class="ln red dash" x1="5" y1="262" x2="955" y2="262"/>
+          <text class="lab red-t" x="480" y="286" text-anchor="middle">heartbeat giữ lease cho mọi bước chạy lâu (hiện có hàm nhưng chưa gọi)</text>
+        </svg>
+        </div>
+        <figcaption>Chỉ thêm một bước mới: gán lớp người nói trên toàn sách, chạy sau OCR, không còn reset ở mỗi trang.</figcaption>
+      </figure>
+
+      <div class="chips">
+        <div class="mini"><b>OCR</b><span>ảnh phủ &gt; 85% trang thì coi là scan</span></div>
+        <div class="mini"><b>OCR</b><span>lá số dạng ảnh chèn đúng vị trí, không dồn xuống cuối trang</span></div>
+        <div class="mini"><b>Cấu trúc</b><span>đối chiếu mục lục, bỏ chương trùng, trang trùng</span></div>
+        <div class="mini"><b>Embed</b><span>khóa vector theo <code>chunk_id + hash</code></span></div>
+      </div>
+    </div>
+
+    <!-- 3. Chunk anatomy -->
+    <div class="blk">
+      <h2>Chunk cha – con</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 392" role="img" aria-label="Một mục trong cây chương thành một parent tối đa khoảng 2000 token, chứa các child có tag người nói riêng và một ví dụ lá số không bị cắt. Tìm trúng child thì gửi cả parent cho Qwen.">
+          <defs>
+            <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="m3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah red" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <text class="gl" x="20" y="30">CÂY CHƯƠNG MỤC</text>
+          <rect class="dot" x="20" y="50" width="10" height="10" rx="2"/>
+          <text class="t" x="38" y="60">Tử Bình Chân Thuyên</text>
+          <line class="tree" x1="25" y1="64" x2="25" y2="226"/>
+          <line class="tree" x1="25" y1="96" x2="44" y2="96"/>
+          <text x="52" y="100">Ch.31 Chính Quan</text>
+          <line class="tree" x1="60" y1="106" x2="60" y2="178"/>
+          <line class="tree" x1="60" y1="138" x2="76" y2="138"/>
+          <rect class="hotf" x="78" y="122" width="168" height="30" rx="6"/>
+          <text class="t" x="90" y="142">Quan dụng Tài</text>
+          <line class="tree" x1="60" y1="178" x2="76" y2="178"/>
+          <text x="90" y="182">Quan dụng Ấn</text>
+          <line class="tree" x1="25" y1="226" x2="44" y2="226"/>
+          <text x="52" y="230">Ch.32 Chính Quan thủ vận</text>
+          <line class="ln" x1="246" y1="137" x2="327" y2="137" marker-end="url(#m3)"/>
+          <text class="lab" x="287" y="127" text-anchor="middle">1 mục = 1 parent</text>
+
+          <rect class="bx big" x="330" y="40" width="360" height="334" rx="10"/>
+          <text class="gl" x="346" y="64">PARENT · tối đa ~2000 token</text>
+
+          <rect class="bx" x="346" y="80" width="328" height="42" rx="6"/>
+          <rect class="tag-o" x="356" y="90" width="84" height="22" rx="11"/><text class="tt tt-o" x="398" y="105" text-anchor="middle">Nguyên văn</text>
+          <text class="s" x="452" y="105">child · ~250 token</text>
+
+          <rect class="bx chg" x="346" y="130" width="328" height="42" rx="6"/>
+          <rect class="tag-t" x="356" y="140" width="84" height="22" rx="11"/><text class="tt tt-t" x="398" y="155" text-anchor="middle">Từ chú</text>
+          <text class="s" x="452" y="155">child · ~250 token</text>
+
+          <rect class="bx" x="346" y="180" width="328" height="42" rx="6"/>
+          <rect class="tag-l" x="356" y="190" width="84" height="22" rx="11"/><text class="tt tt-l" x="398" y="205" text-anchor="middle">Lâm chú</text>
+          <text class="s" x="452" y="205">child · ~250 token</text>
+
+          <rect class="ex" x="346" y="230" width="328" height="130" rx="6"/>
+          <text class="gl" x="358" y="252">VÍ DỤ · KHÔNG BAO GIỜ CẮT</text>
+          <text class="s" x="396" y="272" text-anchor="middle">năm</text>
+          <text class="s" x="476" y="272" text-anchor="middle">tháng</text>
+          <text class="s" x="556" y="272" text-anchor="middle">ngày</text>
+          <text class="s" x="636" y="272" text-anchor="middle">giờ</text>
+          <rect class="pil" x="360" y="278" width="72" height="46" rx="5"/><text x="396" y="297" text-anchor="middle">Giáp</text><text x="396" y="316" text-anchor="middle">Thân</text>
+          <rect class="pil" x="440" y="278" width="72" height="46" rx="5"/><text x="476" y="297" text-anchor="middle">Nhâm</text><text x="476" y="316" text-anchor="middle">Thân</text>
+          <rect class="pil" x="520" y="278" width="72" height="46" rx="5"/><text x="556" y="297" text-anchor="middle">Ất</text><text x="556" y="316" text-anchor="middle">Tỵ</text>
+          <rect class="pil" x="600" y="278" width="72" height="46" rx="5"/><text x="636" y="297" text-anchor="middle">Mậu</text><text x="636" y="316" text-anchor="middle">Dần</text>
+          <text class="s" x="360" y="346">+ lời luận đi kèm, tới marker hoặc tiêu đề kế tiếp</text>
+
+          <rect class="bx" x="760" y="60" width="200" height="56" rx="8"/>
+          <text class="t" x="860" y="84" text-anchor="middle">Câu hỏi</text>
+          <text class="s" x="860" y="102" text-anchor="middle">"Quan dụng Tài là gì?"</text>
+          <path class="ln red" d="M760,100 C720,100 715,151 677,151" marker-end="url(#m3r)"/>
+          <text class="lab red-t" x="742" y="140" text-anchor="middle">① tìm trúng child</text>
+
+          <rect class="gpu" x="760" y="280" width="200" height="56" rx="8"/>
+          <text class="t" x="860" y="304" text-anchor="middle">Qwen</text>
+          <text class="s" x="860" y="322" text-anchor="middle">đọc cả parent</text>
+          <line class="ln" x1="690" y1="308" x2="757" y2="308" marker-end="url(#m3)"/>
+          <text class="lab" x="724" y="296" text-anchor="middle">② gửi cả parent</text>
+        </svg>
+        </div>
+        <figcaption>Tìm bằng child nhỏ để chính xác, trả lời bằng parent lớn để đủ ngữ cảnh.</figcaption>
+      </figure>
+
+      <div class="formula">
+        <div class="f-part"><span class="f-l">header</span><code>Tử Bình Chân Thuyên · Tử Bình · Ch.31 › Quan dụng Tài · tr.84 · [Từ chú]</code></div>
+        <div class="f-plus">+</div>
+        <div class="f-part"><span class="f-l">tóm tắt parent</span><code>do Qwen viết, chỉ dùng để tìm</code></div>
+        <div class="f-plus">+</div>
+        <div class="f-part"><span class="f-l">child</span><code>đoạn sách gốc</code></div>
+        <div class="f-eq">= văn bản đem embed</div>
+      </div>
+    </div>
+
+    <!-- 4. Query flow -->
+    <div class="blk">
+      <h2>Một câu hỏi đi qua hệ thống</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 360" role="img" aria-label="Câu hỏi qua bước chặn rủi ro, tìm song song dense và BM25, điền điểm còn thiếu, trộn 0.8 và 0.2, gộp trùng, rerank, lấy parent, Qwen sinh câu trả lời, rồi kiểm nguồn từng câu.">
+          <defs>
+            <marker id="m4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="m4r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah red" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="10" y="42" width="100" height="56" rx="8"/>
+          <text class="t" x="60" y="75" text-anchor="middle">Câu hỏi</text>
+          <line class="ln" x1="110" y1="70" x2="135" y2="70" marker-end="url(#m4)"/>
+
+          <polygon class="bx chg" points="138,70 190,30 242,70 190,110"/>
+          <text class="t" x="190" y="75" text-anchor="middle">Rủi ro?</text>
+          <line class="ln red" x1="190" y1="110" x2="190" y2="136" marker-end="url(#m4r)"/>
+          <text class="lab red-t" x="198" y="128">có</text>
+          <rect class="hotf" x="135" y="138" width="110" height="44" rx="8"/>
+          <text class="t" x="190" y="157" text-anchor="middle">Câu mẫu</text>
+          <text class="s" x="190" y="173" text-anchor="middle">chết · bệnh · lách luật</text>
+
+          <path class="ln" d="M242,70 H262 V39 H287" marker-end="url(#m4)"/>
+          <path class="ln" d="M262,70 V107 H287" marker-end="url(#m4)"/>
+          <text class="lab" x="250" y="62" text-anchor="middle">không</text>
+
+          <rect class="bx" x="290" y="14" width="150" height="50" rx="8"/>
+          <text class="t" x="365" y="36" text-anchor="middle">Dense</text>
+          <text class="s" x="365" y="53" text-anchor="middle">Jina · top 50</text>
+          <rect class="bx" x="290" y="82" width="150" height="50" rx="8"/>
+          <text class="t" x="365" y="104" text-anchor="middle">BM25</text>
+          <text class="s" x="365" y="121" text-anchor="middle">có dấu + bigram · top 50</text>
+
+          <path class="ln" d="M440,39 H460 V70 H477" marker-end="url(#m4)"/>
+          <path class="ln" d="M440,107 H460 V70"/>
+
+          <rect class="bx chg" x="480" y="42" width="130" height="56" rx="8"/>
+          <text class="t" x="545" y="66" text-anchor="middle">Chấm đủ 2 điểm</text>
+          <text class="s" x="545" y="84" text-anchor="middle">cả chunk lọt 1 bên</text>
+          <line class="ln" x1="610" y1="70" x2="637" y2="70" marker-end="url(#m4)"/>
+
+          <rect class="bx" x="640" y="42" width="130" height="56" rx="8"/>
+          <text class="t" x="705" y="66" text-anchor="middle">Trộn</text>
+          <text class="s" x="705" y="84" text-anchor="middle">0.8·dense + 0.2·BM25</text>
+          <line class="ln" x1="770" y1="70" x2="797" y2="70" marker-end="url(#m4)"/>
+
+          <rect class="bx" x="800" y="42" width="160" height="56" rx="8"/>
+          <text class="t" x="880" y="66" text-anchor="middle">Gộp trùng ấn bản</text>
+          <text class="s" x="880" y="84" text-anchor="middle">simhash</text>
+          <line class="ln" x1="880" y1="98" x2="880" y2="237" marker-end="url(#m4)"/>
+
+          <rect class="bx" x="800" y="240" width="160" height="56" rx="8"/>
+          <text class="t" x="880" y="264" text-anchor="middle">Rerank</text>
+          <text class="s" x="880" y="282" text-anchor="middle">8–10 ứng viên · CPU</text>
+          <line class="ln" x1="800" y1="268" x2="773" y2="268" marker-end="url(#m4)"/>
+
+          <rect class="bx chg" x="620" y="240" width="150" height="56" rx="8"/>
+          <text class="t" x="695" y="264" text-anchor="middle">Kiểm đủ kiến thức</text>
+          <text class="s" x="695" y="282" text-anchor="middle">LLM chấm từng ý</text>
+          <path class="ln red dash" d="M695,240 V160 H365 V135" marker-end="url(#m4r)"/>
+          <text class="lab red-t" x="530" y="154" text-anchor="middle">thiếu → tìm thêm (tối đa 7 vòng)</text>
+          <line class="ln" x1="620" y1="268" x2="593" y2="268" marker-end="url(#m4)"/>
+
+          <rect class="gpu" x="440" y="240" width="150" height="56" rx="8"/>
+          <text class="t" x="515" y="264" text-anchor="middle">Qwen</text>
+          <text class="s" x="515" y="282" text-anchor="middle">JSON · mỗi câu có [P#]</text>
+          <line class="ln" x1="440" y1="268" x2="409" y2="268" marker-end="url(#m4)"/>
+
+          <polygon class="bx chg" points="294,268 350,226 406,268 350,310"/>
+          <text class="t" x="350" y="264" text-anchor="middle">Từng câu</text>
+          <text class="s" x="350" y="280" text-anchor="middle">có nguồn thật?</text>
+
+          <path class="ln" d="M294,268 H262 V231 H233" marker-end="url(#m4)"/>
+          <path class="ln red" d="M262,268 V317 H233" marker-end="url(#m4r)"/>
+          <text class="lab" x="270" y="250">đạt</text>
+          <text class="lab red-t" x="270" y="300">không</text>
+          <rect class="cpu" x="20" y="206" width="210" height="50" rx="8"/>
+          <text class="t" x="125" y="228" text-anchor="middle">Trả lời + nguồn</text>
+          <text class="s" x="125" y="245" text-anchor="middle">chỉ giữ câu có nguồn hợp lệ</text>
+          <rect class="hotf" x="20" y="292" width="210" height="50" rx="8"/>
+          <text class="t" x="125" y="314" text-anchor="middle">"Không đủ căn cứ"</text>
+          <text class="s" x="125" y="331" text-anchor="middle">bản thô chỉ người chấm thấy</text>
+        </svg>
+        </div>
+        <figcaption>Viền đỏ là chỗ phải thêm: chặn câu hỏi rủi ro, chấm đủ 2 điểm trước khi trộn, vòng kiểm đủ kiến thức (mục ngay dưới), kiểm nguồn từng câu.</figcaption>
+      </figure>
+    </div>
+
+    <!-- Sufficiency loop -->
+    <div class="blk">
+      <div class="h-row"><h2>Vòng kiểm đủ kiến thức</h2><span class="k-tag k-keep">đã duyệt</span></div>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 400" role="img" aria-label="Câu hỏi được LLM tách thành các ý cần biết, tìm theo từng ý, LLM chấm từng ý kèm câu trích, code kiểm câu trích có thật. Đủ hết thì trả lời; thiếu và còn vòng thì LLM viết truy vấn bổ sung rồi tìm lại; hết vòng thì trả lời phần đủ và nói rõ phần thiếu.">
+          <defs>
+            <marker id="m5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="m5r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah red" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="20" y="40" width="120" height="56" rx="8"/>
+          <text class="t" x="80" y="73" text-anchor="middle">Câu hỏi</text>
+          <line class="ln" x1="140" y1="68" x2="167" y2="68" marker-end="url(#m5)"/>
+
+          <rect class="gpu" x="170" y="40" width="170" height="56" rx="8"/>
+          <text class="t" x="255" y="64" text-anchor="middle">① Tách ý cần biết</text>
+          <text class="s" x="255" y="82" text-anchor="middle">LLM · 1–4 ý · chỉ vòng đầu</text>
+          <line class="ln" x1="340" y1="68" x2="367" y2="68" marker-end="url(#m5)"/>
+
+          <rect class="bx" x="370" y="40" width="170" height="56" rx="8"/>
+          <text class="t" x="455" y="64" text-anchor="middle">Tìm theo từng ý</text>
+          <text class="s" x="455" y="82" text-anchor="middle">dense + BM25 · rerank</text>
+          <line class="ln" x1="540" y1="68" x2="567" y2="68" marker-end="url(#m5)"/>
+
+          <rect class="gpu" x="570" y="40" width="180" height="56" rx="8"/>
+          <text class="t" x="660" y="64" text-anchor="middle">② Chấm từng ý</text>
+          <text class="s" x="660" y="82" text-anchor="middle">LLM · kèm câu trích</text>
+          <line class="ln" x1="750" y1="68" x2="777" y2="68" marker-end="url(#m5)"/>
+
+          <rect class="cpu" x="780" y="40" width="180" height="56" rx="8"/>
+          <text class="t" x="870" y="64" text-anchor="middle">③ Kiểm bằng chứng</text>
+          <text class="s" x="870" y="82" text-anchor="middle">code · trích có thật?</text>
+          <line class="ln" x1="870" y1="96" x2="870" y2="139" marker-end="url(#m5)"/>
+
+          <polygon class="bx chg" points="800,180 870,142 940,180 870,218"/>
+          <text class="t" x="870" y="185" text-anchor="middle">Đủ mọi ý?</text>
+
+          <polygon class="bx" points="570,180 640,142 710,180 640,218"/>
+          <text class="t" x="640" y="178" text-anchor="middle">Còn vòng?</text>
+          <text class="s" x="640" y="194" text-anchor="middle">tối đa 7</text>
+          <line class="ln red" x1="800" y1="180" x2="713" y2="180" marker-end="url(#m5r)"/>
+          <text class="lab red-t" x="756" y="171" text-anchor="middle">thiếu</text>
+
+          <rect class="gpu chg" x="330" y="152" width="200" height="56" rx="8"/>
+          <text class="t" x="430" y="176" text-anchor="middle">④ Truy vấn bổ sung</text>
+          <text class="s" x="430" y="194" text-anchor="middle">LLM · chỉ cho ý còn thiếu</text>
+          <line class="ln red" x1="570" y1="180" x2="533" y2="180" marker-end="url(#m5r)"/>
+          <text class="lab red-t" x="551" y="171" text-anchor="middle">còn</text>
+          <line class="ln red dash" x1="430" y1="152" x2="430" y2="99" marker-end="url(#m5r)"/>
+          <text class="lab red-t" x="436" y="130">vòng sau</text>
+
+          <line class="ln" x1="870" y1="218" x2="870" y2="317" marker-end="url(#m5)"/>
+          <text class="lab" x="878" y="272">đủ</text>
+          <rect class="cpu" x="770" y="320" width="190" height="56" rx="8"/>
+          <text class="t" x="865" y="344" text-anchor="middle">Trả lời</text>
+          <text class="s" x="865" y="362" text-anchor="middle">mỗi ý gắn câu trích</text>
+
+          <line class="ln" x1="640" y1="218" x2="640" y2="317" marker-end="url(#m5)"/>
+          <text class="lab" x="648" y="260">hết vòng · hết giờ</text>
+          <text class="lab" x="648" y="276">hoặc dừng sớm</text>
+          <rect class="hotf" x="530" y="320" width="220" height="56" rx="8"/>
+          <text class="t" x="640" y="344" text-anchor="middle">Trả lời phần đủ</text>
+          <text class="s" x="640" y="362" text-anchor="middle">nói rõ ý nào sách không có</text>
+
+          <text class="gl" x="20" y="262">SỐ LẦN GỌI QWEN</text>
+          <text class="s" x="20" y="284">vòng 1: ① + ② + trả lời = 3</text>
+          <text class="s" x="20" y="304">mỗi vòng sau: + ④ + ② = +2</text>
+          <text class="s" x="20" y="324">tối đa 7 vòng: 15</text>
+          <text class="s" x="20" y="344">đường tắt (1 ý, đủ ngay): 2</text>
+        </svg>
+        </div>
+        <figcaption>LLM chỉ được nói "đủ" khi chép ra được câu trong sách làm bằng chứng; code kiểm câu đó có thật trong đoạn đã tìm.</figcaption>
+      </figure>
+
+      <h3>Dừng sớm, trước khi hết 7 vòng</h3>
+      <div class="tiers">
+        <div class="tier"><span class="rn">Dừng khi</span><b>Không có gì mới</b><span>Vòng tìm thêm không ra parent nào chưa có.</span></div>
+        <div class="tier"><span class="rn">Dừng khi</span><b>Không tiến triển</b><span>Hai vòng liền không có ý nào chuyển từ <i>thiếu</i> sang <i>đủ</i>.</span></div>
+        <div class="tier"><span class="rn">Dừng khi</span><b>Hết giờ</b><span>Ngân sách thời gian cho cả câu hỏi (đề xuất 120 giây, chờ chốt).</span></div>
+      </div>
+
+      <h3>"1 ý" là gì</h3>
+      <div class="rule"><b>1 ý</b> = một đối tượng + một điều cần biết về nó, đủ để một đoạn sách trả lời trọn. <b>Tách</b> khi khác đối tượng (vận Ngọ / vận Mùi), khác khía cạnh (định nghĩa / lý do / ví dụ) hoặc khác nguồn (Tử Bình / Manh phái, Từ chú / Lâm chú). <b>Không tách</b> khi các vế chỉ hỏi lại cùng một thứ.</div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Câu test</th><th>Số ý</th><th>Các ý</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1, 3, 5, 8, 9</td><td class="num">1</td><td>đi đường tắt nếu đủ ngay vòng 1</td></tr>
+          <tr><td class="num">2</td><td class="num">1</td><td>thuận / nghịch dụng gồm những thần nào (cùng một đoạn trả lời)</td></tr>
+          <tr><td class="num">6</td><td class="num">2</td><td>khách–chủ là gì · bát tự hay vận là chủ</td></tr>
+          <tr><td class="num">13</td><td class="num">3</td><td>dụng thần lá số · vì sao vận Ngọ tốt · vì sao vận Mùi xấu</td></tr>
+          <tr><td class="num">15</td><td class="num">3</td><td>Dậu tốt, Thân xấu · Mùi tốt, Ngọ xấu · lời phê phán "dụng thần"</td></tr>
+          <tr><td class="num">16</td><td class="num">3</td><td>"dụng" của Manh phái · "dụng thần" của Tử Bình · Manh phái có chê Tử Bình không</td></tr>
+          <tr><td class="num">19</td><td class="num">2</td><td>dụng thần là gì · vận Giáp Dần tốt hay xấu</td></tr>
+          <tr><td class="num">20</td><td class="num">0</td><td>bị chặn ở bước rủi ro, không vào vòng lặp</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Thế nào là "đủ": 3 tầng</h3>
+      <div class="tiers">
+        <div class="tier"><span class="rn">Tầng 1 · code</span><b>Tín hiệu tìm kiếm</b><span>Điểm rerank và cosine thô của kết quả tốt nhất. Thấp hơn ngưỡng thì khỏi hỏi LLM: tìm thêm ngay, hoặc báo "không có".</span></div>
+        <div class="tier"><span class="rn">Tầng 2 · code</span><b>Có mặt đủ thực thể</b><span>Thứ người hỏi nêu tên phải xuất hiện trong đoạn tìm được: chuỗi tứ trụ, tên sách, thuật ngữ, trường phái, người bình chú.</span></div>
+        <div class="tier"><span class="rn">Tầng 3 · LLM + code</span><b>Chấm từng ý kèm câu trích</b><span>Mỗi ý: <i>đủ</i> · <i>một phần</i> · <i>thiếu</i> · <i>mâu thuẫn</i>, kèm câu trích nguyên văn. Câu trích không có thật trong đoạn thì hạ xuống <i>thiếu</i>.</span></div>
+      </div>
+      <div class="rule"><b>Quy tắc:</b> đủ khi tầng 2 đạt <em>và</em> mọi ý đều <i>đủ</i> hoặc <i>mâu thuẫn</i>. <i>Mâu thuẫn</i> = hai nguồn nói khác nhau, có đủ 2 câu trích: tính là đủ, nhưng câu trả lời phải nêu cả hai.</div>
+
+      <h3>Ví dụ minh họa: câu 13 trong bộ test</h3>
+      <div class="tablebox"><table class="ck">
+        <thead><tr><th>Ý cần biết (do ① tách)</th><th>Vòng 1</th><th>Vòng 2</th></tr></thead>
+        <tbody>
+          <tr><td>Dụng thần của Mậu Ngọ · Ất Mão · Nhâm Tý · Canh Tý theo Tử Bình Chân Thuyên</td><td><span class="chip c-keep">đủ</span><div class="q">"thủ Sát chế Nhận làm Dụng thần"</div></td><td>—</td></tr>
+          <tr><td>Vì sao vận Ngọ tốt</td><td><span class="chip c-mid">một phần</span><div class="q">chỉ thấy lý thuyết xung, chưa nói lá số này</div></td><td><span class="chip c-keep">đủ</span><div class="q">"Ngọ vận xung Tý, chỉ nhất xung mà tạo ra lưỡng xung"</div></td></tr>
+          <tr><td>Vì sao vận Mùi xấu</td><td><span class="chip c-crit">thiếu</span></td><td><span class="chip c-keep">đủ</span><div class="q">"Mùi vận hội Mão hóa mộc, hỷ hóa thành kị"</div></td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">④ viết truy vấn vòng 2 kiểu: "Khương Hữu Vi vận Ngọ xung Tý vận Mùi hội Mão", lấy thêm parent kề bên của đoạn đã trúng. Mỗi vòng được lưu lại để người chấm thấy trên <code>/judge</code>.</p>
+
+      <h3>Đã duyệt</h3>
+      <div class="tablebox"><table>
+        <thead><tr><th>Quyết định</th><th>Chốt</th></tr></thead>
+        <tbody>
+          <tr><td>Số vòng tối đa</td><td><strong>7</strong>, kèm 3 điều kiện dừng sớm ở trên</td></tr>
+          <tr><td>Cách chấm</td><td><strong>Tách ý rồi chấm từng ý</strong>, tìm riêng cho từng ý</td></tr>
+          <tr><td>Bằng chứng "đủ"</td><td><strong>Bắt câu trích nguyên văn, code kiểm</strong></td></tr>
+          <tr><td>Hết vòng vẫn thiếu</td><td><strong>Trả lời phần đủ, nói rõ phần thiếu</strong></td></tr>
+          <tr><td>Đường tắt</td><td><strong>1 ý</strong> (định nghĩa ở trên) và đủ ngay vòng 1 thì trả lời luôn</td></tr>
+          <tr><td>Chế độ thinking của Qwen3</td><td><strong>Tắt</strong> cho ② ④; thử bật cho ① với câu dài</td></tr>
+          <tr><td>Tốc độ</td><td><strong>Bật prefix caching của vLLM</strong>, khối nguồn đặt đầu prompt</td></tr>
+          <tr><td>Ngân sách thời gian mỗi câu</td><td><span class="chip c-mid">chờ chốt</span> đề xuất 120 giây</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Ngưỡng tầng 1 và tầng 2 chỉnh bằng 20 câu test cùng nhãn của người chấm, không đặt tay.</p>
+    </div>
+
+    <!-- Layered answering strategy -->
+    <div class="blk">
+      <div class="h-row"><h2>Trả lời theo tầng: từ nền lên</h2><span class="k-tag k-fix">đề xuất của bạn · đã review</span></div>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 476" role="img" aria-label="Ví dụ câu 13: tầng dữ kiện lá số do code tính, tầng khái niệm tra sách, tầng phân tích lá số B3 tới B7, tầng câu hỏi con, cuối cùng tổng hợp câu trả lời chỉ trích đoạn sách.">
+          <defs>
+            <marker id="m6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <!-- R4 -->
+          <rect class="lane" x="20" y="16" width="940" height="64" rx="8"/>
+          <rect class="cpu" x="20" y="16" width="6" height="64"/>
+          <text class="t" x="38" y="44">Tổng hợp</text><text class="s" x="38" y="62">LLM</text>
+          <rect class="cpu" x="220" y="32" width="660" height="32" rx="16"/>
+          <text class="tt" x="550" y="53" text-anchor="middle">Trả lời câu chính · chỉ trích đoạn sách [P#], không trích câu trả lời trung gian</text>
+          <!-- R3 -->
+          <rect class="lane" x="20" y="96" width="940" height="74" rx="8"/>
+          <rect class="gpu" x="20" y="96" width="6" height="74"/>
+          <text class="t" x="38" y="128">Câu hỏi con</text><text class="s" x="38" y="146">LLM + tra sách</text>
+          <rect class="bx" x="220" y="117" width="180" height="32" rx="16"/><text class="tt" x="310" y="138" text-anchor="middle">Dụng thần lá số này?</text>
+          <rect class="bx" x="410" y="117" width="170" height="32" rx="16"/><text class="tt" x="495" y="138" text-anchor="middle">Vì sao vận Ngọ tốt?</text>
+          <rect class="bx" x="590" y="117" width="300" height="32" rx="16"/><text class="tt" x="740" y="138" text-anchor="middle">Vì sao vận Mùi xấu dù Kỷ Mùi trợ Sát?</text>
+          <!-- R2 -->
+          <rect class="lane" x="20" y="186" width="940" height="74" rx="8"/>
+          <rect class="gpu" x="20" y="186" width="6" height="74"/>
+          <text class="t" x="38" y="218">Phân tích lá số</text><text class="s" x="38" y="236">B3–B7 · LLM + sách</text>
+          <rect class="gpu" x="220" y="207" width="120" height="32" rx="16"/><text class="tt" x="280" y="228" text-anchor="middle">B3 vượng suy</text>
+          <rect class="gpu" x="350" y="207" width="120" height="32" rx="16"/><text class="tt" x="410" y="228" text-anchor="middle">B4 dụng thần</text>
+          <rect class="gpu" x="480" y="207" width="110" height="32" rx="16"/><text class="tt" x="535" y="228" text-anchor="middle">B5 tố công</text>
+          <rect class="gpu" x="600" y="207" width="110" height="32" rx="16"/><text class="tt" x="655" y="228" text-anchor="middle">B6 so sánh</text>
+          <rect class="gpu chg" x="720" y="207" width="150" height="32" rx="16"/><text class="tt" x="795" y="228" text-anchor="middle">B7 vận Ngọ · Mùi</text>
+          <!-- R1 -->
+          <rect class="lane" x="20" y="276" width="940" height="74" rx="8"/>
+          <rect class="bx" x="20" y="276" width="6" height="74"/>
+          <text class="t" x="38" y="308">Khái niệm</text><text class="s" x="38" y="326">tra sách · lưu dùng lại</text>
+          <rect class="bx" x="220" y="297" width="180" height="32" rx="16"/><text class="tt" x="310" y="318" text-anchor="middle">Dụng thần (TBCT)</text>
+          <rect class="bx" x="410" y="297" width="170" height="32" rx="16"/><text class="tt" x="495" y="318" text-anchor="middle">Thất Sát · Dương Nhận</text>
+          <rect class="bx" x="590" y="297" width="110" height="32" rx="16"/><text class="tt" x="645" y="318" text-anchor="middle">Thương quan</text>
+          <rect class="bx" x="710" y="297" width="120" height="32" rx="16"/><text class="tt" x="770" y="318" text-anchor="middle">Xung · hội cục</text>
+          <rect class="bx" x="840" y="297" width="110" height="32" rx="16"/><text class="tt" x="895" y="318" text-anchor="middle">Thổ trợ Sát</text>
+          <!-- R0 -->
+          <rect class="lane" x="20" y="366" width="940" height="74" rx="8"/>
+          <rect class="cpu" x="20" y="366" width="6" height="74"/>
+          <text class="t" x="38" y="398">Dữ kiện lá số</text><text class="s" x="38" y="416">code · tra bảng</text>
+          <rect class="cpu" x="220" y="387" width="150" height="32" rx="16"/><text class="tt" x="295" y="408" text-anchor="middle">Nhật chủ: Nhâm Thủy</text>
+          <rect class="cpu" x="380" y="387" width="160" height="32" rx="16"/><text class="tt" x="460" y="408" text-anchor="middle">Nguyệt lệnh: Mão Mộc</text>
+          <rect class="cpu" x="550" y="387" width="170" height="32" rx="16"/><text class="tt" x="635" y="408" text-anchor="middle">Mậu Sát · Ất Thương · Canh Ấn</text>
+          <rect class="cpu" x="730" y="387" width="200" height="32" rx="16"/><text class="tt" x="830" y="408" text-anchor="middle">Ngọ xung 2 Tý · Nhận tại Tý</text>
+          <!-- up arrows -->
+          <line class="ln" x1="940" y1="366" x2="940" y2="353" marker-end="url(#m6)"/>
+          <line class="ln" x1="940" y1="276" x2="940" y2="263" marker-end="url(#m6)"/>
+          <line class="ln" x1="940" y1="186" x2="940" y2="173" marker-end="url(#m6)"/>
+          <line class="ln" x1="940" y1="96" x2="940" y2="83" marker-end="url(#m6)"/>
+          <text class="s" x="220" y="464">Ví dụ câu 13. Mỗi tầng dùng kết quả của tầng dưới làm ngữ cảnh, kèm số hiệu đoạn sách [P#].</text>
+        </svg>
+        </div>
+        <figcaption>Đi từ nền lên: dữ kiện chắc chắn, rồi khái niệm, rồi phân tích lá số, rồi từng câu hỏi con, cuối cùng mới trả lời câu chính.</figcaption>
+      </figure>
+
+      <h3>Phân tích lá số B1 → B7</h3>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 360" role="img" aria-label="B1 nhật chủ và B2 nguyệt lệnh do code xác định. Nhánh Tử Bình và Trích Thiên Tủy: B3 vượng suy rồi B4 dụng thần. Nhánh Manh phái: B5 tố công, không dùng vượng suy. B6 so sánh: giống thì một kết luận chung, khác thì hai kết luận. B7 đề xuất thêm: xét đại vận được hỏi.">
+          <defs>
+            <marker id="m10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="cpu" x="20" y="82" width="150" height="56" rx="8"/>
+          <text class="t" x="95" y="106" text-anchor="middle">B1 Nhật chủ</text>
+          <text class="s" x="95" y="124" text-anchor="middle">can ngày · code</text>
+          <line class="ln" x1="170" y1="110" x2="197" y2="110" marker-end="url(#m10)"/>
+          <rect class="cpu" x="200" y="82" width="150" height="56" rx="8"/>
+          <text class="t" x="275" y="106" text-anchor="middle">B2 Nguyệt lệnh</text>
+          <text class="s" x="275" y="124" text-anchor="middle">chi tháng · code</text>
+
+          <path class="ln" d="M350,110 H375 V58 H397" marker-end="url(#m10)"/>
+          <path class="ln" d="M375,110 V172 H397" marker-end="url(#m10)"/>
+
+          <text class="gl" x="400" y="22">TỬ BÌNH · TRÍCH THIÊN TỦY</text>
+          <rect class="gpu" x="400" y="30" width="160" height="56" rx="8"/>
+          <text class="t" x="480" y="54" text-anchor="middle">B3 Vượng suy</text>
+          <text class="s" x="480" y="72" text-anchor="middle">TTT Suy Vượng · TBCT ch.6</text>
+          <line class="ln" x1="560" y1="58" x2="587" y2="58" marker-end="url(#m10)"/>
+          <rect class="gpu" x="590" y="30" width="170" height="56" rx="8"/>
+          <text class="t" x="675" y="54" text-anchor="middle">B4 Dụng thần</text>
+          <text class="s" x="675" y="72" text-anchor="middle">cách cục + 1 trong 5 phép</text>
+
+          <text class="gl" x="400" y="128">MANH PHÁI</text>
+          <rect class="gpu" x="400" y="144" width="360" height="56" rx="8"/>
+          <text class="t" x="580" y="168" text-anchor="middle">B5 Tố công</text>
+          <text class="s" x="580" y="186" text-anchor="middle">khách–chủ · thể–dụng · không dựa vào vượng suy</text>
+
+          <path class="ln" d="M760,58 H850 V67" marker-end="url(#m10)"/>
+          <path class="ln" d="M760,172 H776 V110 H787" marker-end="url(#m10)"/>
+          <polygon class="bx" points="790,110 850,70 910,110 850,150"/>
+          <text class="t" x="850" y="106" text-anchor="middle">B6 Cùng</text>
+          <text class="t" x="850" y="122" text-anchor="middle">kết luận?</text>
+
+          <path class="ln" d="M850,150 V196 H705 V228" marker-end="url(#m10)"/>
+          <path class="ln" d="M850,196 H885 V228" marker-end="url(#m10)"/>
+          <text class="lab" x="760" y="190" text-anchor="middle">giống</text>
+          <text class="lab" x="900" y="190">khác</text>
+          <rect class="cpu" x="620" y="230" width="170" height="50" rx="8"/>
+          <text class="t" x="705" y="252" text-anchor="middle">1 kết luận chung</text>
+          <text class="s" x="705" y="269" text-anchor="middle">nêu cả hai nguồn</text>
+          <rect class="hotf" x="800" y="230" width="170" height="50" rx="8"/>
+          <text class="t" x="885" y="252" text-anchor="middle">2 kết luận</text>
+          <text class="s" x="885" y="269" text-anchor="middle">ghi rõ từng trường phái</text>
+
+          <line class="ln" x1="705" y1="280" x2="705" y2="297" marker-end="url(#m10)"/>
+          <line class="ln" x1="885" y1="280" x2="885" y2="297" marker-end="url(#m10)"/>
+          <rect class="bx chg" x="560" y="300" width="410" height="46" rx="8"/>
+          <text class="t" x="765" y="320" text-anchor="middle">B7 Xét đại vận được hỏi</text>
+          <text class="s" x="765" y="337" text-anchor="middle">đề xuất thêm · theo kết luận của từng bên</text>
+
+          <rect class="cpu" x="24" y="250" width="18" height="13" rx="3"/><text class="s" x="52" y="261">code tra bảng, không cần LLM</text>
+          <rect class="gpu" x="24" y="276" width="18" height="13" rx="3"/><text class="s" x="52" y="287">LLM, chỉ dựa trên đoạn sách tìm được</text>
+          <rect class="bx chg" x="24" y="302" width="18" height="13" rx="3"/><text class="s" x="52" y="313">tôi đề xuất thêm</text>
+        </svg>
+        </div>
+        <figcaption>Hai nhánh chạy riêng, mỗi nhánh chỉ được tìm trong sách của trường phái mình, nên không bị trộn khái niệm.</figcaption>
+      </figure>
+
+      <h3>Tách câu theo cách của bạn, có chỉnh</h3>
+      <div class="decomp">
+        <div class="dc">
+          <div class="dc-q"><span class="rn">Câu 8</span> Manh phái phân biệt "mộ" và "khố" thế nào?</div>
+          <div class="dc-l"><span class="lv">Khái niệm</span><ul><li>Trong Manh phái, "mộ" là gì?</li><li>Trong Manh phái, "khố" là gì?</li></ul></div>
+          <div class="dc-l"><span class="lv">Tổng hợp</span><ul><li>So sánh hai khái niệm → trả lời câu chính</li></ul></div>
+          <div class="dc-n">Giữ nguyên. Không có lá số nên bỏ qua B1–B7.</div>
+        </div>
+        <div class="dc">
+          <div class="dc-q"><span class="rn">Câu 18</span> Đinh Sửu – Kỷ Dậu – Ất Sửu – Giáp Thân. Có phải Tòng Sát? Vận Ất Tỵ có đại hung?</div>
+          <div class="dc-l"><span class="lv">Dữ kiện · code</span><ul><li>Nhật chủ Ất · nguyệt lệnh Dậu · thập thần · tàng can · Tỵ–Dậu–Sửu chỉ đủ khi có vận</li></ul></div>
+          <div class="dc-l"><span class="lv">Khái niệm</span><ul><li>Tòng Sát là gì? (chân tòng · giả tòng)</li><li>"Kim rất vượng, thân nhược" căn cứ vào đâu?</li><li><s>Đại hung là gì?</s> → <em>Tam hợp do vận đưa tới thì sách luận cát hung ra sao?</em></li></ul></div>
+          <div class="dc-l"><span class="lv">Phân tích</span><ul><li>B1–B6 · B7 vận Ất Tỵ</li></ul></div>
+          <div class="dc-l"><span class="lv">Tổng hợp</span><ul><li>Có phải Tòng Sát? · Vận Ất Tỵ có đại hung?</li></ul></div>
+          <div class="dc-n">"Đại hung" là từ thường, không phải thuật ngữ; hỏi "đại hung là gì" sẽ tìm ra đoạn lạc đề. Đổi thành câu hỏi về điều sách thật sự bàn.</div>
+        </div>
+      </div>
+
+      <h3>Nhận xét</h3>
+      <div class="grid2">
+        <div class="card"><span class="chip c-keep">Nên giữ</span>
+          <ul class="tight">
+            <li>Hỏi từ nền lên thì mỗi bước đều có đoạn sách đỡ, model 8B ít đoán mò hơn.</li>
+            <li>B6 tách hai trường phái đúng tinh thần "không trộn dụng với dụng thần".</li>
+            <li>Bắt phân tích lá số trước khi trả lời làm câu trả lời nhất quán giữa các câu.</li>
+          </ul></div>
+        <div class="card"><span class="chip c-mid">Cần chỉnh</span>
+          <ul class="tight">
+            <li><b>B1, B2 và thập thần, tàng can, xung hợp</b> là tra bảng, nên để code làm. Model 8B hay tính sai; repo đã có sẵn bảng (<code>calc/tables.py</code>, <code>calc/relations.py</code>), không cần ngày sinh.</li>
+            <li><b>B4:</b> dụng thần trong Tử Bình Chân Thuyên lấy theo <em>cách cục từ nguyệt lệnh</em>; 5 phép (phù ức, bệnh dược…) là phần thêm. Câu 13 có đáp án "thủ Sát chế Nhận" là kiểu cách cục. Cần cả hai.</li>
+            <li><b>Thêm B7:</b> đề bài luôn hỏi kèm đại vận; phải xét đúng vận được hỏi theo kết luận của từng bên.</li>
+            <li><b>Khái niệm chỉ tạo câu hỏi cho thuật ngữ có trong bảng <code>terms</code></b>, không cho từ thường như "đại hung".</li>
+            <li><b>Câu trả lời trung gian không phải nguồn.</b> Câu trả lời cuối chỉ được trích đoạn sách [P#]; nếu không, model trích lại chính lời nó.</li>
+            <li><b>Tốn thời gian:</b> câu như 13 cần khoảng 15–25 lần gọi Qwen trước khi có vòng lặp. Lưu sẵn định nghĩa khái niệm để dùng lại giữa các câu, và hiện tiến độ từng bước cho người dùng.</li>
+          </ul></div>
+      </div>
+
+      <h3>Đã duyệt</h3>
+      <div class="tablebox"><table>
+        <thead><tr><th>Quyết định</th><th>Chốt</th></tr></thead>
+        <tbody>
+          <tr><td>Dữ kiện lá số (B1, B2, thập thần, tàng can, xung hợp)</td><td><strong>Code tra bảng</strong>, đưa vào ngữ cảnh như "dữ kiện", không cần lịch hay ngày sinh</td></tr>
+          <tr><td>B4 dụng thần</td><td><strong>Cách cục (TBCT) + 5 phép</strong>, ghi rõ dùng cách nào</td></tr>
+          <tr><td>Câu hỏi nêu đích danh một trường phái</td><td><strong>Chạy đủ nhánh được hỏi + 1–2 câu "góc nhìn khác"</strong> từ nhánh còn lại, ghi rõ trường phái</td></tr>
+          <tr><td>Thêm B7 xét đại vận được hỏi</td><td><strong>Có</strong></td></tr>
+          <tr><td>Kho định nghĩa khái niệm</td><td><strong>Tra 1 lần mỗi release, lưu lại</strong>, câu sau dùng lại</td></tr>
+          <tr><td>Câu hỏi khái niệm</td><td><strong>Chỉ cho thuật ngữ có trong bảng <code>terms</code></strong>, sau khi bổ sung bảng (bên dưới)</td></tr>
+          <tr><td>Ngân sách thời gian mỗi câu</td><td><span class="chip c-low">hoãn</span> chốt sau khi chạy thử, dựa trên thời gian đo thật</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Bảng <code>terms</code> là gì</h3>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 230" role="img" aria-label="Bảng concepts chứa khái niệm theo trường phái; bảng terms chứa các cách viết của khái niệm đó: tên chuẩn, biệt danh, chữ Hán, dạng bỏ dấu. Hiện chỉ có Can, Chi, Ngũ Hành.">
+          <defs>
+            <marker id="m11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <text class="gl" x="20" y="24">CONCEPTS · KHÁI NIỆM</text>
+          <rect class="bx" x="20" y="36" width="260" height="70" rx="8"/>
+          <text class="t" x="36" y="62">Thất Sát</text>
+          <text class="s" x="36" y="82">trường phái: Tử Bình · đã duyệt</text>
+          <rect class="bx" x="20" y="120" width="260" height="70" rx="8"/>
+          <text class="t" x="36" y="146">Dụng (Manh phái)</text>
+          <text class="s" x="36" y="166">khác hẳn "Dụng thần" của Tử Bình</text>
+
+          <text class="gl" x="380" y="24">TERMS · CÁCH VIẾT CỦA KHÁI NIỆM</text>
+          <rect class="cpu" x="380" y="40" width="130" height="28" rx="14"/><text class="tt" x="445" y="59" text-anchor="middle">Thất Sát</text>
+          <rect class="bx" x="520" y="40" width="130" height="28" rx="14"/><text class="tt" x="585" y="59" text-anchor="middle">Thiên Quan</text>
+          <rect class="bx" x="660" y="40" width="80" height="28" rx="14"/><text class="tt" x="700" y="59" text-anchor="middle">七殺</text>
+          <rect class="bx" x="750" y="40" width="90" height="28" rx="14"/><text class="tt" x="795" y="59" text-anchor="middle">Sát</text>
+          <text class="s" x="380" y="88">tên chuẩn · biệt danh · chữ Hán · dạng rút gọn (+ dạng bỏ dấu "that sat")</text>
+          <rect class="cpu" x="380" y="124" width="130" height="28" rx="14"/><text class="tt" x="445" y="143" text-anchor="middle">Dụng</text>
+          <rect class="bx" x="520" y="124" width="80" height="28" rx="14"/><text class="tt" x="560" y="143" text-anchor="middle">用</text>
+          <line class="ln" x1="280" y1="70" x2="377" y2="54" marker-end="url(#m11)"/>
+          <line class="ln" x1="280" y1="155" x2="377" y2="138" marker-end="url(#m11)"/>
+
+          <rect class="hotf" x="380" y="176" width="580" height="40" rx="8"/>
+          <text class="t" x="396" y="201">Hiện chỉ có 27 khái niệm: 10 Can, 12 Chi, 5 Ngũ Hành. Chưa có Thập thần, Tòng Sát, Mộ khố…</text>
+        </svg>
+        </div>
+        <figcaption>Bảng thuật ngữ trong Postgres (migration M004), không phải danh sách 24 tiết khí trong <code>calc/solar_terms.py</code>. Đã có sẵn màn hình duyệt ở mục Tri thức → Thuật ngữ.</figcaption>
+      </figure>
+      <div class="rule"><b>Đã xong:</b> danh sách glossary-1 có 1.293 khái niệm đã duyệt, mỗi khái niệm gắn trường phái. Nạp bằng <code>cli load-glossary</code>; xem tab "Tiến độ &amp; bàn giao".</div>
+    </div>
+
+    <!-- 5. Fusion fix -->
+    <div class="blk">
+      <h2>"Chấm đủ 2 điểm" là gì?</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 260" role="img" aria-label="Hai bộ tìm mỗi bên lấy top 50. Chunk ở phần giao có đủ hai điểm. Chunk Y chỉ lọt top dense nên thiếu điểm BM25; chunk X đúng tứ trụ chỉ lọt top BM25 nên thiếu điểm dense.">
+          <circle class="vn-d" cx="400" cy="140" r="108"/>
+          <circle class="vn-s" cx="580" cy="140" r="108"/>
+          <text class="t" x="360" y="22" text-anchor="middle">Top 50 Dense</text>
+          <text class="s" x="360" y="38" text-anchor="middle">giống về nghĩa</text>
+          <text class="t" x="620" y="22" text-anchor="middle">Top 50 BM25</text>
+          <text class="s" x="620" y="38" text-anchor="middle">khớp đúng chữ</text>
+
+          <circle class="pt" cx="345" cy="140" r="7"/>
+          <text class="t" x="345" y="166" text-anchor="middle">Y</text>
+          <circle class="pt" cx="490" cy="140" r="7"/>
+          <text class="s" x="490" y="166" text-anchor="middle">đủ 2 điểm</text>
+          <circle class="pt hot" cx="635" cy="140" r="7"/>
+          <text class="t" x="635" y="166" text-anchor="middle">X</text>
+
+          <text class="t" x="20" y="120">Y chỉ lọt bên dense</text>
+          <text class="s" x="20" y="140">có điểm dense</text>
+          <text class="s red-t" x="20" y="158">thiếu điểm BM25</text>
+          <line class="ln dash" x1="160" y1="138" x2="330" y2="140"/>
+
+          <text class="t" x="790" y="120">X chỉ lọt bên BM25</text>
+          <text class="s" x="790" y="140">khớp đúng chuỗi tứ trụ</text>
+          <text class="s red-t" x="790" y="158">thiếu điểm dense</text>
+          <line class="ln dash" x1="650" y1="140" x2="782" y2="138"/>
+        </svg>
+        </div>
+        <figcaption>Mỗi bộ tìm chỉ trả về 50 chunk của riêng nó, nên nhiều chunk chỉ có một trong hai điểm.</figcaption>
+      </figure>
+
+      <div class="explain">
+        <div class="ex-step"><span class="rn">1</span><b>Hai bộ tìm chạy riêng</b><span>Dense lấy 50 chunk giống nghĩa nhất, BM25 lấy 50 chunk khớp chữ nhất. Hai danh sách chỉ trùng một phần.</span></div>
+        <div class="ex-step bad"><span class="rn">2</span><b>Hiện tại: thiếu thì cho 0</b><span>X đứng hạng 1 bên BM25 nhưng ngoài top 50 dense, nên điểm dense bị coi là 0. 0 ở đây là "chưa ai chấm", không phải "không liên quan".</span></div>
+        <div class="ex-step good"><span class="rn">3</span><b>Đề xuất: chấm nốt cho đủ</b><span>Tính cosine thật cho X (vector có sẵn trong Postgres), tính BM25 thật cho Y (chỉ mục có sẵn trong RAM). Rồi mới trộn 0.8/0.2. Khoảng 100 chunk, gần như không tốn thêm thời gian.</span></div>
+      </div>
+
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 236" role="img" aria-label="Ví dụ: chunk X khớp đúng chuỗi tứ trụ chỉ đạt 0.20 khi bên dense bị tính 0 nên thua chunk Y 0.48; điền điểm thật thì X đạt 0.64 và lên đầu.">
+          <text class="gl" x="10" y="24">HIỆN TẠI · THIẾU THÌ TÍNH 0</text>
+          <text class="gl" x="510" y="24">ĐỀ XUẤT · CHẤM ĐỦ 2 ĐIỂM</text>
+
+          <text class="t" x="10" y="66">Chunk X</text><text class="s" x="10" y="82">khớp đúng tứ trụ</text>
+          <rect class="sp" x="150" y="54" width="60" height="26" rx="3"/>
+          <text class="t" x="218" y="72">0.20</text>
+          <text class="t" x="10" y="136">Chunk Y</text><text class="s" x="10" y="152">dense giữa bảng</text>
+          <rect class="dn" x="150" y="124" width="144" height="26" rx="3"/>
+          <text class="t" x="302" y="142">0.48</text>
+          <rect class="win" x="342" y="128" width="66" height="20" rx="10"/><text class="wt" x="375" y="142" text-anchor="middle">xếp trên</text>
+          <line class="axis" x1="150" y1="172" x2="450" y2="172"/>
+          <text class="s" x="150" y="188" text-anchor="middle">0</text>
+          <text class="s" x="450" y="188" text-anchor="middle">1.0</text>
+
+          <line class="axis" x1="490" y1="40" x2="490" y2="190"/>
+
+          <text class="t" x="510" y="66">Chunk X</text><text class="s" x="510" y="82">khớp đúng tứ trụ</text>
+          <rect class="dn" x="660" y="54" width="132" height="26" rx="3"/>
+          <rect class="sp" x="792" y="54" width="60" height="26" rx="3"/>
+          <text class="t" x="860" y="72">0.64</text>
+          <rect class="win" x="900" y="58" width="66" height="20" rx="10"/><text class="wt" x="933" y="72" text-anchor="middle">xếp trên</text>
+          <text class="t" x="510" y="136">Chunk Y</text><text class="s" x="510" y="152">dense giữa bảng</text>
+          <rect class="dn" x="660" y="124" width="144" height="26" rx="3"/>
+          <rect class="sp" x="804" y="124" width="6" height="26" rx="1"/>
+          <text class="t" x="818" y="142">0.50</text>
+          <line class="axis" x1="660" y1="172" x2="960" y2="172"/>
+          <text class="s" x="660" y="188" text-anchor="middle">0</text>
+          <text class="s" x="960" y="188" text-anchor="middle">1.0</text>
+
+          <rect class="dn" x="150" y="210" width="16" height="12" rx="2"/><text class="s" x="174" y="220">0.8 × dense</text>
+          <rect class="sp" x="270" y="210" width="16" height="12" rx="2"/><text class="s" x="294" y="220">0.2 × BM25</text>
+        </svg>
+        </div>
+        <figcaption>Kết quả trên cùng ví dụ (số minh họa). Thiếu thì cho 0: X tối đa được 0.20 nên thua Y. Chấm đủ 2 điểm: X được 0.64 và lên đầu, đúng đoạn sách người hỏi cần.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 6. VRAM -->
+    <div class="blk">
+      <h2>VRAM trên RTX 4090</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 262" role="img" aria-label="Hiện tại Qwen FP8 12,2 GB cộng Gemma 5,9 và OCR 3,2 là 21,3 trên trần 23 GB; Qwen 4-bit trên vLLM còn 17,9; Qwen Q4 trên llama.cpp còn 15,9.">
+          <text class="t" x="10" y="54">Hiện tại</text><text class="s" x="10" y="70">Qwen FP8 · vLLM</text>
+          <rect class="q" x="230" y="38" width="366" height="34" rx="3"/><text class="in" x="413" y="60" text-anchor="middle">Qwen 12,2</text>
+          <rect class="gm" x="596" y="38" width="177" height="34"/><text class="in" x="684" y="60" text-anchor="middle">Gemma 5,9</text>
+          <rect class="gpu" x="773" y="38" width="96" height="34" rx="3"/><text class="in" x="821" y="60" text-anchor="middle">OCR 3,2</text>
+          <text class="t" x="877" y="60">21,3</text>
+
+          <text class="t" x="10" y="114">Phương án A</text><text class="s" x="10" y="130">Qwen 4-bit AWQ · vLLM</text>
+          <rect class="q" x="230" y="98" width="264" height="34" rx="3"/><text class="in" x="362" y="120" text-anchor="middle">Qwen ≈ 8,8</text>
+          <rect class="gm" x="494" y="98" width="177" height="34"/><text class="in" x="582" y="120" text-anchor="middle">Gemma 5,9</text>
+          <rect class="gpu" x="671" y="98" width="96" height="34" rx="3"/><text class="in" x="719" y="120" text-anchor="middle">OCR 3,2</text>
+          <text class="t" x="775" y="120">17,9</text>
+
+          <text class="t" x="10" y="174">Phương án B</text><text class="s" x="10" y="190">Qwen Q4 · llama.cpp</text>
+          <rect class="q" x="230" y="158" width="204" height="34" rx="3"/><text class="in" x="332" y="180" text-anchor="middle">Qwen ≈ 6,8</text>
+          <rect class="gm" x="434" y="158" width="177" height="34"/><text class="in" x="522" y="180" text-anchor="middle">Gemma 5,9</text>
+          <rect class="gpu" x="611" y="158" width="96" height="34" rx="3"/><text class="in" x="659" y="180" text-anchor="middle">OCR 3,2</text>
+          <text class="t" x="715" y="180">15,9</text>
+
+          <line class="ln dash" x1="770" y1="26" x2="770" y2="206"/>
+          <text class="s" x="770" y="224" text-anchor="middle">18 GB · đang thấy hôm nay</text>
+          <line class="ln red dash" x1="920" y1="26" x2="920" y2="206"/>
+          <text class="lab red-t" x="920" y="224" text-anchor="middle">trần 23 GB</text>
+          <text class="s" x="230" y="250">đơn vị GB · ước tính, cần đo trên máy thật</text>
+        </svg>
+        </div>
+        <figcaption>Qwen + Gemma ≈ 18 GB, đúng con số đang thấy; bật OCR là sát trần. Bản 4-bit để dư 5–7 GB, không cần tắt Qwen khi nạp sách.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 7. Rotation -->
+    <div class="blk">
+      <h2>Luân phiên GPU</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 256" role="img" aria-label="Hai trạng thái: Phục vụ với OCR tắt, và Nạp sách với OCR bật. Chuyển sang Nạp sách khi có job OCR và đủ VRAM; OCR rảnh 5 phút thì nhả và quay về Phục vụ; thiếu VRAM thì job chờ.">
+          <defs>
+            <marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx big" x="60" y="30" width="340" height="150" rx="14"/>
+          <text class="gl" x="80" y="56">PHỤC VỤ · MẶC ĐỊNH</text>
+          <rect class="gpu" x="80" y="72" width="90" height="30" rx="15"/><text class="tt" x="125" y="92" text-anchor="middle">Qwen</text>
+          <rect class="gm" x="180" y="72" width="90" height="30" rx="15"/><text class="tt" x="225" y="92" text-anchor="middle">Gemma</text>
+          <rect class="ghost" x="280" y="72" width="100" height="30" rx="15"/><text class="tt muted-t" x="330" y="92" text-anchor="middle">OCR tắt</text>
+          <text class="s" x="80" y="136">chat · /ask · người chấm</text>
+          <text class="s" x="80" y="156">embed + rerank trên CPU</text>
+
+          <rect class="bx big" x="580" y="30" width="340" height="150" rx="14"/>
+          <text class="gl" x="600" y="56">NẠP SÁCH</text>
+          <rect class="gpu" x="600" y="72" width="90" height="30" rx="15"/><text class="tt" x="645" y="92" text-anchor="middle">Qwen</text>
+          <rect class="gm" x="700" y="72" width="90" height="30" rx="15"/><text class="tt" x="745" y="92" text-anchor="middle">Gemma</text>
+          <rect class="gpu chg" x="800" y="72" width="100" height="30" rx="15"/><text class="tt" x="850" y="92" text-anchor="middle">OCR bật</text>
+          <text class="s" x="600" y="136">OCR trang scan, rồi tóm tắt parent</text>
+          <text class="s" x="600" y="156">chat vẫn chạy nếu đủ VRAM</text>
+
+          <path class="ln" d="M400,70 C470,36 510,36 577,70" marker-end="url(#m7)"/>
+          <text class="lab" x="490" y="40" text-anchor="middle">có job OCR + đủ VRAM</text>
+          <path class="ln" d="M580,150 C510,186 470,186 403,150" marker-end="url(#m7)"/>
+          <text class="lab" x="490" y="196" text-anchor="middle">OCR rảnh 5 phút → nhả model</text>
+          <path class="ln dash" d="M150,180 C150,232 280,232 280,183" marker-end="url(#m7)"/>
+          <text class="lab" x="215" y="246" text-anchor="middle">thiếu VRAM: job chờ, thử lại sau</text>
+        </svg>
+        </div>
+        <figcaption>Worker kiểm VRAM trống trước khi nạp OCR; không đủ thì đợi, không ép.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 8. Network -->
+    <div class="blk">
+      <h2>Mạng: trước và sau</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 320" role="img" aria-label="Trước: api, worker, reasoner nằm trong mạng edge ra được Internet và Qwen mở ra LAN. Sau: chỉ gateway ở edge, các service còn lại và Qwen nằm trong mạng internal, Qwen chỉ nghe 127.0.0.1.">
+          <defs>
+            <marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="m8r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah red" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <text class="gl" x="20" y="24">TRƯỚC</text>
+          <rect class="hotf" x="150" y="38" width="160" height="36" rx="18"/><text class="t" x="230" y="61" text-anchor="middle">Internet</text>
+          <rect class="hotf" x="340" y="38" width="110" height="36" rx="18"/><text class="t" x="395" y="61" text-anchor="middle">LAN</text>
+          <rect class="grp" x="20" y="100" width="440" height="82" rx="10"/>
+          <text class="gl" x="32" y="118">MẠNG EDGE</text>
+          <rect class="bx" x="34" y="128" width="96" height="40" rx="6"/><text x="82" y="153" text-anchor="middle">gateway</text>
+          <rect class="bx" x="138" y="128" width="96" height="40" rx="6"/><text x="186" y="153" text-anchor="middle">api</text>
+          <rect class="bx" x="242" y="128" width="96" height="40" rx="6"/><text x="290" y="153" text-anchor="middle">worker</text>
+          <rect class="bx" x="346" y="128" width="104" height="40" rx="6"/><text x="398" y="153" text-anchor="middle">reasoner</text>
+          <line class="ln red" x1="186" y1="128" x2="210" y2="77" marker-end="url(#m8r)"/>
+          <line class="ln red" x1="290" y1="128" x2="240" y2="77" marker-end="url(#m8r)"/>
+          <line class="ln red" x1="398" y1="128" x2="275" y2="77" marker-end="url(#m8r)"/>
+          <rect class="gpu" x="138" y="230" width="200" height="48" rx="8"/>
+          <text class="t" x="238" y="251" text-anchor="middle">Qwen</text>
+          <text class="s" x="238" y="268" text-anchor="middle">nghe 0.0.0.0:8000</text>
+          <line class="ln" x1="186" y1="168" x2="186" y2="227" marker-end="url(#m8)"/>
+          <text class="lab" x="192" y="204">host-gateway</text>
+          <path class="ln red" d="M338,254 H430 V77" marker-end="url(#m8r)"/>
+          <text class="lab red-t" x="436" y="214">lộ ra LAN</text>
+
+          <line class="axis" x1="490" y1="20" x2="490" y2="300"/>
+
+          <text class="gl" x="520" y="24">SAU</text>
+          <rect class="ghost" x="650" y="38" width="160" height="36" rx="18"/><text class="s" x="730" y="61" text-anchor="middle">Internet</text>
+          <text class="s" x="730" y="92" text-anchor="middle">không service nào gọi ra</text>
+          <rect class="grp" x="520" y="100" width="116" height="82" rx="10"/>
+          <text class="gl" x="530" y="118">EDGE</text>
+          <rect class="bx" x="530" y="128" width="96" height="40" rx="6"/><text x="578" y="153" text-anchor="middle">gateway</text>
+          <rect class="grp" x="650" y="100" width="316" height="200" rx="10"/>
+          <text class="gl" x="662" y="118">MẠNG INTERNAL</text>
+          <rect class="bx" x="664" y="128" width="90" height="40" rx="6"/><text x="709" y="153" text-anchor="middle">api</text>
+          <rect class="bx" x="764" y="128" width="90" height="40" rx="6"/><text x="809" y="153" text-anchor="middle">worker</text>
+          <rect class="cpu chg" x="864" y="128" width="92" height="40" rx="6"/><text x="910" y="153" text-anchor="middle">model srv</text>
+          <rect class="gpu chg" x="664" y="226" width="200" height="56" rx="8"/>
+          <text class="t" x="764" y="249" text-anchor="middle">Qwen</text>
+          <text class="s" x="764" y="267" text-anchor="middle">network connect · 127.0.0.1</text>
+          <line class="ln" x1="626" y1="148" x2="661" y2="148" marker-end="url(#m8)"/>
+          <line class="ln" x1="709" y1="168" x2="709" y2="223" marker-end="url(#m8)"/>
+          <line class="ln" x1="809" y1="168" x2="809" y2="223" marker-end="url(#m8)"/>
+        </svg>
+        </div>
+        <figcaption>Gắn container Qwen vào mạng internal bằng <code>docker network connect</code>; chỉ gateway ở mạng edge.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 9. Eval loop -->
+    <div class="blk">
+      <h2>Vòng đánh giá</h2>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 206" role="img" aria-label="Vòng lặp: chạy 20 câu, chấm trên trang judge, phân loại lỗi tìm kiếm hay sinh câu trả lời, đổi một biến, rồi chạy lại.">
+          <defs>
+            <marker id="m9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="20" y="30" width="200" height="70" rx="10"/>
+          <text class="t" x="120" y="60" text-anchor="middle">Chạy 20 câu</text>
+          <text class="s" x="120" y="80" text-anchor="middle">/ask · lưu cấu hình</text>
+          <rect class="bx" x="270" y="30" width="200" height="70" rx="10"/>
+          <text class="t" x="370" y="60" text-anchor="middle">Chấm trên /judge</text>
+          <text class="s" x="370" y="80" text-anchor="middle">ẩn điểm khi chấm</text>
+          <rect class="bx" x="520" y="30" width="200" height="70" rx="10"/>
+          <text class="t" x="620" y="60" text-anchor="middle">Phân loại lỗi</text>
+          <text class="s" x="620" y="80" text-anchor="middle">tìm sai hay trả lời sai?</text>
+          <rect class="bx chg" x="770" y="30" width="190" height="70" rx="10"/>
+          <text class="t" x="865" y="60" text-anchor="middle">Đổi đúng 1 biến</text>
+          <text class="s" x="865" y="80" text-anchor="middle">trọng số · rerank · parent · Qwen</text>
+          <line class="ln" x1="220" y1="65" x2="267" y2="65" marker-end="url(#m9)"/>
+          <line class="ln" x1="470" y1="65" x2="517" y2="65" marker-end="url(#m9)"/>
+          <line class="ln" x1="720" y1="65" x2="767" y2="65" marker-end="url(#m9)"/>
+          <path class="ln" d="M865,100 V150 H120 V103" marker-end="url(#m9)"/>
+          <text class="lab" x="492" y="174" text-anchor="middle">chạy lại · so với lượt trước</text>
+        </svg>
+        </div>
+        <figcaption>Mỗi lượt chỉ đổi một thứ, để biết điểm thay đổi là do đâu.</figcaption>
+      </figure>
+    </div>
+
+    <!-- 10. Roadmap -->
+    <div class="blk">
+      <h2>Thứ tự làm</h2>
+      <ol class="road">
+        <li><span class="rn">1</span><b>Đo cho đúng</b><span>chặn câu không nguồn · khóa vector · chấm đủ 2 điểm · heartbeat · sửa <code>rag_eval.py</code></span></li>
+        <li><span class="rn">2</span><b>Lớp người nói</b><span>tách người bình chú · 1 lượt cả sách · trang scan · thứ tự OCR</span></li>
+        <li><span class="rn">3</span><b>VRAM, mạng</b><span>Qwen 4-bit · model server CPU · mạng internal</span></li>
+        <li><span class="rn">4</span><b>Ngữ cảnh</b><span>cây chương có mục lục · quy tắc ví dụ · parent 2000</span></li>
+        <li><span class="rn">5</span><b>Một đường RAG</b><span>đưa chế độ lá số, so sánh vào · gỡ đường RRF cũ</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================================================== TAB 2 -->
+  <section class="panel" id="review" role="tabpanel" aria-labelledby="tab-review" hidden>
+
+    <div class="summary">
+      <ul>
+        <li><strong>Nền tốt.</strong> Offset trích dẫn chính xác, revision bất biến, job idempotent, RLS, backup mã hóa, container được hardening. Đừng đánh đổi những thứ này khi sửa nhanh.</li>
+        <li><strong>Vấn đề cấu trúc lớn nhất:</strong> có <em>hai</em> pipeline song song. Pipeline A (<code>retrieval/search.py</code>, RRF, đọc model từ DB) phục vụ <code>/search</code>, chế độ lá số và so sánh. Pipeline B (<code>rag/*</code>, 0.8/0.2, đọc model từ biến môi trường) phục vụ <code>/ask</code> và chế độ research. Đổi model trên giao diện không ảnh hưởng tới research.</li>
+        <li><strong>6 lỗi nặng</strong> nằm ở bảng dưới. 3 lỗi đã được kiểm trực tiếp trong code.</li>
+      </ul>
+    </div>
+
+    <div class="legend"><span class="chip c-crit">Nghiêm trọng</span><span class="chip c-high">Cao</span><span class="chip c-mid">Trung bình</span><span class="chip c-low">Thấp</span><span class="chip c-keep">Nên giữ</span></div>
+
+    <div>
+      <h2>Các lỗi cần sửa trước</h2>
+      <div class="tablebox"><table>
+        <thead><tr><th>Mức</th><th>Lỗi</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip c-crit">Nghiêm trọng</span></td><td><span class="ok">✓</span> Model nói "không đủ căn cứ", hoặc không trích được nguồn hợp lệ nào, nhưng câu trả lời của nó vẫn được hiển thị. Chỉ khi câu trả lời rỗng mới bị thay bằng câu mẫu. Đây là đường lọt cho kiểu "bỏ qua quy tắc, không cần nguồn".</td><td><code>rag/service.py:293-296</code></td><td>Thay toàn bộ bằng câu mẫu; bản thô chỉ hiện trong <code>/judge</code>.</td></tr>
+          <tr><td><span class="chip c-crit">Nghiêm trọng</span></td><td><span class="ok">✓</span> Bảng embedding có khóa chỉ là <code>chunk_id</code> và upsert khi <code>content_hash</code> khác. Chunk dùng chung giữa các generation, nên build lại (đổi header, tóm tắt, trường phái) sẽ ghi đè vector của release đang phục vụ. Kết quả chấm không tái lập được.</td><td><code>retrieval/models.py:89</code>, <code>retrieval/indexer.py:158-163</code></td><td>Khóa <code>(chunk_id, content_hash)</code>.</td></tr>
+          <tr><td><span class="chip c-crit">Nghiêm trọng</span></td><td><span class="ok">✓</span> Mọi lớp bình chú (Nguyên chú, Từ chú, Lâm chú, Nhậm thị) đều thành <code>commentator</code>; child gộp Từ chú với Lâm chú. Regex khớp "nhậm thị" nhưng sách viết "Nhâm thị viết".</td><td><code>ingestion/layout.py:34-42</code>, CHECK ở <code>0003:22</code></td><td>Thêm <code>commentator_key</code>; thêm biến thể chính tả.</td></tr>
+          <tr><td><span class="chip c-crit">Nghiêm trọng</span></td><td>Lớp người nói chỉ nhớ trong phạm vi một trang (đổi màu chữ hay gặp tiêu đề là reset; DOCX không kế thừa; OCR reset theo trang).</td><td><code>pdf_native.py:275-330</code>, <code>docx.py:130-132</code>, <code>ocr.py:160-178</code></td><td>Một pass toàn sách sau OCR.</td></tr>
+          <tr><td><span class="chip c-high">Cao</span></td><td><span class="ok">✓</span> Khi trộn điểm, bên nào không có điểm thì tính 0. Một child chỉ khớp BM25 (ví dụ đúng chuỗi tứ trụ trong câu hỏi) tối đa đạt 0.2, thua mọi child dense ở giữa danh sách.</td><td><code>rag/fusion.py:57-58</code></td><td>Tính điểm thật cho bên còn thiếu.</td></tr>
+          <tr><td><span class="chip c-high">Cao</span></td><td><span class="ok">✓</span> Có hàm <code>heartbeat</code> nhưng không nơi nào gọi; lease 180 s. Các unit dài (validate cả sách, nạp model OCR, tóm tắt) có thể mất lease và lặp đến hết số lần thử.</td><td><code>ingestion/queue.py:21,90</code></td><td>Gọi heartbeat trong một thread khi <code>compute</code> đang chạy.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div>
+      <h2>Theo từng mảng</h2>
+
+      <details open>
+        <summary>Nạp sách và chunk</summary>
+        <div class="tablebox"><table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip c-crit">Nghiêm trọng</span></td><td>Trang scan có lớp chữ ẩn chất lượng kém bị xếp <code>mixed</code>; OCR theo vùng rồi bỏ block OCR trùng ≥ 50% với chữ native, nên giữ chữ rác và bỏ OCR tốt.</td><td><code>pdf_native.py:225-227</code>, <code>ocr.py:351-355</code></td><td>Ảnh phủ trên 85% thì coi là scan; phát hiện chữ rác.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Block OCR (thường là lá số dạng ảnh) bị nối sau mọi block native, nên lá số tách khỏi lời luận.</td><td><code>ocr_stage.py:187-194</code></td><td>Chèn ordinal theo bbox y, offset vẫn nối cuối.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Marker kiểu tiêu đề ("NGUYÊN VĂN" in hoa, "Nguyên văn:" in đậm) bị xét là tiêu đề trước khi xét marker, nên làm vỡ cây chương.</td><td><code>layout.py:108-115</code>, <code>pdf_native.py:312-317</code></td><td>Block ngắn có marker thì không bao giờ là tiêu đề.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Cấp tiêu đề sai: 1.1 và 1.1.1 cùng cấp; Phần ngang Chương; DOCX bỏ qua <code>outlineLvl</code>; không đối chiếu mục lục; tiêu đề trên trang bị loại vẫn tạo section.</td><td><code>layout.py:17-20</code>, <code>docx.py:93</code>, <code>chunker.py:449-457</code></td><td>Bộ dựng cây mới có đối chiếu mục lục.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Ví dụ nuốt tới 900 token đoạn phía sau, kể cả khi lời luận đã hết; <code>EXAMPLE_START</code> khớp mọi đoạn bắt đầu bằng "Nam mệnh…".</td><td><code>chunker.py:49-52, 216-219</code></td><td>Ví dụ kéo tới marker hoặc tiêu đề kế tiếp.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Không phát hiện trang trùng (Trích Thiên Tủy lặp tr.15–19); simhash chỉ có ở chunk.</td><td><code>chunk_meta.py:87</code></td><td>Simhash theo trang ở stage structure.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>OCR vượt ngân sách 2 GB (cap mặc định 3 GB); không kiểm VRAM trống; không có timeout cho <code>predict</code>; nhả model không gọi <code>gc.collect()</code>.</td><td><code>ocr.py:40-43, 196-239</code></td><td>Kiểm <code>mem_get_info</code>; có timeout; biến <code>OCR_IDLE_SECONDS</code>.</td></tr>
+            <tr><td><span class="chip c-low">Thấp</span></td><td><code>conf</code> của OCR luôn None; header thiếu lớp người nói; <code>ocr.languages</code> kiểu Tesseract là code chết; <code>parent_max</code> đếm token của child chứ không phải văn bản đã render.</td><td><code>ocr.py:123</code>, <code>chunk_meta.py:105-116</code>, <code>profiles.py:49-52</code>, <code>chunker.py:342</code></td><td></td></tr>
+          </tbody>
+        </table></div>
+      </details>
+
+      <details>
+        <summary>Tìm kiếm và xếp hạng</summary>
+        <div class="tablebox"><table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip c-high">Cao</span></td><td><span class="ok">✓</span> Pipeline A: stopword dạng bỏ dấu xóa luôn thuật ngữ (<code>tai</code> = Tài, <code>nhat</code> = Nhật chủ, <code>tu</code> = Tử, <code>ma</code> = Mã, <code>vi</code> = vị). <code>'gi'</code> bị lặp; <code>'the nao'</code> có 2 từ nên không bao giờ khớp.</td><td><code>retrieval/search.py:50-53</code></td><td>Dùng stopword có dấu như <code>bm25.py</code>.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Embed câu hỏi bằng model trong cấu hình nhưng truy vấn bảng vector của release, không so profile. Lệch số chiều thì lỗi SQL không được bắt.</td><td><code>rag/models.py:113-115</code>, <code>rag/service.py:162-164</code></td><td>Lấy profile từ release, so <code>profile_hash</code>.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Rerank trên CPU: 8 doc khoảng 4 s, 12 doc khoảng 7 s. Pipeline A gửi 40 doc full text với timeout 10 s. Pipeline B khóa chung embed và rerank (<code>Semaphore(1)</code>), nên mỗi lúc chỉ phục vụ một request; thread hết giờ vẫn tiếp tục chiếm CPU.</td><td><code>retrieval/rerank.py:26,123</code>, <code>rag/deps.py:30</code>, <code>rag/service.py:199</code></td><td>Model server có hàng đợi; độ sâu 8–10; cache.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Min–max luôn đẩy kết quả số 1 lên 1.0 và không có ngưỡng dense, nên câu hỏi vô nghĩa vẫn trả về 50 ứng viên.</td><td><code>rag/fusion.py:35-41</code>, <code>rag/repository.py:44-54</code></td><td>Giữ điểm thô; thêm ngưỡng cosine.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>BM25 build lại đồng bộ ngay trong request đầu tiên sau khi đổi release.</td><td><code>rag/service.py:61-71</code></td><td>Warm lúc activate release.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Mỗi câu hỏi: <code>count(*)</code> phạm vi và kéo toàn bộ UUID về Python; lọc trong CTE có thể làm HNSW không được dùng; không đặt <code>ef_search</code>.</td><td><code>search.py:319</code>, <code>rag/repository.py:30-32</code></td><td>Cache phạm vi; iterative scan của pgvector.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Lọc trường phái chỉ áp với phân loại <code>reviewed</code> và không theo cấp cha–con của trường phái, nên sách chưa gán scope cho ra không có kết quả. Lọc chủ đề dùng nhãn đoán bằng từ khóa.</td><td><code>search.py:147-154</code></td><td>Mở rộng theo <code>schools.parent_id</code>; dùng chủ đề để boost, không để lọc.</td></tr>
+            <tr><td><span class="chip c-low">Thấp</span></td><td>Lexical của <code>/search</code> không index header còn BM25 của <code>/ask</code> có, nên hai trang ra kết quả khác nhau. Query section không có index. Adapter OpenAI không có retry.</td><td><code>indexer.py:149-153</code>, <code>search.py:208-216</code>, <code>embedding.py:92-109</code></td><td></td></tr>
+          </tbody>
+        </table></div>
+      </details>
+
+      <details>
+        <summary>Sinh câu trả lời và LLM</summary>
+        <div class="tablebox"><table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Chỉ kiểm có ít nhất một <code>[P#]</code> hợp lệ trong toàn bài; câu không gắn nguồn vẫn qua; xóa <code>[P9]</code> bịa nhưng giữ nguyên câu đi kèm. Không kiểm độ phủ từ vựng; mọi nguồn được trích đều gắn <code>support=1.0</code>.</td><td><code>rag/service.py:283-293</code>, <code>rag/chat.py:72-82</code></td><td>Kiểm theo từng claim bằng <code>citations.support()</code>.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Không tách trường phái và lớp lời trong prompt: có sẵn <code>meta.speakers</code>, <code>school_key</code> nhưng không đưa vào block nguồn; khi trả về thì đặt <code>None</code>/<code>unknown</code>.</td><td><code>rag/prompts.py:67-74</code>, <code>rag/chat.py:74,77</code></td><td>Ghi trường phái và lớp trong block; output có cấu trúc.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Từ chối câu hỏi chết, bệnh chỉ nằm trong prompt. Pipeline B có <code>RISKY</code> nhưng chỉ gắn cờ, không chặn.</td><td><code>rag/prompts.py:50-64</code>, <code>reasoning/validate.py:26-29,93-95</code></td><td>Chặn ý định trước khi tìm kiếm; hậu kiểm thì chặn.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Có thể tràn context: parent đầu tiên luôn được nhận; ngân sách tối đa 14000 + system + 1500 đầu ra &gt; 16k <code>max_model_len</code>. vLLM trả 400, bị coi là lỗi không thử lại.</td><td><code>rag/service.py:239-241</code>, <code>core/config.py:78</code>, <code>rag/llm.py:119-121</code></td><td>Tính ngân sách từ <code>/v1/models</code>.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Hai nguồn cấu hình LLM: research đọc biến môi trường, các chế độ khác đọc <code>model_profiles</code>; profile đã ghim trong run bị bỏ qua.</td><td><code>orchestrator.py:171-172,239,266</code></td><td>Một registry duy nhất, có <code>max_model_len</code>.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Qwen thinking: pipeline B không gửi <code>enable_thinking=false</code>; cả hai <code>_parse</code> không bóc <code>&lt;think&gt;</code>; client bật được thinking qua <code>/ask</code>; không xét <code>finish_reason=length</code>.</td><td><code>providers.py:96-101,161-168</code>, <code>rag/llm.py:77-81</code>, <code>rag/schemas.py:20</code></td><td></td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Model đang nạp hoặc đang luân phiên: 3 × 180 s ≈ 9 phút; người dùng chỉ thấy "Không có câu trả lời." mà không có nguồn. Không có readiness check.</td><td><code>rag/llm.py:26,100-136</code>, <code>rag/chat.py:28,90-94</code></td><td>Poll <code>/health</code>; fallback hiện nguồn nguyên văn.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Research không nhận lịch sử hội thoại, nên câu hỏi nối tiếp hỏng. Hủy không dừng được request LLM đang chạy.</td><td><code>orchestrator.py:330</code></td><td>Viết lại câu hỏi thành câu độc lập; hủy task LLM.</td></tr>
+            <tr><td><span class="chip c-low">Thấp</span></td><td>Pipeline B dùng <code>json_object</code> mà prompt thiếu schema <code>disagreements</code>. Regex không bắt dạng <code>[P1, P3]</code>. Research không ghi <code>usage_records</code>. Quy tắc đã duyệt nằm ngoài vùng rào <code>&lt;&lt;&lt;…&gt;&gt;&gt;</code>.</td><td><code>reasoning/prompts.py:32-35</code>, <code>rag/service.py:47</code>, <code>rag/prompts.py:72</code></td><td></td></tr>
+          </tbody>
+        </table></div>
+      </details>
+
+      <details>
+        <summary>Dữ liệu và tầng tri thức</summary>
+        <div class="tablebox"><table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Trường phái trong header lấy <em>một</em> scope cho cả sách, trong khi bộ lọc lấy theo trang. Sách có nhiều khoảng trang khác trường phái sẽ bị gắn sai.</td><td><code>chunker.py:606-609</code>, <code>knowledge/scopes.py:80-83</code></td><td>Dùng chung truy vấn scope hẹp nhất.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Từ điển khái niệm có từ một âm tiết ("thể", "dụng", "chủ", "mộ") nên "có thể", "sử dụng" cũng khớp. Bảng thập thần bị chép trùng với <code>terms</code>.</td><td><code>ingestion/chunk_meta.py:23-35</code></td><td>Sinh từ ontology; bỏ từ một âm tiết.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>FK của <code>chunk_parents.section_id</code> và <code>generation_chunks.parent_id</code> là FK đơn, có thể trỏ sang generation khác.</td><td><code>0018:42,67</code></td><td>FK ghép cùng generation.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Tái dùng tóm tắt theo <code>content_hash</code> mà không xét model, nên đổi model sẽ không tóm tắt lại.</td><td><code>summarize.py:67-71,116-123</code></td><td>Thêm <code>summary_model</code> vào khóa.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Mở rộng alias (<code>expansions()</code>) có sẵn nhưng <code>/ask</code> không gọi.</td><td><code>search.py:90-132</code>, <code>rag/service.py:150-170</code></td><td>Đưa vào truy vấn BM25.</td></tr>
+            <tr><td><span class="chip c-low">Thấp</span></td><td>Phục vụ hỏi đáp thường mà vẫn tốn chi phí cho tầng chuyên gia: stage <code>extract_candidates</code> gọi LLM cho từng parent lúc nạp sách; <code>reviewed_rules</code> chạy ở mỗi câu hỏi.</td><td><code>knowledge/candidates.py:172-190</code>, <code>rag/repository.py:91-107</code></td><td>Tắt cho tới khi có quy tắc đã duyệt.</td></tr>
+          </tbody>
+        </table></div>
+      </details>
+
+      <details>
+        <summary>Hạ tầng, bảo mật và trang chấm điểm</summary>
+        <div class="tablebox"><table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Vị trí</th><th>Cách sửa</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Người chấm chỉ nhập tên tự do và dùng chung mật khẩu; phiếu khóa theo (kết quả, tên), nên ai nhập trùng tên là ghi đè được phiếu của người khác.</td><td><code>judging/service.py:10</code>, <code>api/judge.py:44</code></td><td>Token riêng cho từng người chấm.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>Rate limit đăng nhập chấm điểm chỉ theo IP. Qua Caddy và Funnel, mọi người cùng một IP, nên 5 lần sai mật khẩu khóa tất cả 15 phút.</td><td><code>api/judge.py:58</code></td><td>Khóa theo IP + tên; tin <code>X-Forwarded-For</code> từ proxy đã biết.</td></tr>
+            <tr><td><span class="chip c-high">Cao</span></td><td>api, worker, reasoner nằm trong <code>edge</code> nên có Internet; Qwen publish trên <code>0.0.0.0:8000</code>, lộ ra LAN.</td><td><code>compose.yaml:96,119,163</code>, <code>infra/qwen.md:10</code></td><td>Mạng internal + network connect; bind 127.0.0.1.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Chạy <code>APP_ENV=dev</code> qua Funnel: lộ OpenAPI docs, cookie không có Secure, bỏ qua kiểm tra secret. <code>ALLOWED_ORIGINS</code> không có trong <code>.env.example</code>, nên truy cập qua HTTPS bị 403.</td><td><code>.env.example:3</code>, <code>config.py:52-53,165-166</code>, <code>main.py:36</code></td><td>Bắt buộc production khi public.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Jina bị nạp 3 lần (api, reasoner, worker), mỗi nơi 16 thread; reasoner 8 GB giữ hai model fp32 có nguy cơ OOM.</td><td><code>rag/deps.py:44-50</code>, <code>rag/chat.py:51-54</code></td><td>Model server dùng chung.</td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td>Trang chấm điểm: không có chế độ ẩn điểm (dễ bị neo theo); không có đáp án mẫu hay ô "đoạn đúng không tìm thấy"; không so được hai lượt chạy; người chấm nào cũng tải được CSV của mọi người.</td><td><code>frontend/src/app/judge/page.tsx</code>, <code>api/judge.py:180-188</code></td><td></td></tr>
+            <tr><td><span class="chip c-mid">Trung bình</span></td><td><code>rag_eval.py</code> không chạy được: <code>ROOT</code> trỏ ra Desktop; gọi <code>/api/v1/models</code> không tồn tại; không gửi auth; gửi <code>top_k</code>/<code>mode</code> mà schema cấm trường thừa; đọc sai cấu trúc kết quả.</td><td><code>rag_eval.py:20,38</code>, <code>rag/schemas.py:14,93-108</code></td><td>Viết lại gọi <code>/ask</code> có auth, hoặc gọi thẳng <code>RagService</code>.</td></tr>
+            <tr><td><span class="chip c-low">Thấp</span></td><td>OCR ghim revision <code>main</code> (Jina đã ghim theo hash). Thiếu healthcheck worker, reasoner, watchdog. <code>--forwarded-allow-ips "*"</code>. Volume <code>staging</code> thừa. <code>docs/12</code> vẫn ghi Tesseract và "chỉ mạng internal".</td><td><code>config.py:91</code>, <code>compose.yaml:149,235</code></td><td></td></tr>
+          </tbody>
+        </table></div>
+      </details>
+    </div>
+
+    <div>
+      <h2>Nên giữ nguyên</h2>
+      <div class="grid2">
+        <div class="card"><h3>Nguồn gốc trích dẫn</h3><p>Offset và span tới block và bbox; revision bất biến; bản sửa tay sống qua mỗi lần build lại; OCR không làm lệch offset của chữ native.</p></div>
+        <div class="card"><h3>Chunk</h3><p>Unit nguyên khối cho đoạn, danh sách, bảng, ví dụ; câu không bị cắt; parent không vượt ranh giới section; embed văn bản có ngữ cảnh; gộp trùng ấn bản bằng simhash.</p></div>
+        <div class="card"><h3>Tìm kiếm</h3><p>Phạm vi quyền đọc nằm trong truy vấn, trước khi cắt top-k; báo "chạy hạ cấp" thay vì lỗi cứng; registry embedding bất biến, mỗi profile một bảng; BM25 dùng stopword có dấu.</p></div>
+        <div class="card"><h3>Sinh câu trả lời</h3><p>Handle mờ P#/E#; rào <code>&lt;&lt;&lt;…&gt;&gt;&gt;</code> chống chèn lệnh; JSON schema kèm một lượt sửa; không hiển thị gì trước khi kiểm; bộ resolve trích dẫn có kiểm hash, span và chi tiết bịa.</p></div>
+        <div class="card"><h3>Vận hành</h3><p>Lease + fencing, outbox, idempotency; RLS với role runtime riêng; backup AES-256-GCM có drill khôi phục; container non-root, read-only, image ghim theo digest.</p></div>
+        <div class="card"><h3>Trang chấm điểm</h3><p>Hiện cấu hình và version model của lượt chạy; điểm dense, sparse, fused, rerank kèm hạng; nhãn liên quan cho từng chunk; rubric 1–5; xuất CSV.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== TAB 3 -->
+  <section class="panel" id="progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+
+    <div class="keys">
+      <div class="key"><span class="k-tag k-keep">Đã đẩy</span><p><code>main</code> đến f458829: thuật ngữ, dữ kiện lá số, harness bước 3–8, MCP server.</p></div>
+      <div class="key"><span class="k-tag k-fix">Bên Linux</span><p>Pull, build lại image, nạp thuật ngữ, bật MCP, chạy 20 câu với Qwen thật.</p></div>
+      <div class="key"><span class="k-tag k-new">Còn lại</span><p>Bước 2 (sửa nền tìm kiếm) và chỉnh tham số sau lượt chạy đầu.</p></div>
+    </div>
+
+    <div class="blk">
+      <h2>Bên Linux cần làm</h2>
+      <ol class="steps">
+        <li><div><strong>Lấy code mới:</strong> <code>git pull</code> rồi build lại image app (api, worker, reasoner dùng chung).</div></li>
+        <li><div><strong>Nạp danh sách thuật ngữ</strong>, một lần, bằng tài khoản reviewer hoặc admin. Mỗi khái niệm và biệt danh được tạo nháp rồi duyệt qua luồng review, có tên người duyệt và audit log; chạy lại không tạo trùng.
+<pre class="code">docker compose --env-file .env -f infra/compose.yaml --profile app run --rm worker \
+  python -m backend.app.cli load-glossary --as &lt;email reviewer&gt; --publish</pre>
+          Kết quả mong đợi: khoảng 1.266 khái niệm tạo mới, khoảng 27 khái niệm Can/Chi/Ngũ Hành có revision mới (giữ alias chữ Hán), <code>"ok": true</code>. <code>--publish</code> tạo ontology release mới và ghim lại corpus, không cần embed lại.</div></li>
+        <li><div><strong>Bật MCP</strong> (tùy chọn): thêm vào <code>.env</code> rồi khởi động lại <code>api</code>. Tài khoản là tài khoản mà các tool tìm kiếm theo quyền của nó.
+<pre class="code">MCP_TOKEN=&lt;python -c "import secrets; print(secrets.token_urlsafe(36))"&gt;
+MCP_USER_EMAIL=&lt;email tài khoản reviewer hoặc reader&gt;
+MCP_TIME_BUDGET=          # giây cho mỗi answer_question; để trống = không giới hạn</pre></div></li>
+        <li><div><strong>Chạy 20 câu với Qwen thật</strong>, rồi gửi file <code>.md</code> cho người chấm và file <code>.json</code> để phân tích:
+<pre class="code">docker compose --env-file .env -f infra/compose.yaml --profile app run --rm api \
+  python -m backend.app.answering.run test_questions.txt --as &lt;email&gt; [--only 13 18] [--time-budget 240]</pre>
+          Kết quả: <code>.artifacts/answering/run-&lt;UTC&gt;.json</code> (có vết từng vòng) và <code>run-&lt;UTC&gt;.md</code>.</div></li>
+        <li><div><strong>Một test đang đỏ từ trước:</strong> <code>tests/unit/test_rag.py::test_numbered_multiline_questions</code> tìm <code>scripts/rag_eval.py</code>, nhưng commit "1st RAG test run" đặt file ở thư mục gốc. Chuyển file hoặc sửa đường dẫn trong test.</div></li>
+      </ol>
+    </div>
+
+    <div class="blk">
+      <h2>Danh sách thuật ngữ glossary-1</h2>
+      <p class="note">1.293 khái niệm trích từ 4 sách PDF và DOCX "Tên Sách Chưa Đặt", gộp trùng và chốt với chủ dự án. File: <code>backend/app/knowledge/data/glossary_v1.json</code>. Không dùng hai file ca mẫu CASE_01/CASE_02 (đã bị xoá có chủ đích).</p>
+      <div class="grid3">
+        <div class="stat"><b>465</b><span>Chung (tu_tru)</span></div>
+        <div class="stat"><b>477</b><span>Tử Bình</span></div>
+        <div class="stat"><b>351</b><span>Manh phái</span></div>
+      </div>
+
+      <h3>Đã chốt</h3>
+      <div class="tablebox"><table>
+        <thead><tr><th>Chủ đề</th><th>Quyết định</th></tr></thead>
+        <tbody>
+          <tr><td>Thần sát</td><td>Chỉ dùng 3: <strong>Lộc</strong>, <strong>Kình Dương</strong>, <strong>Thiên Mã</strong>. Bỏ toàn bộ thần sát khác (Đào hoa, Quý nhân, Văn Xương, Không Vong…).</td></tr>
+          <tr><td>Hợp hóa</td><td><strong>Bỏ hẳn.</strong> Chỉ xét hợp, không bao giờ kết luận hóa.</td></tr>
+          <tr><td>Tòng cách</td><td>Nghĩa là tòng theo thế mạnh. Bỏ mục "Tòng Cách cách" (Canh Tân kim).</td></tr>
+          <tr><td>Can, Chi</td><td>Theo DOCX, phần "Tượng can chi" (tr.64–81): tượng, vật tượng, bộ phận cơ thể, tên tượng của Chi (mặc trì, quảng cốc…).</td></tr>
+          <tr><td>Cùng chữ khác nghĩa</td><td>Tử Bình và Manh phái là hai khái niệm riêng (Mộ, Khố, Dụng, Thể, Chế, Nguyên thần, Phản cục…).</td></tr>
+          <tr><td>Gộp</td><td>Kiêu thần = Thiên Ấn · Quan tinh = Chính Quan · Thiên quan = Thất Sát · Quý cách = Thượng cách · tên cách có và không có chữ "cách" · Xung = Lục xung = Tương xung…</td></tr>
+          <tr><td>Giữ riêng</td><td>Tài, Ấn là tên nhóm (khác Chính Tài, Chính Ấn) · Tòng cường và Tòng vượng · Thương hợp Sát và Kiếp hợp Sát · Khắc hợp và Chi hợp khắc can · Hỷ dụng và Hỉ thần.</td></tr>
+          <tr><td>Thực / Thương sinh Tài</td><td>Hai mục riêng. <strong>Thực sinh Tài:</strong> tích lũy, dùng kiến thức, kỹ năng để có tiền. <strong>Thương sinh Tài:</strong> tiền đầu tư, thời vụ, dễ đến dễ đi.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Tàng can (chủ → trung → dư khí)</h3>
+          <div class="tablebox"><table class="mini-t">
+            <tbody>
+              <tr><td>Tý</td><td>Quý</td><td>Ngọ</td><td>Đinh, Kỷ</td></tr>
+              <tr><td>Sửu</td><td>Kỷ, Quý, Tân</td><td>Mùi</td><td>Kỷ, Ất, Đinh</td></tr>
+              <tr><td>Dần</td><td>Giáp, Bính, Mậu</td><td>Thân</td><td>Canh, Nhâm, Mậu</td></tr>
+              <tr><td>Mão</td><td>Ất</td><td>Dậu</td><td>Tân</td></tr>
+              <tr><td>Thìn</td><td>Mậu, Ất, Quý</td><td>Tuất</td><td>Mậu, Tân, Đinh</td></tr>
+              <tr><td>Tỵ</td><td>Bính, Mậu, Canh</td><td>Hợi</td><td>Nhâm, Giáp</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <h3>Lộc · Kình Dương · Thiên Mã</h3>
+          <div class="tablebox"><table class="mini-t">
+            <thead><tr><th>Can</th><th>Lộc</th><th>Kình Dương</th></tr></thead>
+            <tbody>
+              <tr><td>Giáp / Ất</td><td>Dần / Mão</td><td>Mão / —</td></tr>
+              <tr><td>Bính / Đinh</td><td>Tỵ / Ngọ</td><td>Ngọ / —</td></tr>
+              <tr><td>Mậu / Kỷ</td><td>Tỵ / Ngọ</td><td>Ngọ / —</td></tr>
+              <tr><td>Canh / Tân</td><td>Thân / Dậu</td><td>Dậu / —</td></tr>
+              <tr><td>Nhâm / Quý</td><td>Hợi / Tý</td><td>Tý / —</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note">Thiên Mã truyền thống, xét chi năm và chi ngày: Thân Tý Thìn → Dần · Dần Ngọ Tuất → Thân · Tỵ Dậu Sửu → Hợi · Hợi Mão Mùi → Tỵ.</p>
+        </div>
+      </div>
+
+      <h3>Quan hệ can chi</h3>
+      <div class="tablebox"><table>
+        <thead><tr><th>Quan hệ</th><th>Các cặp</th></tr></thead>
+        <tbody>
+          <tr><td>Thiên can ngũ hợp</td><td>Giáp–Kỷ · Ất–Canh · Bính–Tân · Đinh–Nhâm · Mậu–Quý (chỉ hợp, không hóa)</td></tr>
+          <tr><td>Thiên can tương xung</td><td>Giáp–Canh · Ất–Tân · Bính–Nhâm · Đinh–Quý</td></tr>
+          <tr><td>Lục hợp</td><td>Tý–Sửu · Dần–Hợi · Mão–Tuất · Thìn–Dậu · Tỵ–Thân · Ngọ–Mùi</td></tr>
+          <tr><td>Lục xung</td><td>Tý–Ngọ · Sửu–Mùi · Dần–Thân · Mão–Dậu · Thìn–Tuất · Tỵ–Hợi</td></tr>
+          <tr><td>Lục hại</td><td>Tý–Mùi · Sửu–Ngọ · Dần–Tỵ · Mão–Thìn · Thân–Hợi · Dậu–Tuất</td></tr>
+          <tr><td>Lục phá</td><td>Tý–Dậu · Sửu–Thìn · Dần–Hợi · Mão–Ngọ · Tỵ–Thân · Mùi–Tuất</td></tr>
+          <tr><td>Tương hình</td><td>Dần–Tỵ–Thân · Sửu–Tuất–Mùi · Tý–Mão · tự hình Thìn, Ngọ, Dậu, Hợi</td></tr>
+          <tr><td>Tam hợp · Tam hội</td><td>Thân Tý Thìn · Hợi Mão Mùi · Dần Ngọ Tuất · Tỵ Dậu Sửu · · Dần Mão Thìn · Tỵ Ngọ Mùi · Thân Dậu Tuất · Hợi Tý Sửu</td></tr>
+          <tr><td>Ám hợp</td><td>Dần–Sửu · Ngọ–Hợi · Mão–Thân (MPSC tr.179)</td></tr>
+          <tr><td>Tự hợp</td><td>Đinh Hợi · Kỷ Hợi · Tân Tỵ · Quý Tỵ · Giáp Ngọ · Mậu Tý · Nhâm Ngọ · Bính Tuất, Nhâm Tuất khi Tuất gặp Mùi hình (DOCX ¶201–202)</td></tr>
+          <tr><td>Chi hợp khắc can</td><td>Đinh Hợi · Kỷ Hợi · Tân Tỵ · Quý Tỵ (DOCX ¶200)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="blk">
+      <div class="h-row"><h2>Bước 1 đã xong: dữ kiện lá số</h2><span class="k-tag k-keep">f633d69</span></div>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 170" role="img" aria-label="Câu hỏi có lá số đi vào find_chart, ra tứ trụ, đại vận, giới tính; facts tính bằng bảng; render ra khối tiếng Việt cho prompt, ghi rõ không phải trích sách.">
+          <defs>
+            <marker id="m12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="10" y="40" width="170" height="70" rx="8"/>
+          <text class="t" x="95" y="68" text-anchor="middle">Câu hỏi</text>
+          <text class="s" x="95" y="88" text-anchor="middle">"Lá số nam: Mậu Ngọ…"</text>
+          <line class="ln" x1="180" y1="75" x2="217" y2="75" marker-end="url(#m12)"/>
+          <rect class="cpu" x="220" y="40" width="200" height="70" rx="8"/>
+          <text class="t" x="320" y="68" text-anchor="middle">find_chart</text>
+          <text class="s" x="320" y="88" text-anchor="middle">4 trụ · đại vận · giới tính</text>
+          <line class="ln" x1="420" y1="75" x2="457" y2="75" marker-end="url(#m12)"/>
+          <rect class="cpu" x="460" y="40" width="250" height="70" rx="8"/>
+          <text class="t" x="585" y="68" text-anchor="middle">facts</text>
+          <text class="s" x="585" y="88" text-anchor="middle">bảng tra · không LLM · không lịch</text>
+          <line class="ln" x1="710" y1="75" x2="747" y2="75" marker-end="url(#m12)"/>
+          <rect class="gpu" x="750" y="40" width="220" height="70" rx="8"/>
+          <text class="t" x="860" y="68" text-anchor="middle">render → prompt</text>
+          <text class="s" x="860" y="88" text-anchor="middle">"không phải trích sách"</text>
+          <text class="s" x="585" y="140" text-anchor="middle">B1, B2 · thập thần · tàng can · trường sinh · Lộc, Kình Dương, Thiên Mã · quan hệ · từng đại vận · cảnh báo</text>
+        </svg>
+        </div>
+        <figcaption><code>backend/app/calc/pillar_facts.py</code>. Lá số không thể có (sai Ngũ Hổ độn, Ngũ Thử độn, đại vận sai chiều) thì cảnh báo, không tự sửa.</figcaption>
+      </figure>
+<pre class="code">from backend.app.calc.pillar_facts import find_chart, facts, render
+chart = find_chart(question)          # None khi câu hỏi không có đủ 4 trụ
+block = render(facts(chart))          # khối "DỮ KIỆN LÁ SỐ" cho prompt</pre>
+      <h3>Ví dụ: câu 13 trong bộ test</h3>
+<pre class="code">DỮ KIỆN LÁ SỐ — tính bằng bảng tra, không phải trích sách
+Tứ trụ (nam): Năm Mậu Ngọ · Tháng Ất Mão · Ngày Nhâm Tý · Giờ Canh Tý
+B1 Nhật chủ: Nhâm (Dương Thủy)
+B2 Nguyệt lệnh: Mão (Mộc), chủ khí Ất (Thương Quan)
+Trụ năm Mậu Ngọ: can Mậu Thất Sát; tàng can Đinh Chính Tài (chủ khí), Kỷ Chính Quan (trung khí); Nhật chủ tại Ngọ: Thai
+Trụ tháng Ất Mão: can Ất Thương Quan; tàng can Ất Thương Quan (chủ khí); Nhật chủ tại Mão: Tử
+Trụ ngày Nhâm Tý: can là Nhật chủ; tàng can Quý Kiếp Tài (chủ khí); Nhật chủ tại Tý: Đế vượng
+Trụ giờ Canh Tý: can Canh Thiên Ấn; tàng can Quý Kiếp Tài (chủ khí); Nhật chủ tại Tý: Đế vượng
+Lộc của Nhật chủ: Hợi — không có trong tứ trụ
+Kình Dương: Tý — ngày, giờ
+Thiên Mã: theo chi năm là Thân — không có trong tứ trụ; theo chi ngày là Dần — không có trong tứ trụ
+Quan hệ trong tứ trụ: Lục phá: Ngọ (năm) – Mão (tháng); Lục xung: Ngọ (năm) – Tý (ngày); Lục xung: Ngọ (năm) – Tý (giờ); Tương hình: Mão (tháng) – Tý (ngày); Thiên can ngũ hợp: Ất (tháng) – Canh (giờ); Tương hình: Mão (tháng) – Tý (giờ)
+Đại vận 1 Bính Thìn: can Thiên Tài; tàng can Mậu Thất Sát, Ất Thương Quan, Quý Kiếp Tài; Nhật chủ tại Thìn: Mộ; Lục hại: Thìn (vận) – Mão (tháng); Thiên can tương xung: Bính (vận) – Nhâm (ngày); Bán hợp Thủy (thiếu Thân): Thìn (vận) – Tý (ngày) – Tý (giờ); Tam hội Mộc thiếu Dần: Thìn (vận) – Mão (tháng)
+Đại vận 3 Mậu Ngọ: can Thất Sát; tàng can Đinh Chính Tài, Kỷ Chính Quan; Nhật chủ tại Ngọ: Thai; Tự hình: Ngọ (vận) – Ngọ (năm); Lục phá: Ngọ (vận) – Mão (tháng); Lục xung: Ngọ (vận) – Tý (ngày); Lục xung: Ngọ (vận) – Tý (giờ)
+Đại vận 4 Kỷ Mùi: can Chính Quan; tàng can Kỷ Chính Quan, Ất Thương Quan, Đinh Chính Tài; Nhật chủ tại Mùi: Dưỡng; Lục hợp: Mùi (vận) – Ngọ (năm); Lục hại: Mùi (vận) – Tý (ngày); Lục hại: Mùi (vận) – Tý (giờ); Bán hợp Mộc (thiếu Hợi): Mùi (vận) – Mão (tháng); Tam hội Hỏa thiếu Tỵ: Mùi (vận) – Ngọ (năm)
+…
+Hợp chỉ ghi là hợp; không xét hóa.</pre>
+      <p class="note">Đã đối chiếu với sách: Lộc của Kỷ ở Ngọ trụ giờ (Onassis), Kình Dương Tý ở ngày và giờ, Ngọ xung hai Tý (câu 13), Dậu–Sửu bán hợp và vận Ất Tỵ "đủ nhờ vận" (câu 18).</p>
+    </div>
+
+    <div class="blk">
+      <div class="h-row"><h2>Bước 3–8 đã xong: answering harness</h2><span class="k-tag k-keep">6fd02d5</span></div>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 230" role="img" aria-label="Harness chỉ nói chuyện với hai cổng: Model (Qwen qua QwenModel) và Retriever (RAG pilot qua RagRetriever). Trong test hai cổng được thay bằng model và thư viện giả.">
+          <defs>
+            <marker id="m13" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx big" x="330" y="30" width="320" height="170" rx="12"/>
+          <text class="t" x="490" y="58" text-anchor="middle">Harness</text>
+          <text class="s" x="490" y="80" text-anchor="middle">chặn rủi ro → dữ kiện lá số → ý cần biết</text>
+          <text class="s" x="490" y="100" text-anchor="middle">→ vòng bằng chứng (≤ 7, dừng sớm)</text>
+          <text class="s" x="490" y="120" text-anchor="middle">→ phân tích từng trường phái</text>
+          <text class="s" x="490" y="140" text-anchor="middle">→ tổng hợp + góc nhìn khác</text>
+          <text class="s" x="490" y="160" text-anchor="middle">→ kiểm từng nhận định → câu trả lời do code dựng</text>
+          <text class="s" x="490" y="184" text-anchor="middle">+ vết đầy đủ từng vòng</text>
+
+          <rect class="gpu" x="730" y="40" width="230" height="56" rx="8"/>
+          <text class="t" x="845" y="64" text-anchor="middle">Model → QwenModel</text>
+          <text class="s" x="845" y="82" text-anchor="middle">JSON schema · thinking tắt · bóc &lt;think&gt;</text>
+          <rect class="cpu" x="730" y="134" width="230" height="56" rx="8"/>
+          <text class="t" x="845" y="158" text-anchor="middle">Retriever → RagRetriever</text>
+          <text class="s" x="845" y="176" text-anchor="middle">tìm kiếm RAG pilot, lọc trường phái</text>
+          <line class="ln" x1="650" y1="80" x2="727" y2="68" marker-end="url(#m13)"/>
+          <line class="ln" x1="650" y1="150" x2="727" y2="162" marker-end="url(#m13)"/>
+
+          <rect class="ghost" x="20" y="40" width="230" height="56" rx="8"/>
+          <text class="t" x="135" y="64" text-anchor="middle">Trong test</text>
+          <text class="s" x="135" y="82" text-anchor="middle">model giả + thư viện giả</text>
+          <rect class="bx" x="20" y="134" width="230" height="56" rx="8"/>
+          <text class="t" x="135" y="158" text-anchor="middle">run.py</text>
+          <text class="s" x="135" y="176" text-anchor="middle">bộ câu hỏi → .json + .md</text>
+          <line class="ln dash" x1="250" y1="68" x2="327" y2="80" marker-end="url(#m13)"/>
+          <line class="ln" x1="250" y1="162" x2="327" y2="150" marker-end="url(#m13)"/>
+        </svg>
+        </div>
+        <figcaption><code>backend/app/answering/</code>. Câu trả lời cuối do code dựng từ những nhận định có nguồn thật, nên câu không nguồn không thể lọt ra.</figcaption>
+      </figure>
+      <div class="chips">
+        <div class="mini"><b>17 unit test</b><span>đường tắt, tìm thấy ở vòng 2, 4 kiểu dừng, câu trích bịa bị loại, mâu thuẫn, lá số hai trường phái, request gửi Qwen</span></div>
+        <div class="mini"><b>Tích hợp</b><span>sách xuất bản qua pipeline thật, BM25 thật, lọc trường phái thật, trọn harness ra câu trả lời có nguồn</span></div>
+        <div class="mini"><b>20 câu test</b><span>chạy thử với model giả: không câu nào lỗi; câu 20 bị chặn</span></div>
+        <div class="mini"><b>Chưa đo</b><span>chất lượng với Qwen thật; số vòng, ngân sách giờ, ngưỡng độ phủ từ chỉnh sau lượt đầu</span></div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="h-row"><h2>MCP server của RAG</h2><span class="k-tag k-keep">f458829</span></div>
+      <figure>
+        <div class="figbox">
+        <svg class="dg" viewBox="0 0 980 250" role="img" aria-label="Client MCP gọi qua gateway tới /api/v1/mcp/ trong service api với bearer token, hoặc chạy bản stdio. Bốn tool chỉ đọc gọi tìm kiếm RAG, harness với Qwen, dữ kiện lá số và danh sách thuật ngữ.">
+          <defs>
+            <marker id="m14" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="bx" x="20" y="40" width="190" height="56" rx="8"/>
+          <text class="t" x="115" y="64" text-anchor="middle">Agent dùng Qwen</text>
+          <text class="s" x="115" y="82" text-anchor="middle">hoặc client MCP bất kỳ</text>
+          <rect class="bx" x="20" y="150" width="190" height="56" rx="8"/>
+          <text class="t" x="115" y="174" text-anchor="middle">Claude Code / Desktop</text>
+          <text class="s" x="115" y="192" text-anchor="middle">cùng máy</text>
+
+          <rect class="bx" x="270" y="40" width="160" height="56" rx="8"/>
+          <text class="t" x="350" y="64" text-anchor="middle">Gateway</text>
+          <text class="s" x="350" y="82" text-anchor="middle">/api/* như cũ</text>
+          <line class="ln" x1="210" y1="68" x2="267" y2="68" marker-end="url(#m14)"/>
+          <text class="lab" x="238" y="58" text-anchor="middle">HTTP</text>
+
+          <rect class="bx chg" x="490" y="30" width="200" height="190" rx="10"/>
+          <text class="t" x="590" y="54" text-anchor="middle">api · /api/v1/mcp/</text>
+          <text class="s" x="590" y="72" text-anchor="middle">Bearer MCP_TOKEN</text>
+          <text class="s" x="590" y="88" text-anchor="middle">quyền của MCP_USER_EMAIL</text>
+          <rect class="cpu" x="506" y="100" width="168" height="24" rx="12"/><text class="tt" x="590" y="117" text-anchor="middle">search_books</text>
+          <rect class="gpu" x="506" y="130" width="168" height="24" rx="12"/><text class="tt" x="590" y="147" text-anchor="middle">answer_question</text>
+          <rect class="cpu" x="506" y="160" width="168" height="24" rx="12"/><text class="tt" x="590" y="177" text-anchor="middle">chart_facts</text>
+          <rect class="cpu" x="506" y="190" width="168" height="24" rx="12"/><text class="tt" x="590" y="207" text-anchor="middle">lookup_terms</text>
+          <line class="ln" x1="430" y1="68" x2="487" y2="68" marker-end="url(#m14)"/>
+          <path class="ln dash" d="M210,178 H460 V150 H487" marker-end="url(#m14)"/>
+          <text class="lab" x="330" y="170" text-anchor="middle">stdio: python -m backend.app.mcpserver</text>
+
+          <rect class="cpu" x="750" y="40" width="210" height="50" rx="8"/>
+          <text class="t" x="855" y="62" text-anchor="middle">RAG pilot</text>
+          <text class="s" x="855" y="79" text-anchor="middle">dense + BM25 · rerank · parent</text>
+          <rect class="gpu" x="750" y="110" width="210" height="50" rx="8"/>
+          <text class="t" x="855" y="132" text-anchor="middle">Harness + Qwen</text>
+          <text class="s" x="855" y="149" text-anchor="middle">bước 3–8</text>
+          <rect class="cpu" x="750" y="180" width="210" height="50" rx="8"/>
+          <text class="t" x="855" y="202" text-anchor="middle">Bảng tra + glossary-1</text>
+          <text class="s" x="855" y="219" text-anchor="middle">pillar_facts · 1.293 thuật ngữ</text>
+          <line class="ln" x1="674" y1="112" x2="747" y2="68" marker-end="url(#m14)"/>
+          <line class="ln" x1="674" y1="142" x2="747" y2="136" marker-end="url(#m14)"/>
+          <line class="ln" x1="674" y1="190" x2="747" y2="204" marker-end="url(#m14)"/>
+        </svg>
+        </div>
+        <figcaption>Không thêm container: gắn vào service <code>api</code>, dùng chung RagService và model CPU đã nạp. Tắt mặc định; bật bằng <code>MCP_TOKEN</code> + <code>MCP_USER_EMAIL</code>.</figcaption>
+      </figure>
+      <div class="tablebox"><table>
+        <thead><tr><th>Tool (chỉ đọc)</th><th>Tham số</th><th>Trả về</th></tr></thead>
+        <tbody>
+          <tr><td><code>search_books</code></td><td>query, school (tu_binh / manh_phai), k ≤ 10</td><td>đoạn sách: id, sách, trang, trường phái, nội dung</td></tr>
+          <tr><td><code>answer_question</code></td><td>question, max_rounds ≤ 7, include_trace</td><td>câu trả lời, nhận định đã kiểm, ý cần biết, nguồn, lý do dừng (và vết)</td></tr>
+          <tr><td><code>chart_facts</code></td><td>text có tứ trụ</td><td>khối dữ kiện lá số, tứ trụ, đại vận, cảnh báo</td></tr>
+          <tr><td><code>lookup_terms</code></td><td>text, school</td><td>thuật ngữ đã duyệt: tên, trường phái, biệt danh, mô tả, nguồn</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Kết nối từ client</h3>
+<pre class="code">// .mcp.json (Claude Code) — HTTP qua gateway
+{"mcpServers": {"bazi-rag": {"type": "http",
+  "url": "http://&lt;máy&gt;:3000/api/v1/mcp/",
+  "headers": {"Authorization": "Bearer ${MCP_TOKEN}"}}}}
+
+# Gọi thử bằng curl
+curl -s http://&lt;máy&gt;:3000/api/v1/mcp/ -H "Authorization: Bearer $MCP_TOKEN" \
+  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</pre>
+      <div class="chips">
+        <div class="mini"><b>11 unit test</b><span>401/404, token yếu bị từ chối, tools/list qua HTTP thật, lọc trường phái, câu rủi ro không gọi Qwen, lỗi là isError, client MCP chính thức qua stdio</span></div>
+        <div class="mini"><b>Tích hợp</b><span>DB thật: tìm theo quyền tài khoản, reader không được chia sẻ thì trống, tài khoản bị khóa thì dừng</span></div>
+        <div class="mini"><b>Thư viện thêm</b><span><code>mcp==1.30.0</code> + 10 gói nhỏ; <code>uv.lock</code> đã cập nhật, Docker build <code>--frozen</code> vẫn chạy</span></div>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h2>Lộ trình quy tắc trả lời</h2>
+      <div class="tablebox"><table>
+        <thead><tr><th>#</th><th>Việc</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td class="num">0</td><td>Danh sách thuật ngữ đã duyệt + lệnh nạp</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">1</td><td>Dữ kiện lá số tính bằng bảng</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">2</td><td>Sửa nền: chấm đủ 2 điểm, chặn câu không nguồn, khóa vector theo hash</td><td><span class="chip c-mid">tiếp theo</span></td></tr>
+          <tr><td class="num">3</td><td>① Tách ý, chỉ tạo câu hỏi khái niệm cho thuật ngữ có trong glossary</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">4</td><td>Tìm theo từng ý · ② chấm từng ý · ③ code kiểm câu trích</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">5</td><td>Vòng lặp tối đa 7, dừng sớm khi không có gì mới, không tiến triển hoặc hết giờ</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">6</td><td>B3–B7 hai nhánh: Tử Bình (TBCT, TTT) và Manh phái (2 sách Manh phái + DOCX)</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">7</td><td>Tổng hợp: câu chính + 1–2 câu góc nhìn khác, kiểm nguồn từng câu</td><td><span class="chip c-keep">xong</span></td></tr>
+          <tr><td class="num">8</td><td>Vết từng vòng + chạy bộ câu hỏi ra .json/.md · <em>còn:</em> đưa vết lên <code>/judge</code>, chạy 20 câu với Qwen thật, chốt ngân sách thời gian</td><td><span class="chip c-mid">một phần</span></td></tr>
+          <tr><td class="num">+</td><td>MCP server của RAG (HTTP trong <code>api</code> + stdio)</td><td><span class="chip c-keep">xong</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  function show(id, push) {
+    tabs.forEach(function (t) {
+      var on = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (push) { try { history.replaceState(null, '', '#' + id); } catch (e) {} }
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { show(t.getAttribute('aria-controls'), true); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); show(next.getAttribute('aria-controls'), true);
+    });
+  });
+  var start = (location.hash || '').slice(1);
+  show(['review', 'progress'].indexOf(start) >= 0 ? start : 'arch', false);
+})();
+</script>

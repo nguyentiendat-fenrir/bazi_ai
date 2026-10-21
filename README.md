@@ -4,7 +4,7 @@
 Dev trên Windows, commit/push Git, Ubuntu 22.04 pull và chạy containers (LLM Qwen3-8B trên vLLM, GPU 4090).
 
 📐 **Tài liệu kiến trúc, review code và tiến độ bàn giao (artifact):**
-<https://claude.ai/artifact/HnuZ5upbo42eQ97fZ69dao>
+<https://claude.ai/artifact/HnuZ5upbo42eQ97fZ69dao> — bản sao trong repo cho agent/công cụ không mở được claude.ai (Codex…): [docs/review/bazi-rag-review.html](docs/review/bazi-rag-review.html)
 
 Hiện có:
 - **Kho tri thức:** upload, trích xuất native/OCR/DOCX, duyệt nguồn, chunk cha/con, embed, publish release, tra cứu hybrid có citation; web app quản trị (`frontend/`), trang chấm `/judge`.
