@@ -41,6 +41,9 @@ class McpOnRagTests(PipelineTestCase):
             passages = found['structuredContent']['passages']
             self.assertTrue(any('nguyệt lệnh' in p['text'] for p in passages))
             self.assertTrue(all(p['school'] == 'tu_binh' for p in passages))
+            # glossary sources are resolved in this library; its books are not in the test database
+            terms = self.call(c, 'lookup_terms', {'text': 'Thương quan'})['structuredContent']['terms']
+            self.assertEqual(terms[0]['sources'][0]['reason'], 'book not in this library (or not visible to you)')
             # no LLM configured here: the harness tool says so instead of failing the request
             answer = self.call(c, 'answer_question', {'question': 'Dụng thần tìm ở đâu?'})
             self.assertTrue(answer['isError'])

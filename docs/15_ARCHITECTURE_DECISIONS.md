@@ -75,6 +75,8 @@ policy/oracle/sai số; T036–T037 model/chunk/rerank ablations; T051 tài nguy
 throughput/latency; T053 measured restore. Thay model không đổi business schema;
 thêm collection/profile/release chạy từ admin qua registry được kiểm soát.
 
+- **21/10/2026 · Nguồn glossary:** nguồn là link mềm (mã sách + trang/đoạn gợi ý + câu neo), không phải id hàng hay revision (khác nhau giữa các máy, đổi sau mỗi lần sửa OCR) và không phải đường dẫn file (sách không vào git). Máy nào cũng tự tra: sha256 rồi tên sách; đúng trang → ±2 → cả cuốn. Đã kiểm trên sách ở máy dev: 5.612 nguồn cũ → 5.401 đúng trang, 64 lệch ±1–2 trang (đã sửa), 147 không thấy chữ (bỏ); giữ tối đa 6/khái niệm → 4.165; 12 khái niệm không còn nguồn. Offset tìm câu neo tính trên văn bản gốc kể cả khi chữ ở dạng tổ hợp (NFD, như text pdfium). Loại: lưu revision_id (gãy khi sửa trang hoặc sang máy khác), đường dẫn file, câu neo dài (dễ lệch giữa các bản OCR). Rollback: revert commit; glossary cũ dạng chuỗi nằm trong git.
+
 - **21/10/2026 · RAG pilot (chủ dự án chốt stack):**
   - **Stack:** OCR SenOCR-Vi (fine-tune PaddleOCR-VL-1.6, GPU), embedding `jina-embeddings-v5-text-small` (1024-d, CPU), reranker `jina-reranker-v3.5` (CPU) và LLM duy nhất là Qwen3-8B-FP8 vLLM có sẵn trên máy (`infra/qwen.md`). Trộn hybrid 0,8·dense + 0,2·BM25 trên điểm min-max theo từng câu hỏi.
   - **Chunk:** cha/con theo cây chương → mục → tiểu mục. Không cắt đoạn, danh sách, bảng hay ví dụ. Con được embed kèm header và tóm tắt Qwen của cha; LLM chỉ đọc cha.

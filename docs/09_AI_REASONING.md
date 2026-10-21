@@ -77,7 +77,7 @@ Server "bazi-rag" đưa thư viện và harness ra cho mọi MCP client (agent d
 | `search_books` | Tìm đoạn sách (dense + BM25, rerank, đoạn cha), lọc trường phái; trả sách, trang, trường phái, nội dung |
 | `answer_question` | Chạy answering harness với Qwen (bước 3–8), trả câu trả lời, nhận định đã kiểm, ý cần biết, nguồn, lý do dừng; tùy chọn kèm vết |
 | `chart_facts` | Dữ kiện lá số tính bằng bảng từ tứ trụ viết sẵn |
-| `lookup_terms` | Thuật ngữ đã duyệt (glossary-1) theo trường phái |
+| `lookup_terms` | Thuật ngữ đã duyệt (glossary-1) theo trường phái, kèm nguồn đã tra trong thư viện của máy (tên sách, trang, trang in, đoạn văn, link mềm) |
 
 Hai đường vào, cùng bộ tool: HTTP gắn trong service `api` (`/api/v1/mcp/`, bearer token, không thêm container; tool dùng chung RagService và model CPU đã nạp của API) và stdio (`python -m backend.app.mcpserver`). Ví dụ cấu hình Claude Code (`.mcp.json`):
 

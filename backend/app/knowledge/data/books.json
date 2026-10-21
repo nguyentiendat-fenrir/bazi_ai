@@ -1,0 +1,25 @@
+{
+ "note": "Stable keys of the source books. Sources refer to a book by key, a page (PDF page, 1-based) or a DOCX paragraph, and an anchor text; each machine resolves them against the books it has ingested: by sha256 when the file is byte-identical, else by title. The books themselves are not in git.",
+ "books": [
+  {"key": "tu_binh_chan_thuyen", "short": "TBCT", "title": "Tử Bình Chân Thuyên bình chú",
+   "author": "Thẩm Hiếu Chiêm, bình chú Từ Nhạc Ngô", "school": "tu_binh", "kind": "pdf", "pages": 140,
+   "sha256": ["4466e2a80c858fe373584b50dc2e753e89f61c815925d75a0f2a0bf6bd4d255e"],
+   "titles": ["Tử Bình Chân Thuyên bình chú", "Tử Bình Chân Thuyên"]},
+  {"key": "trich_thien_tuy", "short": "TTT", "title": "Trích Thiên Tủy bình chú",
+   "author": "Lưu Bá Ôn, bình chú Nhậm Thiết Tiều", "school": "tu_binh", "kind": "pdf", "pages": 202,
+   "sha256": ["b4238356eada5a8b0a130f6d3f62cab7ce78b6bd6fe52158ea936a2e25bb61d3"],
+   "titles": ["Trích Thiên Tủy bình chú", "Trích Thiên tuỷ bình chú (Full)- Nhậm Thiết Tiều", "Trích Thiên Tủy"]},
+  {"key": "manh_phai_so_cap", "short": "MPSC", "title": "Manh phái mệnh lý học sơ cấp",
+   "author": "biên dịch Nguyễn Văn Đoàn", "school": "manh_phai", "kind": "pdf", "pages": 292,
+   "sha256": ["3735ab14d8e6d51effa33efce6e428b2bd93fc2fe997e6dd5ba4f0b508e468ad"],
+   "titles": ["Manh phái sơ cấp lý pháp Facebook ánh dương", "Manh phái sơ cấp lý pháp", "Manh phái sơ cấp"]},
+  {"key": "manh_phai_cao_cap", "short": "MPCC", "title": "Manh phái cao cấp",
+   "author": "Đoàn Kiến Nghiệp, dịch Nguyễn Văn Đoàn", "school": "manh_phai", "kind": "pdf", "pages": 181,
+   "sha256": ["41dcafa5ce08d5dd0e0b1d480864cf0c853756ded9b6712f829baf10d53ff321"],
+   "titles": ["Manh phái cao cấp - Đoàn kiến Nghiệp - tài liệu giảng dạy facebook sách ánh dương", "Manh phái cao cấp"]},
+  {"key": "manh_phai_luoc_dich", "short": "DOCX", "title": "Tên Sách Chưa Đặt (Manh phái, lược dịch)",
+   "author": "", "school": "manh_phai", "kind": "docx", "paragraphs": 1728,
+   "sha256": ["f12090a73dbc6fc4ec065041386a3e60496463132fd88db9bcaf4f9c1ef8bf18"],
+   "titles": ["Tên Sách Chưa Đặt"]}
+ ]
+}

@@ -14,6 +14,7 @@ from ..answering.harness import Config, Harness
 from ..answering.ports import SCHOOL_LABELS
 from ..calc import pillar_facts
 from ..documents.text import nfc
+from ..knowledge import sources
 from .backend import Backend, Unavailable
 
 INSTRUCTIONS = (
@@ -26,6 +27,7 @@ READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotent
                             openWorldHint=False)
 School = Literal['tu_binh', 'manh_phai']
 TEXT_LIMIT = 4000
+SOURCES_PER_TERM = 3
 
 
 async def _run(fn, *args):
@@ -104,6 +106,8 @@ def build_server(backend: Backend, settings) -> FastMCP:
             school: Annotated[School | None, Field(description='chỉ lấy khái niệm của trường phái này')] = None
     ) -> dict[str, Any]:
         """Thuật ngữ đã duyệt (glossary-1): tên chuẩn, trường phái, cách viết khác, mô tả, nguồn.
+        Mỗi nguồn: tên sách, trang (trang in nếu có), câu neo, đoạn văn quanh nó và link mở trang
+        trong thư viện của máy này (matched=not_found nếu máy này chưa có sách đó).
         Cùng một chữ có thể là hai khái niệm khác nhau ở Tử Bình và Manh phái."""
         wanted = nfc(text).strip().lower()
         by_label = [c for c in backend.concepts if c['label'].lower() == wanted
@@ -114,9 +118,15 @@ def build_server(backend: Backend, settings) -> FastMCP:
                             and c not in by_label]
         if school:
             found = [c for c in found if c['school'] in (school, 'tu_tru')]
+        found = found[:10]
+        refs = [s for c in found for s in c['sources'][:SOURCES_PER_TERM]]
+        try:
+            opened = iter(await _run(backend.sources, refs))
+        except Exception:       # sources are an extra: no library here still gives book + page
+            opened = iter([sources.unresolved(r) for r in refs])
         return {'terms': [{'label': c['label'], 'school': SCHOOL_LABELS.get(
             None if c['school'] == 'tu_tru' else c['school']), 'school_key': c['school'],
             'category': c['category'], 'aliases': c['aliases'], 'description': c['description'],
-            'sources': c['sources'][:6]} for c in found[:10]]}
+            'sources': [next(opened) for _ in c['sources'][:SOURCES_PER_TERM]]} for c in found]}
 
     return server

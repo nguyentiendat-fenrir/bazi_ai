@@ -132,6 +132,10 @@ class McpHttpTests(unittest.TestCase):
         self.assertEqual(terms['terms'][0]['label'], 'Tòng Sát cách')
         self.assertTrue(mp['terms'])
         self.assertTrue(all(t['school_key'] in ('manh_phai', 'tu_tru') for t in mp['terms']))
+        source = terms['terms'][0]['sources'][0]                     # no library: book + page only
+        self.assertEqual(source['matched'], 'not_found')
+        self.assertTrue(source['title'] and source['anchor'])
+        self.assertTrue(source['link'].startswith('/api/v1/sources/open?book='))
 
     def test_unavailable_backend_is_a_tool_error_not_a_crash(self):
         with self.client(FakeBackend(broken=True)) as c:

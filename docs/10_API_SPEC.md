@@ -170,9 +170,13 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 
 POST charts analyses tạo conversation nội bộ gắn analysis để dùng cùng run model; DB giữ conversation_id và privacy, UI không cần hiện thread tự động trong chat list (`context.origin=analysis`). Hoặc triển khai service tạo explicit analysis thread và trả conversation_id; contract response luôn có ID này. Research không chart vẫn có source statements; chart mode không source trả facts và limitations.
 
+## Nguồn sách (link mềm)
+
+`GET /api/v1/sources/resolve?book=&page=|para=&q=` (R) — tìm một nguồn của glossary trong thư viện của máy này: `book` là mã sách ổn định trong `knowledge/data/books.json`, `page` trang PDF gợi ý (hoặc `para` đoạn DOCX), `q` câu neo in trên trang. Trả tên sách, `page`, `printed_page`, `revision_id`, `url` (`/pages/{revision}?from=&to=` tô sáng câu neo), `excerpt`, `matched` (`exact` / `nearby` ±2 trang / `search` cả cuốn / `not_found` kèm `reason`) và `matched_by` (`sha256` / `title`). Chỉ xét sách trong release đang active mà người gọi được đọc. `GET /api/v1/sources/open` cùng tham số: 302 tới trang xem (sau `PUBLIC_BASE_PATH`), 404 `SOURCE_NOT_FOUND` khi không tìm được.
+
 ## MCP (RAG cho agent)
 
-`POST /api/v1/mcp/` — Streamable HTTP của MCP (JSON-RPC 2.0, không giữ phiên, trả JSON), `Authorization: Bearer <MCP_TOKEN>`; 401 khi thiếu/sai token, 404 khi chưa cấu hình. Không nằm trong OpenAPI. Tool chỉ đọc: `search_books(query, school?, k)`, `answer_question(question, max_rounds?, include_trace?)`, `chart_facts(text)`, `lookup_terms(text, school?)`; kết quả nằm ở `structuredContent`, lỗi nghiệp vụ là `isError` kèm thông điệp. Chạy cục bộ qua stdio: `python -m backend.app.mcpserver`.
+`POST /api/v1/mcp/` — Streamable HTTP của MCP (JSON-RPC 2.0, không giữ phiên, trả JSON), `Authorization: Bearer <MCP_TOKEN>`; 401 khi thiếu/sai token, 404 khi chưa cấu hình. Không nằm trong OpenAPI. Tool chỉ đọc: `search_books(query, school?, k)`, `answer_question(question, max_rounds?, include_trace?)`, `chart_facts(text)`, `lookup_terms(text, school?)` (mỗi thuật ngữ kèm tối đa 3 nguồn đã tra: tên sách, trang, trang in, đoạn văn, link mềm); kết quả nằm ở `structuredContent`, lỗi nghiệp vụ là `isError` kèm thông điệp. Chạy cục bộ qua stdio: `python -m backend.app.mcpserver`.
 
 ## Evaluation và operations
 

@@ -10,6 +10,8 @@ from ..answering.adapters import QwenModel, RagRetriever
 from ..answering.glossary_index import GlossaryIndex
 from ..answering.ports import Model, Retriever
 from ..auth.service import Principal
+from ..core.db import transaction
+from ..knowledge import sources
 from ..knowledge.glossary import read
 from ..rag.llm import config_from
 
@@ -46,6 +48,14 @@ class Backend:
         if config is None:
             raise Unavailable('the LLM is not configured (LLM_BASE_URL, LLM_MODEL)')
         return QwenModel(config)
+
+    def sources(self, refs: list[dict]) -> list[dict]:
+        """Soft source links resolved against this machine's library, as the MCP account."""
+        if not refs:
+            return []
+        principal = self.principal()
+        with transaction(self.engine, principal.user_id) as conn:
+            return sources.resolve_many(conn, principal, refs)
 
     @cached_property
     def glossary(self) -> GlossaryIndex:
