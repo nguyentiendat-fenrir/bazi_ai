@@ -34,10 +34,14 @@ from . import layout
 
 log = logging.getLogger('bazi.ocr')
 DPI_STEPS = (200, 150)
+OOM_DPI_STEPS = (200, 150, 120)   # out of GPU memory: smaller renders before giving up
 MAX_PIXELS = 40_000_000           # ~ A3 at 300 dpi; larger renders step DPI down
 MIN_DPI = 120
 MIN_REGION_AREA = 0.02            # ignore tiny images (logos, ornaments)
-IDLE_SECONDS = 300
+# Releasing the model when idle and loading it again later could leave the old copy alive
+# in PaddleX's worker threads (two copies > the cap: OOM on the first page of the next book),
+# so by default it stays loaded for the worker's life; OCR_IDLE_SECONDS > 0 turns release on.
+IDLE_SECONDS = int(os.environ.get('OCR_IDLE_SECONDS', '0'))
 # The card is shared with Qwen (~12.9 GB) and Gemma (~5.9 GB): OCR gets a hard cap so it
 # can never push the others into OOM, and small VL batches so it fits under that cap.
 GPU_MEMORY_GB = float(os.environ.get('OCR_GPU_MEMORY_GB', '3.0'))
@@ -231,7 +235,7 @@ class SenOcrEngine:
         with self._lock:
             if self._pipeline is None:
                 self._pipeline = self._load()
-                if self._reaper is None:
+                if self._reaper is None and IDLE_SECONDS > 0:
                     self._reaper = threading.Thread(target=self._reap, daemon=True)
                     self._reaper.start()
             self._last_used = time.monotonic()
@@ -312,9 +316,10 @@ def render(doc: pdfium.PdfDocument, index: int, dpi: int):
 
 def ocr_page(doc: pdfium.PdfDocument, index: int, regions: list[list[float]] | None,
              engine: SenOcrEngine) -> tuple[list[OcrBlock], int]:
-    """OCR a whole page (regions=None) or listed regions; DPI steps down once on failure."""
+    """OCR a whole page (regions=None) or listed regions. A render too large steps DPI down
+    once; running out of GPU memory steps down to 120 dpi before giving up."""
     last_error: Exception | None = None
-    for dpi in DPI_STEPS:
+    for dpi in OOM_DPI_STEPS:
         try:
             image, w, h, used = render(doc, index, dpi)
             targets = [(0, [0.0, 0.0, 1.0, 1.0])] if regions is None else list(enumerate(regions))
@@ -330,12 +335,24 @@ def ocr_page(doc: pdfium.PdfDocument, index: int, regions: list[list[float]] | N
                 blocks += to_blocks(found, part.shape[1], part.shape[0], region, (ox, oy), (w, h))
             assign_speakers(blocks)
             return blocks, used
+        except OcrOutOfMemory as exc:
+            last_error = exc
+            _free_cache()
+            continue
         except (OcrTimeout, MemoryError) as exc:
             last_error = exc
+            if dpi not in DPI_STEPS:
+                break
         except RuntimeError as exc:
-            if 'out of memory' in str(exc).lower():
-                raise OcrOutOfMemory(str(exc)[:200]) from None
-            raise
+            if 'out of memory' not in str(exc).lower():
+                raise
+            last_error = OcrOutOfMemory(str(exc)[:200])
+            _free_cache()
+            continue
+        if dpi == DPI_STEPS[-1]:
+            break                      # timeouts stop at the normal steps
+    if isinstance(last_error, OcrOutOfMemory):
+        raise last_error
     raise OcrTimeout(str(last_error))
 
 

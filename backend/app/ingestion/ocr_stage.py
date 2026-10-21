@@ -25,6 +25,7 @@ from .worker import JobContext, RetryableError, Unit
 
 OCR_VERSION = 'ocr-senocr-1'
 REPLACEMENT = '�'
+_OOM_SEEN: set[tuple[str, int]] = set()   # pages that already ran out of GPU memory once
 
 
 @dataclass
@@ -115,9 +116,15 @@ class OcrStage:
             outcome.status, outcome.detail = 'unavailable', str(exc)[:200]
             return outcome
         except OcrOutOfMemory as exc:
-            # The GPU is shared; memory frees up. Retry the page later instead of
-            # settling it as "no OCR" (the unit retries with jitter, up to 5 times).
-            raise RetryableError('OCR_OUT_OF_MEMORY', str(exc)) from None
+            # The GPU is shared and memory frees up: the first time, retry the page later.
+            # If it fails again it goes to review like a timeout — one page must not use up
+            # the job's retries and fail the whole book.
+            key = (str(ctx.generation_id), number)
+            if key not in _OOM_SEEN:
+                _OOM_SEEN.add(key)
+                raise RetryableError('OCR_OUT_OF_MEMORY', str(exc)) from None
+            outcome.status, outcome.detail = 'timeout', f'GPU out of memory twice: {exc}'[:200]
+            return outcome
         if not whole_page:
             blocks = new_ocr_blocks(blocks, [b for b in native['native_boxes'] if b])
         outcome.dpi, outcome.engine = dpi, engine.version

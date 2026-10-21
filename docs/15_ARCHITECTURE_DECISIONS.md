@@ -94,6 +94,8 @@ thêm collection/profile/release chạy từ admin qua registry được kiểm 
     - Sửa bằng 4 cách: trần bộ nhớ 3,0 GB cho tiến trình (`OCR_GPU_MEMORY_GB`); VL batch 1 (batch 2 làm processor HF lỗi vì không padding); giải phóng cache sau mỗi trang với `expandable_segments`; hết VRAM thì thử lại unit chứ không đưa trang vào hàng duyệt.
     - Đo 15 trang: OCR đỉnh 3,2 GB, toàn card 22,0/23 GB.
     - Embedding xếp đoạn theo độ dài trước khi chia lô: nhanh gấp 2,2 lần, vector giữ nguyên.
+    - Mô hình OCR nạp một lần và giữ suốt đời worker. Nhả rồi nạp lại để lại bản cũ trong luồng nội bộ của PaddleX, khiến trang đầu của sách sau bị hết VRAM.
+    - Khi hết VRAM: giảm độ phân giải 200 → 150 → 120 dpi. Hết VRAM lần đầu thì thử lại unit; lần thứ hai thì đưa trang vào hàng duyệt, để một trang không làm hỏng cả sách.
   - **Loại:** Tesseract; reranker hoặc embedding trên GPU (thiếu VRAM khi Gemma vẫn chạy); thêm service mới vào Compose (chủ dự án không cho thêm); RRF thay cho trộn có trọng số.
   - **Rollback:** revert commit và `alembic downgrade 0017_m017_feedback`; Qwen quay lại theo `infra/qwen.md`.
 

@@ -92,7 +92,7 @@ class FakeEngine:
         self.calls += 1
         if self.behaviour == 'timeout':
             raise OcrTimeout('fake timeout')
-        if self.behaviour == 'oom':
+        if self.behaviour == 'oom' or (self.behaviour == 'oom-once' and self.calls == 1):
             from backend.app.ingestion.ocr import OcrOutOfMemory
             raise OcrOutOfMemory('CUDA out of memory')
         if self.behaviour == 'empty':
@@ -193,6 +193,23 @@ class StageTests(unittest.TestCase):
         self.assertEqual(self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s',
                                   gen), [])
         self.assertEqual(self.linked(gen)[1], 1)       # still the native revision, not settled
+
+    def test_out_of_memory_steps_down_the_resolution_before_retrying(self):
+        state, job, gen = self.run_with(self.scan_pdf(), FakeEngine('oom-once'))
+        self.assertEqual(state, 'succeeded')
+        quality = self.linked(gen)[4]
+        self.assertEqual(quality['ocr']['dpi'], 150)
+
+    def test_persistent_out_of_memory_goes_to_review_without_failing_the_book(self):
+        engine = FakeEngine('oom')
+        job, gen = self.job_for(self.scan_pdf())
+        stages = [ValidatePdfStage(), ExtractPdfStage(), OcrStage(engine_factory=lambda: engine)]
+        self.assertEqual(run_job(self.engine, self.store, job, stages, 'w1'), 'retry_wait')
+        with psycopg.connect(database_url(self.db), autocommit=True) as conn:   # retry is due
+            conn.execute("UPDATE ingestion_jobs SET state = 'queued' WHERE id = %s", (job,))
+        self.assertEqual(run_job(self.engine, self.store, job, stages, 'w1'), 'succeeded')
+        self.assertEqual(self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s',
+                                  gen), [('OCR_TIMEOUT',)])
 
     def test_missing_engine_is_a_review_not_a_failure(self):
         job, gen = self.job_for(self.scan_pdf())
