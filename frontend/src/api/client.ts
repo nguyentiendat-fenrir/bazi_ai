@@ -4,6 +4,7 @@
 // throws ApiError; a 401 anywhere except the login form signs the user out.
 import createClient, { type Middleware } from 'openapi-fetch'
 
+import { BASE_PATH } from '@/lib/base'
 import { csrf } from '@/lib/storage'
 import { ApiError, networkError, toApiError } from './problem'
 import type { components, paths } from './schema'
@@ -20,7 +21,7 @@ const security: Middleware = {
   },
 }
 
-export const api = createClient<paths>({ baseUrl: '', credentials: 'same-origin' })
+export const api = createClient<paths>({ baseUrl: BASE_PATH, credentials: 'same-origin' })
 api.use(security)
 
 type Listener = (error: ApiError) => void

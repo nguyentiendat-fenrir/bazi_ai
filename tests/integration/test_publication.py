@@ -27,7 +27,7 @@ from backend.app.ingestion.pdf_stages import ExtractPdfStage, ValidatePdfStage
 from backend.app.ingestion.publish import PublishStage
 from backend.app.ingestion.quality import QualityStage
 from backend.app.ingestion.structure import StructureStage
-from backend.app.ingestion.worker import run_job
+from backend.app.ingestion.worker import Unit, run_job
 from backend.app.main import create_app
 from backend.app.retrieval.indexer import EmbedStage
 from backend.app.retrieval.models import provision_collection, register_profile
@@ -330,6 +330,40 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(counters['auto_publish'], 'PARTIAL_NOT_ACKNOWLEDGED')
         self.assertEqual((self.active(), self.sql('SELECT state FROM generations WHERE id = %s',
                                                   partial)), (before, [('ready',)]))
+
+    def test_resumed_job_finishes_stages_after_publish_without_touching_the_seal(self):
+        """A worker that dies after publish (during rule candidates) resumes the job: the
+        reused pre-publish units must not be re-linked into the sealed generation."""
+        class AfterPublish:
+            name = 'extract_candidates'
+            calls = 0
+
+            def units(self, ctx):
+                return [Unit('after', '0' * 64)]
+
+            def compute(self, ctx, unit):
+                AfterPublish.calls += 1
+                if AfterPublish.calls == 1:
+                    raise RuntimeError('worker died after publish')
+                return {}
+
+            def persist(self, conn, ctx, unit, result):
+                return {}
+        batch = self.sql("INSERT INTO ingestion_batches (created_by, name, config) VALUES"
+                         """ (%s, 'auto', '{"auto_publish": true}') RETURNING id""",
+                         self.user)[0][0]
+        version, gen, job = self.queue(batch=batch)
+        stages = [ValidatePdfStage(), ExtractPdfStage(), OcrStage(engine_factory=no_ocr),
+                  StructureStage(), QualityStage(), ChunkStage(), EmbedStage(), PublishStage(),
+                  AfterPublish()]
+        with self.assertRaises(RuntimeError):
+            run_job(self.engine, self.store, job, stages, 'w')
+        self.sql("UPDATE job_stages SET state = 'pending', lease_until = NULL"
+                 " WHERE job_id = %s AND state = 'running'", job)     # the watchdog's job
+        self.assertEqual(run_job(self.engine, self.store, job, stages, 'w2'), 'succeeded')
+        self.assertEqual(self.sql('SELECT state FROM generations WHERE id = %s', gen),
+                         [('published',)])
+        self.assertIn((version, gen), self.members(self.active()))
 
 
 if __name__ == '__main__':

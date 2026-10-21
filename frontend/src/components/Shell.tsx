@@ -33,6 +33,7 @@ export const NAV: NavItem[] = [
   { href: '/review', label: 'Duyệt nguồn', needs: 'library:review', match: ['/pages'] },
   { href: '/knowledge/terms', label: 'Tri thức', needs: 'library:review', match: ['/knowledge', '/cases'] },
   { href: '/evaluation', label: 'Đánh giá', needs: 'library:review' },
+  { href: '/judge', label: 'Chấm câu trả lời', needs: 'library:review' },
   { href: '/settings', label: 'Cài đặt', needs: 'own:data', match: ['/settings'] },
 ]
 

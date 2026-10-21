@@ -9,6 +9,43 @@ chunk/embed, publish release, tra cứu hybrid có citation, adapter LLM) và we
 quản trị kho bước đầu (`frontend/`). **Chưa có lá số, chat hay Gemma thật đã smoke.** Lộ trình và trạng thái task: [docs/14_ROADMAP.md](docs/14_ROADMAP.md);
 mục lục tài liệu: [docs/README.md](docs/README.md).
 
+## RAG pilot: chatbot hỏi đáp từ sách và trang chấm
+
+Pipeline gồm các bước sau:
+- OCR SenOCR-Vi (GPU).
+- Chunk cha/con theo chương → mục → tiểu mục, kèm metadata và tóm tắt Qwen.
+- Embedding và reranker Jina (CPU).
+- Trộn hybrid 0,8·dense + 0,2·BM25.
+- Qwen3-8B trên máy này trả lời chỉ từ các đoạn sách được đưa vào, có trích `[P#]`.
+
+Cấu hình Qwen nằm ở [infra/qwen.md](infra/qwen.md); quyết định và số đo ở decision log trong [docs/15](docs/15_ARCHITECTURE_DECISIONS.md#decision-log).
+
+```bash
+C="docker compose --env-file .env -f infra/compose.yaml"
+$C build && $C up -d --wait postgres redis
+python3 scripts/dev migrate --without-backup
+# Mô hình vào volume model_cache (cần mạng; service mount volume read-only nên dùng docker run)
+docker run --rm --user 0 -v bazi-ai_model_cache:/models -e HF_HUB_OFFLINE=0 bazi-ai-app:local \
+    python -m backend.app.cli fetch-models
+$C run --rm api python -m backend.app.cli create-runtime-login
+$C run --rm -e BAZI_BOOTSTRAP_PASSWORD api python -m backend.app.cli bootstrap-admin --email admin@example.test
+$C run --rm api python -m backend.app.cli rag-setup
+# Mật khẩu chấm: hash vào JUDGE_PASSWORD_HASH='…' trong .env (giữ dấu nháy đơn vì hash có '$')
+$C run --rm -e BAZI_JUDGE_PASSWORD api python -m backend.app.cli judge-password
+$C --profile app up -d
+$C run --rm -v "$PWD/inputs/books:/books:ro" worker \
+    python -m backend.app.cli ingest-folder /books --admin admin@example.test
+BAZI_EVAL_EMAIL=admin@example.test python3 scripts/rag_eval.py run   # 20 câu → /judge
+```
+
+**Chạy dưới đường dẫn con.** Ví dụ Tailscale Funnel `--set-path=/bazi`:
+- Đặt `PUBLIC_BASE_PATH=/bazi` trong `.env`.
+- Thêm origin `https://<máy>.<tailnet>.ts.net` vào `ALLOWED_ORIGINS`.
+- Build lại `frontend` và `api`, rồi chạy `up -d frontend api gateway`.
+- Gateway nhận cả đường dẫn có lẫn không có `/bazi`, vì Funnel cắt tiền tố trước khi chuyển tiếp. Ở máy local, địa chỉ là `http://127.0.0.1:3000/bazi`.
+
+Người chấm mở `http://127.0.0.1:3000/judge`, nhập mật khẩu chấm và tên. Mỗi câu hỏi hiện câu trả lời, các đoạn sách đưa cho mô hình, và các đoạn truy xuất kèm điểm dense, sparse, trộn và rerank. Phiếu chấm gồm thang 1–5 và nhãn cho từng đoạn. Kết quả tải về dạng CSV. Đoạn được đánh dấu "có quy tắc" vào hàng duyệt của chuyên gia (Tri thức → Luận điểm).
+
 ## Cấu trúc
 
 | Đường dẫn | Vai trò |

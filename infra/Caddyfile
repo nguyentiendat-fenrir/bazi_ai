@@ -1,19 +1,33 @@
 # One loopback port (docs/03): /api/* to FastAPI unbuffered (SSE), everything else to Next.js.
+# The UI may live under a sub-path (PUBLIC_BASE_PATH, e.g. /bazi = Next basePath). A Tailscale
+# Funnel mounted there strips that prefix before proxying, so every path is accepted with or
+# without it: API calls lose the prefix, everything else gets it back internally — a rewrite,
+# never a redirect (redirecting "/" to "/bazi" would loop through the stripping proxy).
 {
 	admin off
 }
 
 :3000 {
-	@health path /healthz
-	respond @health 200
+	# In its own handle: a bare respond runs after handle blocks, so the catch-all
+	# below would send /healthz to Next.js (404) and the gateway looked unhealthy.
+	handle /healthz {
+		respond 200
+	}
 
-	handle /api/* {
+	@api path_regexp ^({$PUBLIC_BASE_PATH})?/api/
+	handle @api {
+		uri path_regexp ^{$PUBLIC_BASE_PATH}/api/ /api/
 		reverse_proxy api:8000 {
 			flush_interval -1
 		}
 	}
 
 	handle {
+		# "/" is the app root: "{base}" exactly ("{base}/" would be redirected by Next).
+		@root path /
+		rewrite @root {$PUBLIC_BASE_ROOT}
+		@bare not path_regexp ^{$PUBLIC_BASE_PATH}(/|$)
+		rewrite @bare {$PUBLIC_BASE_PATH}{uri}
 		reverse_proxy frontend:3000
 	}
 

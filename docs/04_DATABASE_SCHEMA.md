@@ -132,7 +132,7 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
 |---|---|
-| content_hash char(64); text text; token_count int; language text; kind text; speaker_layer text; quality_state text | immutable; không UQ content_hash toàn cục vì provenance khác nhau |
+| content_hash char(64); text text; token_count int; language text; kind text (text/list/table/case); speaker_layer text; quality_state text | immutable; không UQ content_hash toàn cục vì provenance khác nhau; RAG pilot: một row là một chunk *con* (M018) |
 
 ### `chunk_spans`
 
@@ -144,7 +144,19 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
 |---|---|
-| generation_id uuid FK generations; chunk_id uuid FK chunks; section_id uuid FK sections; ordinal int | UQ(generation_id,ordinal); UQ(generation_id,chunk_id); source thuộc version của generation |
+| generation_id uuid FK generations; chunk_id uuid FK chunks; section_id uuid FK sections; ordinal int; parent_id uuid? FK chunk_parents | UQ(generation_id,ordinal); UQ(generation_id,chunk_id); source thuộc version của generation; cha của con là thuộc tính của generation (M018) |
+
+### `chunk_parents`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| generation_id uuid FK generations; section_id uuid? FK sections; ordinal int; text text; token_count int; content_hash char(64); meta jsonb; summary text?; summary_status text; summary_model text?; summary_prompt_version text? | UQ(generation_id,ordinal); text/meta bất biến, chỉ cột summary đổi khi generation còn `building` (stage `summarize`); văn bản cha = các con + dòng tiêu đề, LLM chỉ đọc cha (M018) |
+
+### `chunk_meta`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| generation_id uuid FK generations; chunk_id uuid FK chunks; meta jsonb | UQ(generation_id,chunk_id); metadata + header ngữ cảnh của con theo generation (sách, trường phái, breadcrumb, trang, lớp người nói, loại đơn vị, thực thể, lá số, simhash); chỉ ghi khi `building` (M018) |
 
 ### `search_entries`
 
@@ -181,6 +193,24 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
 |---|---|
 | slot text UQ; release_id uuid FK corpus_releases; visibility_epoch bigint | slot default; singleton id; compare-and-swap pointer transaction; không có row trước first publish → empty corpus |
+
+### `eval_runs`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| label text; questions_file text?; settings jsonb; versions jsonb; created_by uuid? FK users | lượt chạy `scripts/rag_eval.py` cho trang chấm (M018) |
+
+### `eval_results`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| run_id uuid FK eval_runs CASCADE; ordinal int; question_key text; question text; status text; answer text?; latency_ms int?; payload jsonb | UQ(run_id,ordinal); payload = toàn bộ phản hồi `/ask` (nguồn, đoạn truy xuất, điểm) |
+
+### `judge_scores`
+
+| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
+|---|---|
+| result_id uuid FK eval_results CASCADE; judge_name text; scores jsonb; chunk_labels jsonb; notes text | UQ(result_id,judge_name); người chấm không có tài khoản (mật khẩu chung), một phiếu mỗi người mỗi câu |
 
 ### `schools`
 

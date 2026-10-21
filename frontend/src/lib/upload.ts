@@ -1,4 +1,5 @@
 // One multipart upload with progress (fetch cannot report upload progress).
+import { withBase } from './base'
 import { csrf } from './storage'
 import { networkError, toApiError } from '@/api/problem'
 
@@ -31,7 +32,7 @@ export function uploadFile(file: File, fields: UploadFields, key: string,
   }
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', '/api/v1/uploads')
+    xhr.open('POST', withBase('/api/v1/uploads'))
     xhr.withCredentials = true
     xhr.setRequestHeader('Idempotency-Key', key)
     const token = csrf.get()

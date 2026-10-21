@@ -15,7 +15,7 @@ __pycache__/
 /frontend/.next/
 /.cache/
 /.artifacts/
-
+/.claude/
 .claude/settings.local.json
 /frontend/next-env.d.ts
 /frontend/*.tsbuildinfo

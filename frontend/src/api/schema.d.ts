@@ -74,6 +74,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer a question from the published books only, with sources */
+        post: operations["ask_api_v1_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assertion-relations": {
         parameters: {
             query?: never;
@@ -732,6 +749,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/eval-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Eval Run */
+        post: operations["create_eval_run_api_v1_eval_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/evaluation-datasets": {
         parameters: {
             query?: never;
@@ -1058,6 +1092,126 @@ export interface paths {
         /** Retry Job */
         post: operations["retry_job_api_v1_jobs__job_id__retry_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Judge Me */
+        get: operations["judge_me_api_v1_judge_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/results/{result_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Judge Result */
+        get: operations["judge_result_api_v1_judge_results__result_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/results/{result_id}/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Judge Score */
+        put: operations["judge_score_api_v1_judge_results__result_id__score_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Judge Runs */
+        get: operations["judge_runs_api_v1_judge_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/runs/{run_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Judge Results */
+        get: operations["judge_results_api_v1_judge_runs__run_id__results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/runs/{run_id}/scores.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Judge Scores Csv */
+        get: operations["judge_scores_csv_api_v1_judge_runs__run_id__scores_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judge/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Judge Sign In */
+        post: operations["judge_sign_in_api_v1_judge_session_post"];
+        /** Judge Sign Out */
+        delete: operations["judge_sign_out_api_v1_judge_session_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1998,6 +2152,109 @@ export interface components {
             ruleset_id?: string | null;
             /** School Id */
             school_id?: string | null;
+        };
+        /** AskIn */
+        AskIn: {
+            /**
+             * Book Ids
+             * @default []
+             */
+            book_ids: string[];
+            /** Question */
+            question: string;
+            /**
+             * Rerank
+             * @default true
+             */
+            rerank: boolean;
+            /**
+             * School Keys
+             * @description restrict to these schools (manh_phai, tu_binh)
+             * @default []
+             */
+            school_keys: string[];
+            /**
+             * Thinking
+             * @description Qwen thinking; default from settings
+             */
+            thinking?: boolean | null;
+        };
+        /** AskOut */
+        AskOut: {
+            /**
+             * Answer
+             * @description validated answer, invalid [P#] removed
+             */
+            answer?: string | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["ChildOut"][];
+            /**
+             * Cited
+             * @default []
+             */
+            cited: string[];
+            /**
+             * Degraded
+             * @default []
+             */
+            degraded: string[];
+            /** Error */
+            error?: string | null;
+            /**
+             * Invalid Citations
+             * @default []
+             */
+            invalid_citations: string[];
+            /** Model Said Insufficient */
+            model_said_insufficient?: boolean | null;
+            /**
+             * Parents
+             * @default []
+             */
+            parents: components["schemas"]["ParentOut"][];
+            /** Question */
+            question: string;
+            /**
+             * Raw Answer
+             * @description model output before validation
+             */
+            raw_answer?: string | null;
+            /**
+             * Settings
+             * @default {}
+             */
+            settings: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "insufficient_evidence" | "empty_corpus" | "no_match" | "provider_not_configured" | "provider_error";
+            /**
+             * Timings Ms
+             * @default {}
+             */
+            timings_ms: {
+                [key: string]: unknown;
+            };
+            /**
+             * Usage
+             * @default {}
+             */
+            usage: {
+                [key: string]: unknown;
+            };
+            /**
+             * Versions
+             * @default {}
+             */
+            versions: {
+                [key: string]: unknown;
+            };
         };
         /** AssertionDTO */
         AssertionDTO: {
@@ -2991,6 +3248,89 @@ export interface components {
              */
             status: "ok" | "degraded" | "fail";
         };
+        /** ChildOut */
+        ChildOut: {
+            /**
+             * Also In
+             * @default []
+             */
+            also_in: {
+                [key: string]: unknown;
+            }[];
+            /** Book Title */
+            book_title: string;
+            /**
+             * Breadcrumb
+             * @default []
+             */
+            breadcrumb: string[];
+            /** Chunk Id */
+            chunk_id: string;
+            /** Edition */
+            edition?: string | null;
+            /**
+             * Expert Reviewed
+             * @default false
+             */
+            expert_reviewed: boolean;
+            /**
+             * Header
+             * @default
+             */
+            header: string;
+            /**
+             * Meta
+             * @description entities, charts, extraction, …
+             */
+            meta?: {
+                [key: string]: unknown;
+            };
+            /** Page End */
+            page_end?: number | null;
+            /** Page Start */
+            page_start?: number | null;
+            /**
+             * Parent Handle
+             * @description P# of the parent sent to the model
+             */
+            parent_handle?: string | null;
+            /** Printed Pages */
+            printed_pages?: string[] | null;
+            /** Rank */
+            rank: number;
+            /**
+             * Reviewed Rules
+             * @default []
+             */
+            reviewed_rules: components["schemas"]["ReviewedRule"][];
+            /** School */
+            school?: string | null;
+            scores: components["schemas"]["Scores"];
+            /** Section Path */
+            section_path: string;
+            /**
+             * Spans
+             * @description exact source spans (page viewer)
+             * @default []
+             */
+            spans: components["schemas"]["SourceSpan"][];
+            /** Speaker Layer */
+            speaker_layer: string;
+            /** Text */
+            text: string;
+            /** Unit Kind */
+            unit_kind: string;
+        };
+        /** ChunkLabel */
+        ChunkLabel: {
+            /** Relevance */
+            relevance?: ("relevant" | "partial" | "irrelevant") | null;
+            /**
+             * Suggest Rule
+             * @default false
+             */
+            suggest_rule: boolean;
+        };
         /** Citation */
         Citation: {
             /**
@@ -3533,6 +3873,11 @@ export interface components {
             data: components["schemas"]["AnalysisDTO"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[AskOut] */
+        Envelope_AskOut_: {
+            data: components["schemas"]["AskOut"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[AssertionDetail] */
         Envelope_AssertionDetail_: {
             data: components["schemas"]["AssertionDetail"];
@@ -3603,6 +3948,11 @@ export interface components {
             data: components["schemas"]["ErasureResult"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[EvalRunCreated] */
+        Envelope_EvalRunCreated_: {
+            data: components["schemas"]["EvalRunCreated"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[EvaluationRunDTO] */
         Envelope_EvaluationRunDTO_: {
             data: components["schemas"]["EvaluationRunDTO"];
@@ -3626,6 +3976,11 @@ export interface components {
         /** Envelope[JobDetail] */
         Envelope_JobDetail_: {
             data: components["schemas"]["JobDetail"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[JudgeMe] */
+        Envelope_JudgeMe_: {
+            data: components["schemas"]["JudgeMe"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[KnowledgeImpactDTO] */
@@ -3733,6 +4088,11 @@ export interface components {
             data: components["schemas"]["ReleaseDetail"];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[ResultDetail] */
+        Envelope_ResultDetail_: {
+            data: components["schemas"]["ResultDetail"];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[ReviewItemDTO] */
         Envelope_ReviewItemDTO_: {
             data: components["schemas"]["ReviewItemDTO"];
@@ -3766,6 +4126,11 @@ export interface components {
         /** Envelope[ScopeDTO] */
         Envelope_ScopeDTO_: {
             data: components["schemas"]["ScopeDTO"];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[ScoreSaved] */
+        Envelope_ScoreSaved_: {
+            data: components["schemas"]["ScoreSaved"];
             meta: components["schemas"]["Meta"];
         };
         /** Envelope[SearchResult] */
@@ -3846,10 +4211,22 @@ export interface components {
             data: components["schemas"]["MessageDTO"][];
             meta: components["schemas"]["Meta"];
         };
+        /** Envelope[list[ResultSummary]] */
+        Envelope_list_ResultSummary__: {
+            /** Data */
+            data: components["schemas"]["ResultSummary"][];
+            meta: components["schemas"]["Meta"];
+        };
         /** Envelope[list[RulesetDTO]] */
         Envelope_list_RulesetDTO__: {
             /** Data */
             data: components["schemas"]["RulesetDTO"][];
+            meta: components["schemas"]["Meta"];
+        };
+        /** Envelope[list[RunSummary]] */
+        Envelope_list_RunSummary__: {
+            /** Data */
+            data: components["schemas"]["RunSummary"][];
             meta: components["schemas"]["Meta"];
         };
         /** ErasureInput */
@@ -3878,6 +4255,45 @@ export interface components {
             };
             /** User Id */
             user_id: string;
+        };
+        /** EvalResultIn */
+        EvalResultIn: {
+            /** Latency Ms */
+            latency_ms?: number | null;
+            /** Ordinal */
+            ordinal: number;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Question */
+            question: string;
+            /** Question Key */
+            question_key: string;
+        };
+        /** EvalRunCreated */
+        EvalRunCreated: {
+            /** Id */
+            id: string;
+            /** Results */
+            results: number;
+        };
+        /** EvalRunIn */
+        EvalRunIn: {
+            /** Label */
+            label: string;
+            /** Questions File */
+            questions_file?: string | null;
+            /** Results */
+            results: components["schemas"]["EvalResultIn"][];
+            /** Settings */
+            settings?: {
+                [key: string]: unknown;
+            };
+            /** Versions */
+            versions?: {
+                [key: string]: unknown;
+            };
         };
         /** EvaluationRunDTO */
         EvaluationRunDTO: {
@@ -4607,6 +5023,20 @@ export interface components {
             /** State */
             state: string;
         };
+        /** JudgeMe */
+        JudgeMe: {
+            /** Expires At */
+            expires_at: number;
+            /** Name */
+            name: string;
+        };
+        /** JudgeSignIn */
+        JudgeSignIn: {
+            /** Name */
+            name: string;
+            /** Password */
+            password: string;
+        };
         /** KnowledgeImpactDTO */
         KnowledgeImpactDTO: {
             /** Counts */
@@ -5064,6 +5494,24 @@ export interface components {
              */
             secret_ref?: string | null;
         };
+        /** MyScore */
+        MyScore: {
+            /** Chunk Labels */
+            chunk_labels: {
+                [key: string]: unknown;
+            };
+            /** Notes */
+            notes: string;
+            /** Scores */
+            scores: {
+                [key: string]: unknown;
+            };
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** NormalizedTime */
         NormalizedTime: {
             /** Birth Instant Utc */
@@ -5329,6 +5777,57 @@ export interface components {
              * @enum {string}
              */
             state: "accepted" | "review_required" | "excluded";
+        };
+        /** ParentOut */
+        ParentOut: {
+            /** Book Title */
+            book_title: string;
+            /**
+             * Breadcrumb
+             * @default []
+             */
+            breadcrumb: string[];
+            /**
+             * Child Ids
+             * @description retrieved children that selected this parent
+             */
+            child_ids: string[];
+            /**
+             * Cited
+             * @default false
+             */
+            cited: boolean;
+            /**
+             * Expert Reviewed
+             * @default false
+             */
+            expert_reviewed: boolean;
+            /** Handle */
+            handle: string;
+            /**
+             * Header
+             * @default
+             */
+            header: string;
+            /** Page End */
+            page_end?: number | null;
+            /** Page Start */
+            page_start?: number | null;
+            /** Parent Id */
+            parent_id: string;
+            /**
+             * Reviewed Rules
+             * @default []
+             */
+            reviewed_rules: components["schemas"]["ReviewedRule"][];
+            /** School */
+            school?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Text */
+            text: string;
+            /** Tokens */
+            tokens: number;
         };
         /** Pillar */
         Pillar: {
@@ -5774,6 +6273,50 @@ export interface components {
             /** Pages */
             pages: number[];
         };
+        /** ResultDetail */
+        ResultDetail: {
+            /** Id */
+            id: string;
+            /** Latency Ms */
+            latency_ms: number | null;
+            my_score: components["schemas"]["MyScore"] | null;
+            /** Ordinal */
+            ordinal: number;
+            /**
+             * Payload
+             * @description the full /ask response captured by the run
+             */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Question */
+            question: string;
+            /** Question Key */
+            question_key: string;
+            /** Run Id */
+            run_id: string;
+            /** Status */
+            status: string;
+        };
+        /** ResultSummary */
+        ResultSummary: {
+            /** Id */
+            id: string;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Ordinal */
+            ordinal: number;
+            /** Question */
+            question: string;
+            /** Question Key */
+            question_key: string;
+            /** Scored By Me */
+            scored_by_me: boolean;
+            /** Scores */
+            scores: number;
+            /** Status */
+            status: string;
+        };
         /** RetryInput */
         RetryInput: {
             /**
@@ -5935,6 +6478,17 @@ export interface components {
             state: "draft" | "in_review" | "approved" | "rejected" | "revoked";
             /** Terms Approved */
             terms_approved?: number | null;
+        };
+        /** ReviewedRule */
+        ReviewedRule: {
+            /** Assertion Id */
+            assertion_id: string;
+            /** Key */
+            key: string;
+            /** Revision */
+            revision: number;
+            /** Text */
+            text: string;
         };
         /** RuleDTO */
         RuleDTO: {
@@ -6318,6 +6872,32 @@ export interface components {
              */
             status: "passed" | "failed" | "error" | "skipped";
         };
+        /** RunSummary */
+        RunSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Judges */
+            judges: number;
+            /** Label */
+            label: string;
+            /** Results */
+            results: number;
+            /** Scored By Me */
+            scored_by_me: number;
+            /** Settings */
+            settings: {
+                [key: string]: unknown;
+            };
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+        };
         /**
          * RuntimeConfigDTO
          * @description Redacted runtime facts: which providers are configured, never their secrets.
@@ -6418,6 +6998,65 @@ export interface components {
              * Format: uuid
              */
             school_id: string;
+        };
+        /** ScoreSaved */
+        ScoreSaved: {
+            /** Rule Suggestions */
+            rule_suggestions: number;
+            /** Saved */
+            saved: boolean;
+        };
+        /** ScoreSheet */
+        ScoreSheet: {
+            /** Chunk Labels */
+            chunk_labels?: {
+                [key: string]: components["schemas"]["ChunkLabel"];
+            };
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Scores */
+            scores?: {
+                [key: string]: number | boolean | null;
+            };
+        };
+        /** Scores */
+        Scores: {
+            /**
+             * Dense
+             * @description dense score min-max normalised in this query
+             */
+            dense: number;
+            /** Dense Rank */
+            dense_rank?: number | null;
+            /**
+             * Dense Raw
+             * @description cosine similarity
+             */
+            dense_raw?: number | null;
+            /**
+             * Fused
+             * @description w_dense·dense + w_sparse·sparse
+             */
+            fused: number;
+            /** Rerank */
+            rerank?: number | null;
+            /** Rerank Rank */
+            rerank_rank?: number | null;
+            /**
+             * Sparse
+             * @description BM25 score min-max normalised in this query
+             */
+            sparse: number;
+            /** Sparse Rank */
+            sparse_rank?: number | null;
+            /**
+             * Sparse Raw
+             * @description BM25 score
+             */
+            sparse_raw?: number | null;
         };
         /** SearchInput */
         SearchInput: {
@@ -6615,6 +7254,19 @@ export interface components {
              * @enum {string}
              */
             speaker_layer: "original_author" | "commentator" | "translator" | "editor" | "unknown";
+            /** Start Offset */
+            start_offset: number;
+        };
+        /** SourceSpan */
+        SourceSpan: {
+            /** End Offset */
+            end_offset: number;
+            /** Page Revision Id */
+            page_revision_id: string;
+            /** Physical Page Number */
+            physical_page_number: number;
+            /** Printed Page Label */
+            printed_page_label?: string | null;
             /** Start Offset */
             start_offset: number;
         };
@@ -7981,6 +8633,201 @@ export interface operations {
                      *       "status": 404,
                      *       "title": "Not Found",
                      *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ask_api_v1_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "book_ids": [],
+                 *       "question": "example",
+                 *       "rerank": true,
+                 *       "school_keys": [],
+                 *       "thinking": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "answer": "example",
+                     *         "children": [],
+                     *         "cited": [],
+                     *         "degraded": [],
+                     *         "error": "example",
+                     *         "invalid_citations": [],
+                     *         "model_said_insufficient": true,
+                     *         "parents": [],
+                     *         "question": "example",
+                     *         "raw_answer": "example",
+                     *         "settings": {},
+                     *         "status": "ok",
+                     *         "timings_ms": {},
+                     *         "usage": {},
+                     *         "versions": {}
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_AskOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
                      *     }
                      */
                     "application/problem+json": unknown;
@@ -21174,6 +22021,196 @@ export interface operations {
             };
         };
     };
+    create_eval_run_api_v1_eval_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "label": "example",
+                 *       "questions_file": "example",
+                 *       "results": [
+                 *         {
+                 *           "latency_ms": 1,
+                 *           "ordinal": 1,
+                 *           "payload": {},
+                 *           "question": "example",
+                 *           "question_key": "example"
+                 *         }
+                 *       ],
+                 *       "settings": {},
+                 *       "versions": {}
+                 *     }
+                 */
+                "application/json": components["schemas"]["EvalRunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "id": "example",
+                     *         "results": 1
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_EvalRunCreated_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "FORBIDDEN",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 403,
+                     *       "title": "Forbidden",
+                     *       "type": "urn:bazi:problem:forbidden"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     list_datasets_api_v1_evaluation_datasets_get: {
         parameters: {
             query?: never;
@@ -25540,6 +26577,1425 @@ export interface operations {
                      *       "status": 409,
                      *       "title": "Conflict",
                      *       "type": "urn:bazi:problem:conflict"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_me_api_v1_judge_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "expires_at": 1,
+                     *         "name": "example"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_JudgeMe_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_result_api_v1_judge_results__result_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "id": "example",
+                     *         "latency_ms": 1,
+                     *         "my_score": {
+                     *           "chunk_labels": {},
+                     *           "notes": "example",
+                     *           "scores": {},
+                     *           "updated_at": "2026-10-18T08:00:00Z"
+                     *         },
+                     *         "ordinal": 1,
+                     *         "payload": {},
+                     *         "question": "example",
+                     *         "question_key": "example",
+                     *         "run_id": "example",
+                     *         "status": "example"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_ResultDetail_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_score_api_v1_judge_results__result_id__score_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "chunk_labels": {},
+                 *       "notes": "",
+                 *       "scores": {}
+                 *     }
+                 */
+                "application/json": components["schemas"]["ScoreSheet"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "rule_suggestions": 1,
+                     *         "saved": true
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_ScoreSaved_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_runs_api_v1_judge_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "created_at": "2026-10-18T08:00:00Z",
+                     *           "id": "example",
+                     *           "judges": 1,
+                     *           "label": "example",
+                     *           "results": 1,
+                     *           "scored_by_me": 1,
+                     *           "settings": {},
+                     *           "versions": {}
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_list_RunSummary__"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_results_api_v1_judge_runs__run_id__results_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "id": "example",
+                     *           "latency_ms": 1,
+                     *           "ordinal": 1,
+                     *           "question": "example",
+                     *           "question_key": "example",
+                     *           "scored_by_me": true,
+                     *           "scores": 1,
+                     *           "status": "example"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_list_ResultSummary__"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_scores_csv_api_v1_judge_runs__run_id__scores_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description all judges' score sheets of the run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /** @example null */
+                    "application/json": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_sign_in_api_v1_judge_session_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "example",
+                 *       "password": "example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["JudgeSignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "expires_at": 1,
+                     *         "name": "example"
+                     *       },
+                     *       "meta": {
+                     *         "request_id": "example"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Envelope_JudgeMe_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "VALIDATION_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [
+                     *         {
+                     *           "message": "Field required",
+                     *           "path": "body.name"
+                     *         }
+                     *       ],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 422,
+                     *       "title": "Validation Error",
+                     *       "type": "urn:bazi:problem:validation_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 429,
+                     *       "title": "Rate Limited",
+                     *       "type": "urn:bazi:problem:rate_limited"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 429,
+                     *       "title": "Rate Limited",
+                     *       "type": "urn:bazi:problem:rate_limited"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 500,
+                     *       "title": "Internal Error",
+                     *       "type": "urn:bazi:problem:internal_error"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PROVIDER_UNAVAILABLE",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 503,
+                     *       "title": "Provider Unavailable",
+                     *       "type": "urn:bazi:problem:provider_unavailable"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "PROVIDER_UNAVAILABLE",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 503,
+                     *       "title": "Provider Unavailable",
+                     *       "type": "urn:bazi:problem:provider_unavailable"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    judge_sign_out_api_v1_judge_session_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "AUTH_REQUIRED",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 401,
+                     *       "title": "Auth Required",
+                     *       "type": "urn:bazi:problem:auth_required"
+                     *     }
+                     */
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Problem"];
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "detail": null,
+                     *       "field_errors": [],
+                     *       "request_id": "req_0123456789abcdef",
+                     *       "status": 404,
+                     *       "title": "Not Found",
+                     *       "type": "urn:bazi:problem:not_found"
                      *     }
                      */
                     "application/problem+json": unknown;

@@ -14,6 +14,13 @@
         --provision
     python -m backend.app.cli pipeline-profile --name "Sách in"         --embedding-profile <id> --ocr-languages vie+eng
 
+RAG pilot (backend/app/rag/admin.py):
+
+    python -m backend.app.cli fetch-models                 # pinned models into the model cache
+    python -m backend.app.cli rag-setup                    # embedding + pipeline profiles
+    python -m backend.app.cli ingest-folder /inputs/books --admin admin@example.test
+    python -m backend.app.cli judge-password               # hash for JUDGE_PASSWORD_HASH
+
 Passwords come from an environment variable or an interactive prompt, never
 from argv (shell history, process lists).
 """
@@ -35,6 +42,7 @@ from .auth.service import create_user
 from .core.config import ConfigError, load_settings
 
 BOOTSTRAP_PASSWORD_ENV = 'BAZI_BOOTSTRAP_PASSWORD'
+JUDGE_PASSWORD_ENV = 'BAZI_JUDGE_PASSWORD'
 
 
 def _password(prompt_env: str) -> str:
@@ -299,6 +307,21 @@ def run_restore(args) -> int:
     return 0
 
 
+def rag_command(args) -> int:
+    from .rag import admin
+    if args.command == 'fetch-models':
+        _print(admin.fetch_models())
+    elif args.command == 'rag-setup':
+        _print(admin.rag_setup())
+    elif args.command == 'ingest-folder':
+        _print(admin.ingest_folder(Path(args.root), args.admin, args.pipeline_profile, args.only,
+                                   not args.no_auto_publish))
+    else:
+        password = _password(JUDGE_PASSWORD_ENV)
+        print(admin.judge_password_hash(password))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog='python -m backend.app.cli')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -359,6 +382,16 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument('--baseline', help="'latest' (same strategy and split) or a run id")
     ev.add_argument('--tolerance', type=float, default=0.02)
     ev.add_argument('--gates', action='store_true', help='also fail when a release gate fails')
+    commands.add_parser('fetch-models', help='download the pinned RAG/OCR models (network)')
+    commands.add_parser('rag-setup', help='RAG pilot embedding profile, collection, pipeline')
+    ingest = commands.add_parser('ingest-folder', help='upload every PDF/DOCX of a folder tree')
+    ingest.add_argument('root', help='folder whose sub-folders name the school')
+    ingest.add_argument('--admin', required=True, help='admin email that approves the schools')
+    ingest.add_argument('--pipeline-profile', help='default: latest "RAG pilot" profile')
+    ingest.add_argument('--only', nargs='*', help='file name fragments to include')
+    ingest.add_argument('--no-auto-publish', action='store_true')
+    commands.add_parser('judge-password', help='print the Argon2 hash of a judge password'
+                        f' (read from {JUDGE_PASSWORD_ENV} or a prompt)')
     gc = commands.add_parser('gc', help='remove unreferenced objects and orphan blobs')
     gc.add_argument('--grace-hours', type=float, default=24.0)
     gc.add_argument('--dry-run', action='store_true')
@@ -372,6 +405,8 @@ def main(argv: list[str] | None = None) -> int:
             return embedding_profile(args)
         if args.command == 'gc':
             return collect_garbage(args)
+        if args.command in ('fetch-models', 'rag-setup', 'ingest-folder', 'judge-password'):
+            return rag_command(args)
         if args.command == 'pipeline-profile':
             return pipeline_profile(args)
         if args.command == 'backup':

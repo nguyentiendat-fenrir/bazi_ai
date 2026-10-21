@@ -75,6 +75,28 @@ policy/oracle/sai số; T036–T037 model/chunk/rerank ablations; T051 tài nguy
 throughput/latency; T053 measured restore. Thay model không đổi business schema;
 thêm collection/profile/release chạy từ admin qua registry được kiểm soát.
 
+- **21/10/2026 · RAG pilot (chủ dự án chốt stack):**
+  - **Stack:** OCR SenOCR-Vi (fine-tune PaddleOCR-VL-1.6, GPU), embedding `jina-embeddings-v5-text-small` (1024-d, CPU), reranker `jina-reranker-v3.5` (CPU) và LLM duy nhất là Qwen3-8B-FP8 vLLM có sẵn trên máy (`infra/qwen.md`). Trộn hybrid 0,8·dense + 0,2·BM25 trên điểm min-max theo từng câu hỏi.
+  - **Chunk:** cha/con theo cây chương → mục → tiểu mục. Không cắt đoạn, danh sách, bảng hay ví dụ. Con được embed kèm header và tóm tắt Qwen của cha; LLM chỉ đọc cha.
+  - **Chấm:** người chấm dùng trang `/judge` với mật khẩu chung.
+  - **Số đo (spike 21/10, RTX 4090, i7-13700K):**
+    - OCR: 1,0–7,6 s/trang trên 15 trang scan của 7 sách. VRAM toàn máy đỉnh 20,8/23 GB (OCR thêm khoảng 3,2 GB). Lỗi chủ yếu ở dấu: "Ấn"→"Ân", "Ất"→"Át".
+    - Jina trên 16 luồng CPU: truy vấn khoảng 100 ms; tài liệu 1,8 đoạn/s với đoạn khoảng 300 token. Reranker: 8 ứng viên mất 4,2 s, 12 ứng viên mất 7,2 s, nên chọn độ sâu rerank 10. Lượng tử hóa int8 không nhanh hơn vì CPU không có AVX-512/AMX.
+    - Qwen ở 16k ngữ cảnh cần util 0,53 (0,5 không đủ KV cho 16k).
+  - **Quyết định phụ:**
+    - PaddleX chạy cả layout lẫn VL bằng engine transformers và không cài paddlepaddle. Output giống hệt (so 4 trang); hai bộ wheel CUDA cu126 và cu128 xung đột khi resolve.
+    - ML stack ghim trong `infra/requirements-ml.txt`, không đưa vào `uv.lock`, vì torch đến từ index riêng.
+    - BM25 chạy trong tiến trình API (đọc từ DB, dựng lại khi release đổi), không dùng FTS `simple`.
+    - Trang scan nguyên trang chỉ giữ block OCR, vì lớp chữ cũ của file scan rời rạc.
+    - `/search` cũ giữ nguyên hợp đồng; chỉ chat (chế độ research) và `/ask` dùng pipeline mới.
+  - **Bổ sung cùng ngày:**
+    - Chạy thật, OCR từng hết VRAM với 41 trang, vì tiến trình phình lên 4,69 GB khi Qwen và Gemma đã chiếm 18,8 GB.
+    - Sửa bằng 4 cách: trần bộ nhớ 3,0 GB cho tiến trình (`OCR_GPU_MEMORY_GB`); VL batch 1 (batch 2 làm processor HF lỗi vì không padding); giải phóng cache sau mỗi trang với `expandable_segments`; hết VRAM thì thử lại unit chứ không đưa trang vào hàng duyệt.
+    - Đo 15 trang: OCR đỉnh 3,2 GB, toàn card 22,0/23 GB.
+    - Embedding xếp đoạn theo độ dài trước khi chia lô: nhanh gấp 2,2 lần, vector giữ nguyên.
+  - **Loại:** Tesseract; reranker hoặc embedding trên GPU (thiếu VRAM khi Gemma vẫn chạy); thêm service mới vào Compose (chủ dự án không cho thêm); RRF thay cho trộn có trọng số.
+  - **Rollback:** revert commit và `alembic downgrade 0017_m017_feedback`; Qwen quay lại theo `infra/qwen.md`.
+
 - **11/10/2026 · T002 (chưa nghiệm thu):** khóa Python 3.12 + uv (`uv.lock`, 52
   packages); image upstream ghim digest SHA256 trong `infra/compose.yaml` và
   Dockerfile, không dùng `latest`. Smoke thực: PostgreSQL 17.11 + pgvector 0.8.7,

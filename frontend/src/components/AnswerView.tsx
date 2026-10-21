@@ -2,6 +2,7 @@
 // A validated answer (docs/09 · Answer contract): summary, claims with their support and
 // sources, disagreements, limitations, follow-up questions. Book text renders as text only.
 import { Badge } from '@/components/ui'
+import { withBase } from '@/lib/base'
 import type { Tone } from '@/lib/format'
 
 export interface AnswerCitation {
@@ -85,7 +86,7 @@ export function AnswerView({ answer, onFollowUp }: { answer: AnswerData, onFollo
                         <span className="muted small">«{c.book_title}»{c.section_title ? ` · ${c.section_title}` : ''} · trang {c.pages.join(', ')}
                           {c.speaker_layer ? ` · ${SPEAKERS[c.speaker_layer] ?? c.speaker_layer}` : ''}</span>
                         <blockquote>{c.quote}</blockquote>
-                        {c.viewer?.[0] && <a className="small" href={`/pages/${c.viewer[0].page_revision_id}?from=${c.viewer[0].start_offset ?? ''}&to=${c.viewer[0].end_offset ?? ''}`}>Mở trang nguồn</a>}
+                        {c.viewer?.[0] && <a className="small" href={withBase(`/pages/${c.viewer[0].page_revision_id}?from=${c.viewer[0].start_offset ?? ''}&to=${c.viewer[0].end_offset ?? ''}`)}>Mở trang nguồn</a>}
                       </li>
                     ))}
                   </ul>

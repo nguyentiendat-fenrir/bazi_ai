@@ -1,65 +1,75 @@
-"""OCR (T012): merge rules, stage behaviour with a fake engine, and real Tesseract.
+"""OCR (SenOCR-Vi / PaddleOCR-VL): block mapping, stage behaviour with a fake engine, real model.
 
-Real-Tesseract tests run where the ``tesseract`` binary exists — the worker
-image (infra/backend.Dockerfile ``test`` target); elsewhere they skip.
+Real-model tests run where the model cache holds SenOCR-Vi and a GPU is present
+(the worker image with the model_cache volume); elsewhere they are skipped,
+which does not count as tested.
 """
 from pathlib import Path
-import shutil
+import os
 import tempfile
 import unittest
 import uuid
 
 import psycopg
 
-from backend.app.ingestion.ocr import (OcrBlock, OcrTimeout, TesseractEngine, crop, group_blocks,
-                                       new_ocr_blocks, ocr_page, render, OcrWord)
+from backend.app.ingestion.ocr import (OcrBlock, OcrTimeout, assign_speakers, new_ocr_blocks,
+                                       ocr_page, render, table_rows, to_blocks)
 from backend.app.ingestion.ocr_stage import OcrStage
-from backend.app.ingestion.pdf_native import extract_page, open_document
+from backend.app.ingestion.pdf_native import open_document
 from backend.app.ingestion.pdf_stages import ExtractPdfStage, ValidatePdfStage
 from backend.app.ingestion.worker import run_job
 from backend.app.storage.local import LocalObjectStore
 from backend.app.storage.service import store_object
-from tests.fixtures.pdf_factory import PdfBuilder, font_path, oversized_page, scanned_copy
+from tests.fixtures.pdf_factory import PdfBuilder, font_path, oversized_page
 from tests.integration.db import (ADMIN_URL, ROOT, create_runtime_login, database_url,
                                   drop_database, drop_role, engine_for, migrated_database, sha)
 from tests.integration.factories import Factory
 
-HAS_TESSERACT = shutil.which('tesseract') is not None
-CAO_CAP = ROOT / 'inputs' / 'books' / ('Manh phái cao cấp - Đoàn kiến Nghiệp - tài liệu giảng dạy'
-                                        ' facebook sách ánh dương .pdf')
+MODEL_DIR = Path(os.environ.get('OCR_MODEL_DIR', '/models/senocr-vi/current'))
+HAS_MODEL = (MODEL_DIR / 'model.safetensors').exists()
+SCANNED = ROOT / 'inputs' / 'books' / 'Vượng suy' / 'tử bình chân thuyên fb ánh dương .pdf'
 
 
-def text_pdf(tmp: Path, lines) -> Path:
-    builder = PdfBuilder()
-    builder.page(lines=[(t, 72, y, 20, (0, 0, 0)) for t, y in lines])
-    return builder.save(tmp / f'{uuid.uuid4().hex}.pdf')
-
-
-class MergeRuleTests(unittest.TestCase):
+class MappingTests(unittest.TestCase):
     def test_ocr_blocks_inside_native_text_are_dropped(self):
         native = [[0.1, 0.1, 0.9, 0.3]]
-        ocr = [OcrBlock('duplicate of native', [0.12, 0.12, 0.8, 0.28], 90, 0),
-               OcrBlock('figure caption', [0.2, 0.5, 0.6, 0.55], 85, 1),
-               OcrBlock('   ', [0.2, 0.7, 0.6, 0.75], 85, 1)]
+        ocr = [OcrBlock('duplicate of native', [0.12, 0.12, 0.8, 0.28], None, 0),
+               OcrBlock('figure caption', [0.2, 0.5, 0.6, 0.55], None, 1),
+               OcrBlock('   ', [0.2, 0.7, 0.6, 0.75], None, 1)]
         self.assertEqual([b.text for b in new_ocr_blocks(ocr, native)], ['figure caption'])
 
-    def test_words_grouped_into_paragraph_blocks_in_reading_order(self):
-        words = [OcrWord('Chủ', [0.3, 0.1, 0.4, 0.12], 90, (0, 1, 1, 1)),
-                 OcrWord('Khách', [0.1, 0.1, 0.25, 0.12], 80, (0, 1, 1, 1)),
-                 OcrWord('lưu', [0.1, 0.13, 0.2, 0.15], 70, (0, 1, 1, 2)),
-                 OcrWord('Hình', [0.1, 0.6, 0.2, 0.62], 60, (1, 1, 1, 1))]
-        blocks = group_blocks(words)
-        self.assertEqual([b.text for b in blocks], ['Chủ Khách\nlưu', 'Hình'])
-        self.assertEqual(blocks[0].bbox, [0.1, 0.1, 0.4, 0.15])
-        self.assertEqual(blocks[0].conf, 80.0)
+    def test_layout_labels_map_to_block_kinds_roles_and_boxes(self):
+        items = [
+            {'block_label': 'paragraph_title', 'block_content': 'Chương 8: Luận dụng thần',
+             'block_bbox': [100, 50, 900, 100]},
+            {'block_label': 'text', 'block_content': 'Bát tự dụng thần chuyên cầu nguyệt lệnh.',
+             'block_bbox': [100, 120, 900, 300]},
+            {'block_label': 'table', 'block_bbox': [100, 320, 600, 500], 'block_content':
+             '<table><tr><td>Kiếp</td><td>T.Tài</td><td>Nhật chủ</td><td>Kiếp</td></tr>'
+             '<tr><td>Quý</td><td>Bính</td><td>Nhâm</td><td>Quý</td></tr>'
+             '<tr><td>Tị</td><td>Thìn</td><td>Thân</td><td>Mão</td></tr></table>'},
+            {'block_label': 'number', 'block_content': '60', 'block_bbox': [480, 980, 520, 1000]},
+            {'block_label': 'image', 'block_content': '', 'block_bbox': [0, 0, 10, 10]}]
+        blocks = to_blocks(items, 1000, 1000)
+        self.assertEqual([(b.kind, b.role) for b in blocks],
+                         [('heading', None), ('paragraph', None), ('table', None),
+                          ('paragraph', 'folio')])
+        self.assertEqual(blocks[0].level, 1)                       # "Chương N" rule
+        self.assertEqual(blocks[1].bbox, [0.1, 0.12, 0.9, 0.3])
+        self.assertEqual(blocks[2].table_cells[1], ['Quý', 'Bính', 'Nhâm', 'Quý'])
+        self.assertEqual(blocks[2].text.split('\n')[1], 'Quý Bính Nhâm Quý')
 
-    def test_crop_is_exact(self):
-        w, h = 4, 2
-        pixels = bytes(range(w * h * 3))
-        ppm = b'P6 4 2 255\n' + pixels
-        part, x0, y0, cw, ch = crop(ppm, w, h, [0.5, 0.5, 1.0, 1.0])
-        self.assertEqual((x0, y0, cw, ch), (2, 1, 2, 1))
-        self.assertEqual(part.split(b'\n', 1)[1], pixels[(1 * w + 2) * 3:(1 * w + 4) * 3])
+    def test_table_rows_skip_empty(self):
+        self.assertEqual(table_rows('<table><tr><td> a </td><td>b</td></tr><tr><td></td></tr></table>'),
+                         [['a', 'b']])
+
+    def test_speaker_markers_carry_to_following_paragraphs(self):
+        blocks = [OcrBlock('Nguyên văn: Bát tự dụng thần…', [0, 0, 1, 0.1], None, 0),
+                  OcrBlock('chuyên cầu nguyệt lệnh', [0, 0.1, 1, 0.2], None, 0),
+                  OcrBlock('Từ chú: nguyệt lệnh là…', [0, 0.2, 1, 0.3], None, 0)]
+        assign_speakers(blocks)
+        self.assertEqual([b.attributes.get('speaker') for b in blocks],
+                         ['original_author', 'original_author', 'commentator'])
 
     def test_pixel_bomb_never_renders_full_size(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -78,16 +88,18 @@ class FakeEngine:
         self.behaviour = behaviour
         self.calls = 0
 
-    def words(self, image, langs):
+    def recognize(self, image):
         self.calls += 1
         if self.behaviour == 'timeout':
             raise OcrTimeout('fake timeout')
+        if self.behaviour == 'oom':
+            from backend.app.ingestion.ocr import OcrOutOfMemory
+            raise OcrOutOfMemory('CUDA out of memory')
         if self.behaviour == 'empty':
             return []
-        return [{'text': 'Thiên', 'left': '10', 'top': '10', 'width': '60', 'height': '20',
-                 'conf': '91', 'block_num': '1', 'par_num': '1', 'line_num': '1'},
-                {'text': 'can', 'left': '80', 'top': '10', 'width': '40', 'height': '20',
-                 'conf': '89', 'block_num': '1', 'par_num': '1', 'line_num': '1'}]
+        h, w = image.shape[:2]
+        return [{'block_label': 'text', 'block_content': 'Thiên can địa chi, âm dương ngũ hành.',
+                 'block_bbox': [w * 0.1, h * 0.1, w * 0.6, h * 0.15]}]
 
 
 class StageTests(unittest.TestCase):
@@ -157,11 +169,12 @@ class StageTests(unittest.TestCase):
         state, job, gen = self.run_with(self.scan_pdf(), engine)
         self.assertEqual(state, 'succeeded')
         _, revision_no, rev_state, text_, quality = self.linked(gen)
-        self.assertEqual((revision_no, text_, rev_state), (2, 'Thiên can', 'accepted'))
+        self.assertEqual((revision_no, text_, rev_state), (2, 'Thiên can địa chi, âm dương ngũ hành.', 'accepted'))
         self.assertEqual((quality['needs_ocr'], quality['ocr']['mode']), (False, 'page'))
         block = self.sql("SELECT bbox, attributes->>'origin', start_offset, end_offset FROM blocks"
                          ' WHERE page_revision_id = %s', self.linked(gen)[0])[0]
-        self.assertEqual((block[1], block[2], block[3]), ('ocr', 0, len('Thiên can')))
+        self.assertEqual((block[1], block[2], block[3]),
+                         ('ocr', 0, len('Thiên can địa chi, âm dương ngũ hành.')))
         self.assertTrue(all(0 <= v <= 1 for v in block[0]))
         counters = self.sql('SELECT counters FROM ingestion_jobs WHERE id = %s', job)[0][0]
         self.assertEqual(counters['pages_ocr_text'], 1)
@@ -174,12 +187,19 @@ class StageTests(unittest.TestCase):
         reasons = self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s', gen)
         self.assertEqual(reasons, [('OCR_TIMEOUT',)])
 
+    def test_gpu_out_of_memory_retries_the_page_instead_of_settling_it(self):
+        state, job, gen = self.run_with(self.scan_pdf(), FakeEngine('oom'))
+        self.assertEqual(state, 'retry_wait')          # the GPU is shared: try again later
+        self.assertEqual(self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s',
+                                  gen), [])
+        self.assertEqual(self.linked(gen)[1], 1)       # still the native revision, not settled
+
     def test_missing_engine_is_a_review_not_a_failure(self):
         job, gen = self.job_for(self.scan_pdf())
 
         def unavailable():
             from backend.app.ingestion.ocr import OcrUnavailable
-            raise OcrUnavailable('no tesseract')
+            raise OcrUnavailable('no model')
         stages = [ValidatePdfStage(), ExtractPdfStage(), OcrStage(engine_factory=unavailable)]
         self.assertEqual(run_job(self.engine, self.store, job, stages, 'w1'), 'succeeded')
         self.assertEqual(self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s',
@@ -223,52 +243,37 @@ class StageTests(unittest.TestCase):
         self.assertEqual(self.linked(gen2)[0], self.linked(gen)[0])  # same merged revision
 
 
-@unittest.skipUnless(HAS_TESSERACT, 'tesseract binary not installed (run in the worker image)')
-class TesseractTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.engine = TesseractEngine()
+@unittest.skipUnless(HAS_MODEL, 'SenOCR-Vi not in the model cache (run in the worker image)')
+class SenOcrTests(unittest.TestCase):
+    """The real model on real scanned pages (GPU)."""
 
-    def test_scanned_vietnamese_page_is_read(self):
-        if font_path() is None:
-            self.skipTest('no TrueType font for the text fixture')
-        tmp = Path(self.tmp.name)
-        source = text_pdf(tmp, [('Khách Chủ luận theo can ngày', 700),
-                                ('Thể Dụng và Tố Công', 650)])
-        scan = scanned_copy(source, tmp / 'scan.pdf')
-        doc = open_document(str(scan))
+    @classmethod
+    def setUpClass(cls):
+        from backend.app.ingestion.ocr import SenOcrEngine
+        cls.engine = SenOcrEngine(str(MODEL_DIR))
+
+    def test_scanned_vietnamese_page_is_read_with_its_pillar_tables(self):
+        if not SCANNED.exists():
+            self.skipTest('scanned Tử Bình Chân Thuyên not in inputs/books')
+        doc = open_document(str(SCANNED))
         try:
-            self.assertEqual(extract_page(doc, 0).page_class, 'scan')
-            words, dpi = ocr_page(doc, 0, None, self.engine)
+            blocks, dpi = ocr_page(doc, 59, None, self.engine)      # printed page 60
         finally:
             doc.close()
-        text_ = ' '.join(w.text for w in words)
-        for expected in ('Khách', 'Chủ', 'ngày', 'Dụng'):
-            self.assertIn(expected, text_)
-        self.assertTrue(all(0 <= v <= 1 for w in words for v in w.box))
-        self.assertEqual(dpi, 300)
+        text_ = '\n'.join(b.text for b in blocks)
+        self.assertIn('Nguyệt lệnh Quan tinh', text_)
+        tables = [b for b in blocks if b.kind == 'table']
+        self.assertGreaterEqual(len(tables), 2)
+        self.assertTrue(any(b.attributes.get('chart_row') for b in tables))
 
     def test_pixel_bomb_page_goes_to_review_not_crash(self):
-        doc = open_document(str(oversized_page(Path(self.tmp.name) / 'bomb.pdf')))
-        try:
-            with self.assertRaises(OcrTimeout):
-                ocr_page(doc, 0, None, self.engine)
-        finally:
-            doc.close()
-
-    @unittest.skipUnless(CAO_CAP.is_file(), 'original book not mounted')
-    def test_figure_region_on_real_page(self):
-        doc = open_document(str(CAO_CAP))
-        try:
-            page = extract_page(doc, 29)                       # p30 star chart
-            words, _ = ocr_page(doc, 29, page.image_boxes, self.engine)
-        finally:
-            doc.close()
-        blocks = new_ocr_blocks(group_blocks(words), [b.bbox for b in page.blocks])
-        for block in blocks:   # whatever OCR finds lies inside the figure, not over native text
-            box = page.image_boxes[0]
-            self.assertTrue(box[0] - 0.01 <= block.bbox[0] and block.bbox[2] <= box[2] + 0.01)
+        with tempfile.TemporaryDirectory() as tmp:
+            doc = open_document(str(oversized_page(Path(tmp) / 'huge.pdf')))
+            try:
+                with self.assertRaises(OcrTimeout):
+                    ocr_page(doc, 0, None, self.engine)
+            finally:
+                doc.close()
 
 
 if __name__ == '__main__':

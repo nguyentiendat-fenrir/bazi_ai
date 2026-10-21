@@ -10,6 +10,7 @@ import { api, call, idempotencyKey, ifMatch, type Schemas } from '@/api/client'
 import { ApiError } from '@/api/problem'
 import { Dialog } from '@/components/Dialog'
 import { Badge, ErrorState, Facts, FormError, Loading, Notice, PageHeader, StateBadge } from '@/components/ui'
+import { withBase } from '@/lib/base'
 import { type Edit, diffWords, rebase } from '@/lib/diff'
 import { PAGE_STATES, REVIEW_REASONS, REVIEW_STATES, SEVERITIES, formatDateTime, shortId } from '@/lib/format'
 import { useQuery } from '@/lib/query'
@@ -316,7 +317,7 @@ export default function PageWorkspace() {
             // 1.5× fills the panel; 2× overflows it and the panel scrolls (never the page).
             <div className="page-image" style={{ width: `${(scale / 1.5) * 100}%` }}>
               {/* eslint-disable-next-line @next/next/no-img-element -- authenticated API image, not static media */}
-              <img src={`/api/v1/page-revisions/${rev.id}/render?scale=${scale}`} alt={`Ảnh trang ${rev.physical_page_number}`}
+              <img src={withBase(`/api/v1/page-revisions/${rev.id}/render?scale=${scale}`)} alt={`Ảnh trang ${rev.physical_page_number}`}
                    onError={() => setImageError(true)} />
               {withBox.map((b) => {
                 const [x0, y0, x1, y1] = b.bbox

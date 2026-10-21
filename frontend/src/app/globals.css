@@ -311,3 +311,49 @@ mark.quoted { background: #fff1a8; color: inherit; padding: 0 1px; border-radius
 .setup-steps li { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .setup-steps li.done strong { color: var(--muted); text-decoration: line-through; }
 .scope { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+
+/* ---- /judge: human judging of RAG answers ---------------------------------------------- */
+.judge { min-height: 100vh; display: flex; flex-direction: column; }
+.judge-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+.judge-run { display: flex; align-items: center; gap: 6px; }
+.judge-run select { max-width: 420px; }
+.judge-settings { padding: 4px 16px; }
+.judge-body { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; flex: 1; min-height: 0; }
+.judge-list { border-right: 1px solid var(--border); overflow-y: auto; max-height: calc(100vh - 56px);
+  position: sticky; top: 56px; background: var(--surface); }
+.judge-item { display: grid; gap: 2px; width: 100%; text-align: left; padding: 10px 12px; border: 0;
+  border-bottom: 1px solid var(--border); background: transparent; cursor: pointer; font: inherit; color: inherit; }
+.judge-item:hover { background: var(--surface-2); }
+.judge-item-active { background: var(--teal-weak); }
+.judge-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.judge-item-q { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.judge-detail { padding: 16px 20px 48px; min-width: 0; }
+.judge-result { display: grid; gap: 14px; max-width: 1200px; }
+.judge-answer { white-space: pre-wrap; line-height: 1.6; }
+.cite { border: 0; background: var(--info-weak); color: var(--info); border-radius: 4px; padding: 0 4px;
+  font: inherit; font-weight: 600; cursor: pointer; }
+.cite-bad { background: var(--danger-weak); color: var(--danger); text-decoration: line-through; }
+.judge-criterion { border: 0; padding: 0; margin: 0 0 10px; }
+.judge-criterion legend { padding: 0; margin-bottom: 4px; }
+.judge-pick { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--surface); }
+.judge-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.judge-pick-on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.judge-pick:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.judge-form .segmented { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.judge-parent { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; scroll-margin-top: 70px; }
+.judge-parent-cited { border-left: 4px solid var(--ok); }
+.judge-parent-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.judge-pre { white-space: pre-wrap; word-break: break-word; background: var(--surface-2); padding: 10px 12px;
+  border-radius: var(--radius); font-family: inherit; font-size: 14px; line-height: 1.55; max-height: 520px; overflow-y: auto; }
+.judge-chunks { width: 100%; border-collapse: collapse; font-size: 14px; }
+.judge-chunks th, .judge-chunks td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; }
+.judge-chunks th { background: var(--surface-2); font-weight: 600; font-size: 13px; }
+.judge-chunk-used { background: #f6fbf9; }
+.judge-chunk-text td { background: var(--surface); }
+.link-button { border: 0; background: none; padding: 0; color: var(--info); font: inherit; cursor: pointer; text-align: left; }
+@media (max-width: 860px) {
+  .judge-body { grid-template-columns: 1fr; }
+  .judge-list { position: static; max-height: 240px; border-right: 0; border-bottom: 1px solid var(--border); }
+}

@@ -11,6 +11,7 @@ import { AnswerView, type AnswerClaim, type AnswerData } from '@/components/Answ
 import { Dialog } from '@/components/Dialog'
 import { FeedbackBar } from '@/components/FeedbackBar'
 import { Empty, ErrorState, FormError, Loading, Notice } from '@/components/ui'
+import { withBase } from '@/lib/base'
 import { pairLabel } from '@/lib/bazi'
 import { formatDateTime } from '@/lib/format'
 import { usePagedList, useQuery } from '@/lib/query'
@@ -138,7 +139,7 @@ function Thread({ conversationId, onTitle }: { conversationId: string, onTitle()
   const follow = useCallback((runId: string) => {
     source.current?.close()
     setLive({ runId, steps: [], claims: [], ended: false })
-    const events = new EventSource(`/api/v1/runs/${runId}/events`)
+    const events = new EventSource(withBase(`/api/v1/runs/${runId}/events`))
     source.current = events
     const add = (step: string) => setLive((l) => l && { ...l, steps: [...l.steps, step] })
     events.addEventListener('run.started', () => add(STEPS['run.started']))

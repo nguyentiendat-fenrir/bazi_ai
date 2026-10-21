@@ -26,7 +26,7 @@ class ProfileError(ValueError):
 def code_versions(renderer: str | None = None) -> dict:
     return {'parser_version': (f'{pdf_native.PARSER_VERSION}+{docx.PARSER_VERSION}'
                                f'+{ocr_stage.OCR_VERSION}'),
-            'chunker_version': chunker.CHUNKER_VERSION,
+            'chunker_version': chunker.chunker_version(),
             'normalizer_version': f'{structure.STRUCTURE_VERSION}+{quality.QUALITY_VERSION}',
             'renderer_version': renderer}
 

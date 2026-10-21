@@ -8,11 +8,14 @@ Book text leaves the machine only with consent: a provider whose profile is not
 declared ``locality: local`` is external, and needs the version's
 ``external_processing_allowed`` (docs/12: unknown rights stay local-private).
 
-Vectors: chunks are embedded in batches (one job unit per batch). A chunk that
-already has a vector in the collection is skipped, and a chunk whose content
-hash matches another chunk's vector reuses it without calling the provider, so
-replays and new generations never duplicate work. Provider failures that may
-pass (timeouts, 429, 5xx) retry the unit; wrong dimensions fail it.
+Vectors: chunks are embedded in batches (one job unit per batch) as their
+*contextual* text — the chunk_meta header, the parent's summary, then the child
+text (``embed_text``) — so a child that says "như trên" still lands near
+questions about its section. The collection's ``content_hash`` is the hash of
+that contextual text: a chunk whose vector already has it is skipped, another
+chunk with the same contextual text lends its vector, and a chunk whose context
+changed (new summary) is embedded again. Provider failures that may pass
+(timeouts, 429, 5xx) retry the unit; wrong dimensions fail it.
 """
 from __future__ import annotations
 
@@ -30,6 +33,29 @@ from .models import collection_for, load_profile
 
 LEXICAL_VERSION = 'fts-simple-1'
 BATCH = 64
+
+
+def embed_text(header: str | None, summary: str | None, body: str) -> str:
+    parts = [header or '']
+    if summary:
+        parts.append(f'Tóm tắt: {summary}')
+    return '\n'.join(p for p in parts if p) + '\n\n' + body if any(parts) else body
+
+
+def _contextual(conn: Connection, generation_id, ids: list[str] | None = None) -> list[dict]:
+    rows = conn.execute(text(
+        "SELECT c.id, c.text, c.content_hash, m.meta->>'header' AS header, p.summary"
+        ' FROM generation_chunks gc JOIN chunks c ON c.id = gc.chunk_id'
+        ' LEFT JOIN chunk_meta m ON m.generation_id = gc.generation_id AND m.chunk_id = c.id'
+        ' LEFT JOIN chunk_parents p ON p.id = gc.parent_id'
+        ' WHERE gc.generation_id = :g AND (CAST(:ids AS uuid[]) IS NULL OR c.id = ANY(CAST(:ids AS uuid[])))'
+        ' ORDER BY gc.ordinal'), {'g': generation_id, 'ids': ids}).mappings().all()
+    out = []
+    for row in rows:
+        contextual = embed_text(row['header'], row['summary'], row['text'])
+        out.append({'id': str(row['id']), 'text': row['text'], 'embed_text': contextual,
+                    'embed_hash': hashlib.sha256(contextual.encode('utf-8')).hexdigest()})
+    return out
 
 
 def _vector_literal(vector: list[float]) -> str:
@@ -58,21 +84,18 @@ class EmbedStage:
 
     def units(self, ctx: JobContext) -> list[Unit]:
         with ctx.engine.connect() as conn:
-            chunks = conn.execute(text(
-                'SELECT c.id, c.content_hash FROM generation_chunks gc JOIN chunks c'
-                ' ON c.id = gc.chunk_id WHERE gc.generation_id = :g ORDER BY gc.ordinal'),
-                {'g': ctx.generation_id}).all()
+            chunks = _contextual(conn, ctx.generation_id)
         if not chunks:
             return []
         profile, collection = self._profile(ctx)
         units = []
         for start in range(0, len(chunks), BATCH):
             batch = chunks[start:start + BATCH]
-            material = '|'.join(f'{c[0]}:{c[1].strip()}' for c in batch)
+            material = '|'.join(f"{c['id']}:{c['embed_hash']}" for c in batch)
             digest = hashlib.sha256(
                 f'{material}|{LEXICAL_VERSION}|{profile.profile_hash}|{collection}'.encode()).hexdigest()
             units.append(Unit(f'batch:{start // BATCH}', digest))
-        ctx.state['batches'] = {f'batch:{i // BATCH}': [str(c[0]) for c in chunks[i:i + BATCH]]
+        ctx.state['batches'] = {f'batch:{i // BATCH}': [c['id'] for c in chunks[i:i + BATCH]]
                                 for i in range(0, len(chunks), BATCH)}
         return units
 
@@ -80,23 +103,22 @@ class EmbedStage:
         ids = ctx.state['batches'][unit.key]
         profile, collection = self._profile(ctx)
         with ctx.engine.connect() as conn:
-            chunks = conn.execute(text('SELECT id, text, content_hash FROM chunks'
-                                       ' WHERE id = ANY(CAST(:ids AS uuid[]))'),
-                                  {'ids': ids}).mappings().all()
+            chunks = _contextual(conn, ctx.generation_id, ids)
             todo, reused = [], {}
             if collection:
                 table = sql.Identifier(collection).as_string(conn.connection.dbapi_connection)
-                have = set(conn.execute(text(f'SELECT chunk_id::text FROM {table}'
-                                             ' WHERE chunk_id = ANY(CAST(:ids AS uuid[]))'),
-                                        {'ids': ids}).scalars())
-                missing = [c for c in chunks if str(c['id']) not in have]
+                have = dict(conn.execute(text(f'SELECT chunk_id::text, content_hash FROM {table}'
+                                              ' WHERE chunk_id = ANY(CAST(:ids AS uuid[]))'),
+                                         {'ids': ids}).all())
+                missing = [c for c in chunks if (have.get(c['id']) or '').strip() != c['embed_hash']]
                 same = dict(conn.execute(text(
                     f'SELECT DISTINCT ON (content_hash) content_hash, vector::text FROM {table}'
                     ' WHERE content_hash = ANY(:hashes)'),
-                    {'hashes': [c['content_hash'] for c in missing]}).all())
+                    {'hashes': [c['embed_hash'] for c in missing]}).all())
+                same = {k.strip(): v for k, v in same.items()}
                 for chunk in missing:
-                    if chunk['content_hash'] in same:
-                        reused[str(chunk['id'])] = same[chunk['content_hash']]
+                    if chunk['embed_hash'] in same:
+                        reused[chunk['id']] = same[chunk['embed_hash']]
                     else:
                         todo.append(chunk)
         vectors = {}
@@ -110,14 +132,14 @@ class EmbedStage:
                 embedder = ctx.state.get('embedder') or build_embedder(profile, self.app_env,
                                                                       self.transport)
                 ctx.state['embedder'] = embedder
-                result = checked(embedder.embed([prefix + c['text'] for c in todo]), profile)
+                result = checked(embedder.embed([prefix + c['embed_text'] for c in todo]), profile)
             except EmbeddingError as exc:
                 if exc.retryable:
                     raise RetryableError(exc.code, str(exc)) from None
                 raise UnitFailed(exc.code, str(exc)) from None
-            vectors = {str(c['id']): _vector_literal(v) for c, v in zip(todo, result)}
-        return {'chunks': [{'id': str(c['id']), 'text': c['text'],
-                            'hash': c['content_hash'].strip()} for c in chunks],
+            vectors = {c['id']: _vector_literal(v) for c, v in zip(todo, result)}
+        return {'chunks': [{'id': c['id'], 'text': c['text'], 'hash': c['embed_hash']}
+                           for c in chunks],
                 'vectors': {**reused, **vectors}, 'collection': collection,
                 'computed': len(vectors), 'reused': len(reused)}
 
@@ -135,7 +157,10 @@ class EmbedStage:
             for chunk_id, vector in result['vectors'].items():
                 conn.execute(text(
                     f'INSERT INTO {table} (chunk_id, content_hash, vector, embedding_hash)'
-                    ' VALUES (:c, :h, CAST(:v AS vector), :eh) ON CONFLICT (chunk_id) DO NOTHING'),
+                    ' VALUES (:c, :h, CAST(:v AS vector), :eh) ON CONFLICT (chunk_id) DO UPDATE'
+                    ' SET content_hash = EXCLUDED.content_hash, vector = EXCLUDED.vector,'
+                    ' embedding_hash = EXCLUDED.embedding_hash'
+                    f' WHERE {table}.content_hash <> EXCLUDED.content_hash'),
                     {'c': chunk_id, 'h': hashes[chunk_id], 'v': vector,
                      'eh': hashlib.sha256(vector.encode()).hexdigest()})
         output = {'lexical': len(result['chunks']), 'computed': result['computed'],

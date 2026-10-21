@@ -5,12 +5,15 @@ module-level app so importing this module never reads the environment.
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
-from .api import (assertions, auth, books, cases, charts, chat, evaluation, health, jobs, knowledge,
-                  models, ontology, openapi, operations, pages, pipelines, releases, reviews, rules,
-                  rulesets, search, settings as settings_api, uploads, users)
+from .api import (ask, assertions, auth, books, cases, charts, chat, evaluation, health, jobs,
+                  judge, knowledge, models, ontology, openapi, operations, pages, pipelines,
+                  releases, reviews, rules, rulesets, search, settings as settings_api, uploads,
+                  users)
 from .auth.ratelimit import LoginLimiter
 from .core.config import Settings, load_settings
 from .core.crypto import FieldCipher
@@ -19,6 +22,7 @@ from .core.errors import install_error_handlers
 from .core.health import ReadinessCheck, default_checks
 from .core.logging import configure_logging
 from .core.middleware import OriginGuardMiddleware, RequestContextMiddleware
+from .rag import deps as rag_deps
 from .storage import ObjectStore, build_store, storage_check
 
 API_PREFIX = '/api/v1'
@@ -30,7 +34,16 @@ def create_app(settings: Settings | None = None,
     settings = settings or load_settings()
     configure_logging(settings.log_level, settings.secret_values())
     public_docs = settings.app_env != 'production'
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Shared clients and CPU models live for the process, never per request (docs/09).
+        await rag_deps.install(app, settings)
+        yield
+        await rag_deps.uninstall(app)
+
     app = FastAPI(
+        lifespan=lifespan,
         title='BAZI AI',
         openapi_url=f'{API_PREFIX}/openapi.json' if public_docs else None,
         docs_url=f'{API_PREFIX}/docs' if public_docs else None,
@@ -47,7 +60,8 @@ def create_app(settings: Settings | None = None,
                                            settings.login_window_seconds)
     app.state.readiness_checks = (readiness_checks if readiness_checks is not None else
                                   [database_check(engine), runtime_role_check(engine, settings),
-                                   storage_check(store), *default_checks(settings)])
+                                   storage_check(store), *default_checks(settings),
+                                   rag_deps.readiness(app)])
     install_error_handlers(app)
     # Added last runs first: request context wraps everything, origin guard inside it.
     app.add_middleware(OriginGuardMiddleware, allowed_origins=settings.allowed_origins)
@@ -57,7 +71,7 @@ def create_app(settings: Settings | None = None,
                    knowledge.router, assertions.router, rules.router, cases.router,
                    ontology.router, search.router, evaluation.router, models.router,
                    pipelines.router, charts.router, rulesets.router, chat.router,
-                   operations.router):
+                   operations.router, ask.router, judge.router):
         app.include_router(router, prefix=API_PREFIX)
     openapi.install(app)
     return app

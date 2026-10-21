@@ -11,12 +11,16 @@ from .pdf_stages import ExtractPdfStage, ValidatePdfStage
 from .publish import PublishStage
 from .quality import QualityStage
 from .structure import StructureStage
+from .summarize import SummarizeStage
 from .worker import StageHandler
 
 
 def handlers_for(settings: Settings | None) -> list[StageHandler]:
     # Each stage returns no units for sources it does not handle (PDF vs DOCX).
     app_env = settings.app_env if settings else 'dev'
-    return [ValidatePdfStage(), ExtractPdfStage(), DocxExtractStage(), OcrStage(),
-            StructureStage(), QualityStage(), ChunkStage(), EmbedStage(app_env),
-            ExtractCandidatesStage(), PublishStage()]
+    return [ValidatePdfStage(), ExtractPdfStage(), DocxExtractStage(), OcrStage(settings),
+            StructureStage(), QualityStage(), ChunkStage(), SummarizeStage(settings),
+            # Publish before candidates: a book is searchable without waiting for the (slow,
+            # Qwen-backed) rule proposals, which only write drafts and never touch the
+            # sealed generation's membership.
+            EmbedStage(app_env), PublishStage(), ExtractCandidatesStage(settings)]

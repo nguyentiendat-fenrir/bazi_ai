@@ -4,6 +4,8 @@ import type { NextConfig } from 'next'
 // (cookies, CSRF and Origin checks behave as behind the Caddy gateway of docs/03).
 const apiOrigin = process.env.BAZI_API_ORIGIN ?? 'http://127.0.0.1:8000'
 const dev = process.env.NODE_ENV !== 'production'
+// Public sub-path ("/bazi" behind a Tailscale Funnel mount); empty serves from "/".
+const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? '').replace(/\/+$/, '')
 
 // Book text is rendered as plain React text; the policy also blocks any script, frame or
 // connection to another origin should something slip through (docs/11 source viewer).
@@ -23,6 +25,7 @@ const csp = [
 const config: NextConfig = {
   // The container image runs the minimal standalone server (infra/frontend.Dockerfile).
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
+  basePath: basePath || undefined,
   reactStrictMode: true,
   poweredByHeader: false,
   async rewrites() {

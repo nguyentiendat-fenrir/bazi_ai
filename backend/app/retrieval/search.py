@@ -226,8 +226,8 @@ def _vector(conn: Connection, cte: str, params: dict, active, query: str,
     try:
         profile = load_profile(conn, active['profile_id'])
         embedder = build_embedder(profile, app_env, transport)
-        vector = checked(embedder.embed([profile.config.get('query_prefix', '') + query]),
-                         profile)[0]
+        embed = getattr(embedder, 'embed_query', embedder.embed)   # Jina: query prompt
+        vector = checked(embed([profile.config.get('query_prefix', '') + query]), profile)[0]
     except EmbeddingError:
         return [], 'vector_unavailable'
     table = sql.Identifier(active['physical_table']).as_string(conn.connection.dbapi_connection)

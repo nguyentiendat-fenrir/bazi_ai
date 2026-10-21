@@ -109,6 +109,29 @@ class OpenAICompatibleEmbedder:
         return vectors
 
 
+class LocalJinaEmbedder:
+    """jina-embeddings-v5 in this process (CPU), loaded once per process from the model cache.
+
+    Profile config: ``revision`` (pinned commit), ``threads``; documents use the
+    ``document`` prompt, queries (``embed_query``) the ``query`` prompt.
+    """
+
+    def __init__(self, profile: EmbeddingProfile):
+        from ..rag.models import ModelSpec, embedder
+        self.profile = profile
+        try:
+            self.model = embedder(ModelSpec(profile.model_name, profile.model_revision,
+                                            int(profile.config.get('threads', 16))))
+        except OSError as exc:      # not in the model cache and no network
+            raise EmbeddingError('MODEL_UNAVAILABLE', str(exc)[:200], False) from None
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return self.model.encode(texts, 'document')
+
+    def embed_query(self, texts: list[str]) -> list[list[float]]:
+        return self.model.encode(texts, 'query')
+
+
 def build_embedder(profile: EmbeddingProfile, app_env: str = 'dev', transport=None):
     if profile.secret_ref and profile.secret_ref not in SECRET_REFS:
         raise EmbeddingError('SECRET_REF_NOT_ALLOWED', 'secret_ref is not an allowlisted name', False)
@@ -118,6 +141,8 @@ def build_embedder(profile: EmbeddingProfile, app_env: str = 'dev', transport=No
         return HashingEmbedder(profile)
     if profile.provider == 'openai_compatible':
         return OpenAICompatibleEmbedder(profile, transport)
+    if profile.provider == 'local-jina':
+        return LocalJinaEmbedder(profile)
     raise EmbeddingError('UNKNOWN_PROVIDER', f'unsupported provider {profile.provider}', False)
 
 

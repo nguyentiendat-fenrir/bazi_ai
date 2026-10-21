@@ -66,9 +66,40 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None
     embedding_model: str | None = None
 
+    # RAG pilot (backend/app/rag). Weights apply to min-max normalised scores per query.
+    rag_dense_weight: float = Field(0.8, ge=0, le=1)
+    rag_sparse_weight: float = Field(0.2, ge=0, le=1)
+    rag_dense_candidates: int = Field(50, ge=1, le=500)
+    rag_sparse_candidates: int = Field(50, ge=1, le=500)
+    rag_rerank_depth: int = Field(10, ge=0, le=50)        # 0 turns the reranker off
+    rag_rerank_chars: int = Field(600, ge=100, le=4000)   # child text sent per candidate
+    rag_rerank_timeout: float = Field(20.0, gt=0)
+    rag_dedupe_bits: int = Field(3, ge=0, le=16)          # simhash Hamming distance
+    rag_context_tokens: int = Field(9000, ge=500, le=14000)
+    rag_answer_tokens: int = Field(1500, ge=100, le=4000)
+    rag_thinking: bool = False
+    rag_temperature: float = Field(0.2, ge=0, le=1.5)
+    rag_llm_timeout: float = Field(180.0, gt=0)
+    rag_cpu_threads: int = Field(16, ge=1, le=64)
+    rag_embedding_model: str = 'jinaai/jina-embeddings-v5-text-small'
+    rag_embedding_revision: str = 'dd76d535f5447ca3897a9c893fb1e612ead98192'
+    rag_reranker_model: str = 'jinaai/jina-reranker-v3.5'
+    rag_reranker_revision: str = 'e8a93f33f0b22108f8c2364f8484ce3422552fbc'
+    rag_summary_concurrency: int = Field(4, ge=1, le=16)
+    rag_load_models: bool = True                          # API loads the CPU models at startup
+    ocr_model: str = 'VietAlphaLabs/SenOCR-Vi'
+    ocr_revision: str = 'main'
+    ocr_precision: Literal['bf16', 'fp32'] = 'bf16'
+    ocr_dpi: int = Field(200, ge=100, le=400)
+    # Shared judging password (argon2 hash, never the password) and its cookie lifetime.
+    judge_password_hash: SecretStr | None = None
+    judge_session_hours: int = Field(8, ge=1, le=72)
+    # Sub-path the UI and API are published under ("/bazi"), for cookie paths the browser sees.
+    public_base_path: str = Field('', pattern=r'^(/[A-Za-z0-9._-]+)*$')
+
     @field_validator('postgres_password', 'postgres_app_user', 'postgres_app_password',
                      'session_signing_key', 'field_encryption_key', 'backup_encryption_key',
-                     'llm_api_key', 'llm_base_url',
+                     'llm_api_key', 'llm_base_url', 'judge_password_hash',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
                      's3_access_key_id', 's3_secret_access_key', mode='before')
     @classmethod
@@ -142,7 +173,7 @@ class Settings(BaseSettings):
         """Configured secret strings, used by the log redactor."""
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
                    self.field_encryption_key, self.backup_encryption_key, self.llm_api_key,
-                   self.s3_secret_access_key)
+                   self.s3_secret_access_key, self.judge_password_hash)
         return [s.get_secret_value() for s in secrets if s is not None]
 
 

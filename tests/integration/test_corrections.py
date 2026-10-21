@@ -36,7 +36,8 @@ from tests.integration.db import (ADMIN_URL, create_runtime_login, database_url,
 BLACK = (0, 0, 0)
 PASSWORD = 'correct horse battery staple'
 # Small chunks: one paragraph per chunk, so reuse is visible per paragraph.
-CONFIG = '{"chunk": {"target": 25, "max": 60, "overlap": 0}}'
+# child_target 1: chunker-3 never merges paragraphs, so each stays one chunk as asserted below.
+CONFIG = '{"chunk": {"child_target": 1, "hard_max": 60, "parent_max": 1200}}'
 TYPO = 'chế phục thì quv'
 BOOK = [
     ('CHƯƠNG 1: THỂ DỤNG', ['Thể là cái mình có, dụng là cái mình dùng để đạt mục đích.',
@@ -56,11 +57,10 @@ class FakeOcr:
     def __init__(self):
         self.calls = 0
 
-    def words(self, image, langs):
+    def recognize(self, image):
         self.calls += 1
-        return [{'text': text, 'left': str(left), 'top': '10', 'width': '60', 'height': '20',
-                 'conf': '91', 'block_num': '1', 'par_num': '1', 'line_num': '1'}
-                for text, left in (('Thiên', 10), ('cn', 80))]
+        return [{'block_label': 'text', 'block_content': 'Thiên cn',
+                 'block_bbox': [10, 10, 140, 30]}]
 
 
 class ChangedRangeTests(unittest.TestCase):
@@ -301,7 +301,10 @@ class CorrectionTests(unittest.TestCase):
                          promoted['text'])
         self.assertEqual({c for c, _, _, pages in after if pages != [1]},
                          {c for c, _, _, pages in before if pages != [1]})
-        self.assertEqual(self.counters(data['job_id'])['embeddings_computed'], 0)
+        # Text is unchanged, but the child after the new title now sits in another
+        # subsection: its context header (part of the embedded text) changed, so it alone
+        # is embedded again (RAG pilot: contextual embeddings).
+        self.assertEqual(self.counters(data['job_id'])['embeddings_computed'], 1)
         counts = self.impact(data['generation_id'])['counts']
         self.assertEqual((counts['section_added'], counts['section_removed'],
                           counts['chunk_removed'], counts['chunk_added']), (1, 0, 3, 2))

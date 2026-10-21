@@ -16,8 +16,14 @@ proposals worth their time. Only pages whose school a reviewer approved are read
 evidence span on the exact revision text, the block's speaker layer, origin
 ``source_explicit`` and an ``info`` review item explaining why it was proposed.
 Keys derive from the version and the folded sentence, so re-runs, rebuilds and
-corrected pages never duplicate a candidate. A model-backed extractor can
-replace :func:`propose` later (T038) behind the same stage.
+corrected pages never duplicate a candidate.
+
+Model proposals (``qwen-1``, RAG pilot): with a model configured, each parent
+chunk is also read by Qwen, which returns up to four rule/definition sentences
+*quoted verbatim*. A proposal is kept only if its sentence is found exactly
+(whitespace-normalised) inside one source block of that parent; the found text
+becomes the evidence span and the assertion statement — Qwen's paraphrase goes
+only into the review item. Everything stays a draft for an expert to approve.
 """
 from __future__ import annotations
 
@@ -34,6 +40,8 @@ from ..ingestion.worker import JobContext, Unit
 from .cases import book_case_key, parse_charts
 
 EXTRACTOR_VERSION = 'heuristic-3'
+MODEL_EXTRACTOR_VERSION = 'qwen-1'
+PARENT_BATCH = 16
 MAX_PER_PAGE = 4
 # Matching is on lower-case NFC text with diacritics: folding would merge "ắt" (then)
 # with the stem "Ất", "tài" (wealth) with "tại" (at), "thể" with "thế".
@@ -131,10 +139,57 @@ def _vocabulary(conn: Connection, school_id) -> tuple[str, ...]:
     return tuple(sorted(set(DOMAIN) | {e for e in extra if 2 <= len(e) <= 40}))
 
 
+def locate(sentence: str, blocks: list[dict]) -> tuple[dict, int, int] | None:
+    """(block, start, end) of ``sentence`` inside one block, whitespace-insensitive."""
+    words = sentence.split()
+    if len(words) < 4:
+        return None
+    pattern = re.compile(r'\s+'.join(re.escape(w) for w in words))
+    for block in blocks:
+        match = pattern.search(block['text'])
+        if match:
+            return block, match.start(), match.end()
+    return None
+
+
 class ExtractCandidatesStage:
     name = 'extract_candidates'
 
+    def __init__(self, settings=None, client=None):
+        self.settings = settings
+        self._client = client
+
+    def _llm(self):
+        if self._client is None and self.settings is not None:
+            from ..rag.llm import SyncLLM, config_from
+            config = config_from(self.settings)
+            self._client = SyncLLM(config) if config else None
+        return self._client
+
     def units(self, ctx: JobContext) -> list[Unit]:
+        return self._page_units(ctx) + self._parent_units(ctx)
+
+    def _parent_units(self, ctx: JobContext) -> list[Unit]:
+        """Batches of parents (Qwen calls run in parallel inside a unit, like summaries)."""
+        llm = self._llm()
+        if llm is None or not (ctx.pipeline_config.get('candidates') or {}).get('model', True):
+            return []
+        from ..rag.prompts import PROPOSER_PROMPT_VERSION
+        with ctx.engine.connect() as conn:
+            parents = conn.execute(text(
+                "SELECT p.ordinal, p.content_hash FROM chunk_parents p"
+                " JOIN schools s ON s.key = p.meta->>'school_key'"
+                ' WHERE p.generation_id = :g ORDER BY p.ordinal'), {'g': ctx.generation_id}).all()
+        units = []
+        for start in range(0, len(parents), PARENT_BATCH):
+            batch = parents[start:start + PARENT_BATCH]
+            material = '|'.join(f'{o}:{h.strip()}' for o, h in batch)
+            units.append(Unit(f'parents:{batch[0][0]}-{batch[-1][0]}', hashlib.sha256(
+                f'{material}|{MODEL_EXTRACTOR_VERSION}|{PROPOSER_PROMPT_VERSION}|'
+                f'{llm.config.model}'.encode()).hexdigest()))
+        return units
+
+    def _page_units(self, ctx: JobContext) -> list[Unit]:
         with ctx.engine.connect() as conn:
             pages = conn.execute(text(
                 'SELECT p.page_kind, p.physical_page_number, gp.page_revision_id, ('
@@ -162,6 +217,8 @@ class ExtractCandidatesStage:
         return units
 
     def compute(self, ctx: JobContext, unit: Unit) -> dict:
+        if unit.key.startswith('parents:'):
+            return self._compute_parent(ctx, unit)
         _, kind, number, revision, school = unit.key.split(':')
         with ctx.engine.connect() as conn:
             page_blocks = conn.execute(text(
@@ -193,6 +250,57 @@ class ExtractCandidatesStage:
         return {'revision_id': revision, 'school_id': school, 'page': int(number),
                 'candidates': proposals[:MAX_PER_PAGE], 'cases': charts}
 
+    def _compute_parent(self, ctx: JobContext, unit: Unit) -> dict:
+        from concurrent.futures import ThreadPoolExecutor
+
+        from ..rag.llm import LLMError
+        from ..rag.prompts import ProposedRules, proposer_messages
+        first, last = map(int, unit.key.split(':', 1)[1].split('-'))
+        with ctx.engine.connect() as conn:
+            parents = conn.execute(text(
+                "SELECT p.id, p.text, p.meta->>'header' AS header, s.id AS school"
+                " FROM chunk_parents p JOIN schools s ON s.key = p.meta->>'school_key'"
+                ' WHERE p.generation_id = :g AND p.ordinal BETWEEN :a AND :b ORDER BY p.ordinal'),
+                {'g': ctx.generation_id, 'a': first, 'b': last}).mappings().all()
+            blocks: dict[str, list[dict]] = {}
+            for r in conn.execute(text(
+                    'SELECT DISTINCT gc.parent_id, b.id, b.text, b.start_offset, b.speaker_layer,'
+                    ' b.page_revision_id, pg.physical_page_number AS page FROM generation_chunks gc'
+                    ' JOIN chunk_spans sp ON sp.chunk_id = gc.chunk_id'
+                    ' JOIN blocks b ON b.id = sp.block_id'
+                    ' JOIN page_revisions pr ON pr.id = b.page_revision_id'
+                    ' JOIN pages pg ON pg.id = pr.page_id'
+                    ' WHERE gc.generation_id = :g AND gc.parent_id = ANY(CAST(:p AS uuid[]))'),
+                    {'g': ctx.generation_id, 'p': [str(p['id']) for p in parents]}).mappings():
+                blocks.setdefault(str(r['parent_id']), []).append(dict(r))
+
+        def propose_for(parent) -> list[dict]:
+            try:
+                proposed, _ = self._llm().structured(
+                    proposer_messages(parent['header'] or '', parent['text']), ProposedRules, 900)
+            except LLMError:
+                return []
+            found = []
+            for rule in proposed.rules[:MAX_PER_PAGE]:
+                hit = locate(rule.sentence, blocks.get(str(parent['id']), []))
+                if hit is None:
+                    continue                  # not verbatim in the source: dropped
+                block, start, end = hit
+                found.append({'kind': 'definition' if rule.kind.startswith('def') else 'rule',
+                              'start': start, 'end': end,
+                              'statement': ' '.join(block['text'][start:end].split()),
+                              'mentions': rule.terms[:12], 'score': 0.0,
+                              'block_id': str(block['id']), 'offset': block['start_offset'],
+                              'speaker': block['speaker_layer'], 'paraphrase': rule.statement[:500],
+                              'revision_id': str(block['page_revision_id']), 'page': block['page'],
+                              'school_id': str(parent['school'])})
+            return found
+
+        workers = getattr(self.settings, 'rag_summary_concurrency', 4)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            candidates = [c for found in pool.map(propose_for, parents) for c in found]
+        return {'school_id': None, 'candidates': candidates, 'cases': [], 'model': True}
+
     def persist(self, conn: Connection, ctx: JobContext, unit: Unit, result: dict) -> dict:
         author = conn.execute(text('SELECT requested_by FROM ingestion_jobs WHERE id = :j'),
                               {'j': ctx.job_id}).scalar_one()
@@ -202,17 +310,20 @@ class ExtractCandidatesStage:
                 'INSERT INTO assertions (assertion_key, revision, school_id, statement, origin,'
                 " author_id) VALUES (:k, 1, :s, :st, 'source_explicit', :a)"
                 ' ON CONFLICT (assertion_key, revision) DO NOTHING RETURNING id'),
-                {'k': _key(ctx.book_version_id, cand['statement']), 's': result['school_id'],
+                {'k': _key(ctx.book_version_id, cand['statement']),
+                 's': cand.get('school_id') or result['school_id'],
                  'st': cand['statement'], 'a': author}).scalar()
             if assertion is None:
                 continue                      # proposed before (other run, page or revision)
             start, end = cand['offset'] + cand['start'], cand['offset'] + cand['end']
+            revision_id = cand.get('revision_id') or result['revision_id']
+            page = cand.get('page') or result['page']
             evidence = conn.execute(text(
                 'INSERT INTO evidence_spans (book_version_id, page_revision_id, block_id,'
                 ' start_offset, end_offset, quote_hash, speaker_layer, origin)'
                 ' SELECT :v, :r, :b, :s, :e, bazi_sha256_text(substr(normalized_text, :s + 1,'
                 " :e - :s)), :sp, 'source_explicit' FROM page_revisions WHERE id = :r RETURNING id"),
-                {'v': ctx.book_version_id, 'r': result['revision_id'], 'b': cand['block_id'],
+                {'v': ctx.book_version_id, 'r': revision_id, 'b': cand['block_id'],
                  's': start, 'e': end, 'sp': cand['speaker']}).scalar_one()
             conn.execute(text("INSERT INTO assertion_sources (assertion_id, evidence_id, relation)"
                               " VALUES (:a, :e, 'states')"), {'a': assertion, 'e': evidence})
@@ -220,10 +331,12 @@ class ExtractCandidatesStage:
                 'INSERT INTO review_items (generation_id, page_revision_id, entity_kind, entity_id,'
                 " reason_code, severity, resolution) VALUES (:g, :r, 'assertion', :a,"
                 " 'CANDIDATE_ASSERTION', 'info', CAST(:d AS jsonb))"),
-                {'g': ctx.generation_id, 'r': result['revision_id'], 'a': assertion,
+                {'g': ctx.generation_id, 'r': revision_id, 'a': assertion,
                  'd': json.dumps({'kind': cand['kind'], 'mentions': cand['mentions'],
-                                  'score': cand['score'], 'extractor': EXTRACTOR_VERSION,
-                                  'page': result['page']})})
+                                  'score': cand['score'], 'page': page,
+                                  'extractor': MODEL_EXTRACTOR_VERSION if result.get('model')
+                                  else EXTRACTOR_VERSION,
+                                  'ai_paraphrase': cand.get('paraphrase')}, ensure_ascii=False)})
             created += 1
         cases = sum(self._case(conn, ctx, result, case, author) for case in result['cases'])
         conn.execute(text(

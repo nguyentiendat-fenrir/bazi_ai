@@ -1,12 +1,13 @@
-"""``ocr`` stage: OCR flagged pages/regions and publish a merged revision.
+"""``ocr`` stage: OCR flagged pages/regions with SenOCR-Vi and publish a new revision.
 
 Outcome per page:
-* text found → new revision = native blocks unchanged + OCR blocks appended,
-  linked to the generation in place of the native one; low confidence or a
-  whole-page scan below the threshold also opens a review item;
-* timeout (after one lower-DPI retry), engine missing, or nothing recognised →
-  the native revision stays linked and a review item explains why.
-A page never fails the job (docs/05: OCR timeout goes to review).
+* whole ``scan`` page with text found → new revision made of the OCR blocks only
+  (a scan's own text layer, when it has one, is sparse and garbled; the native
+  revision stays as history and any evidence on it stays valid);
+* image regions of a text page → native blocks unchanged + OCR blocks appended;
+* nothing recognised, engine missing, or the page cannot be rendered → the native
+  revision stays linked and a review item explains why.
+A page never fails the job (docs/05: OCR problems go to review).
 """
 from __future__ import annotations
 
@@ -17,13 +18,13 @@ import json
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from .ocr import (DEFAULT_LANGS, DPI_STEPS, MIN_REGION_AREA, OcrBlock, OcrTimeout, OcrUnavailable,
-                  TesseractEngine, group_blocks, new_ocr_blocks, ocr_page)
+from .ocr import (DPI_STEPS, MIN_REGION_AREA, OcrBlock, OcrOutOfMemory, OcrTimeout,
+                  OcrUnavailable, new_ocr_blocks, ocr_page, shared_engine)
 from .pdf_stages import _document
-from .worker import JobContext, Unit
+from .worker import JobContext, RetryableError, Unit
 
-OCR_VERSION = 'ocr-merge-1'
-MIN_CONFIDENCE = 60.0
+OCR_VERSION = 'ocr-senocr-1'
+REPLACEMENT = '�'
 
 
 @dataclass
@@ -32,7 +33,6 @@ class OcrOutcome:
     page_number: int
     native_revision_id: str
     blocks: list[OcrBlock] = field(default_factory=list)
-    mean_conf: float | None = None
     dpi: int | None = None
     engine: str | None = None
     mode: str = 'page'                # page | regions
@@ -46,9 +46,9 @@ def _region_area(box: list[float]) -> float:
 class OcrStage:
     name = 'ocr'
 
-    def __init__(self, engine_factory=TesseractEngine, langs: str = DEFAULT_LANGS):
+    def __init__(self, settings=None, engine_factory=shared_engine):
+        self.settings = settings
         self.engine_factory = engine_factory
-        self.langs = langs
 
     def _engine(self, ctx: JobContext):
         if 'ocr_engine' not in ctx.state:
@@ -57,9 +57,6 @@ class OcrStage:
             except OcrUnavailable:
                 ctx.state['ocr_engine'] = None
         return ctx.state['ocr_engine']
-
-    def _langs(self, ctx: JobContext) -> str:
-        return (ctx.pipeline_config.get('ocr') or {}).get('languages') or self.langs
 
     def units(self, ctx: JobContext) -> list[Unit]:
         with ctx.engine.connect() as conn:
@@ -81,8 +78,7 @@ class OcrStage:
             if row['settled'] or not (row['needs_ocr'] or boxes):
                 continue
             digest = hashlib.sha256(json.dumps(
-                [row['text_hash'].strip(), boxes, self._langs(ctx), DPI_STEPS, version,
-                 OCR_VERSION]).encode()).hexdigest()
+                [row['text_hash'].strip(), boxes, DPI_STEPS, version, OCR_VERSION]).encode()).hexdigest()
             units.append(Unit(f"page:{row['n']}", digest))
         return units
 
@@ -111,18 +107,24 @@ class OcrStage:
             outcome.status = 'unavailable'
             return outcome
         try:
-            words, dpi = ocr_page(_document(ctx), number - 1, regions, engine, self._langs(ctx))
+            blocks, dpi = ocr_page(_document(ctx), number - 1, regions, engine)
         except OcrTimeout as exc:
             outcome.status, outcome.detail = 'timeout', str(exc)[:200]
             return outcome
         except OcrUnavailable as exc:
             outcome.status, outcome.detail = 'unavailable', str(exc)[:200]
             return outcome
-        blocks = new_ocr_blocks(group_blocks(words), native['native_boxes'])
+        except OcrOutOfMemory as exc:
+            # The GPU is shared; memory frees up. Retry the page later instead of
+            # settling it as "no OCR" (the unit retries with jitter, up to 5 times).
+            raise RetryableError('OCR_OUT_OF_MEMORY', str(exc)) from None
+        if not whole_page:
+            blocks = new_ocr_blocks(blocks, [b for b in native['native_boxes'] if b])
         outcome.dpi, outcome.engine = dpi, engine.version
-        if blocks:
+        # Any recognised text counts: a scanned chapter title page ("CHƯƠNG 3") is short but
+        # carries the heading the section tree needs; only an empty result goes to review.
+        if any(b.text.strip() for b in blocks if not b.role):
             outcome.status, outcome.blocks = 'ok', blocks
-            outcome.mean_conf = round(sum(b.conf for b in blocks) / len(blocks), 1)
         return outcome
 
     # ---- persistence -------------------------------------------------------------
@@ -132,10 +134,10 @@ class OcrStage:
         output = {'status': result.status, 'page_id': str(page_id),
                   'page_revision_id': result.native_revision_id, 'review': None}
         if result.status == 'ok':
-            output['page_revision_id'] = str(self._merged_revision(conn, page_id, result))
-            low = result.mean_conf is not None and result.mean_conf < MIN_CONFIDENCE
-            if low:
-                output['review'] = 'OCR_LOW_CONFIDENCE'
+            revision_id, garbled = self._new_revision(conn, page_id, result)
+            output['page_revision_id'] = str(revision_id)
+            if garbled:
+                output['review'] = 'OCR_GARBLED'
         else:
             output['review'] = {'timeout': 'OCR_TIMEOUT', 'unavailable': 'OCR_UNAVAILABLE',
                                 'empty': 'OCR_EMPTY'}[result.status]
@@ -172,16 +174,17 @@ class OcrStage:
             ' WHERE id = :j'),
             {'j': ctx.job_id, 'ok': int(output['status'] == 'ok'), 'rev': int(bool(output['review']))})
 
-    def _merged_revision(self, conn: Connection, page_id, result: OcrOutcome):
+    def _new_revision(self, conn: Connection, page_id, result: OcrOutcome):
         native = conn.execute(text(
             'SELECT id, revision_no, raw_text, normalized_text, offset_map, layout, quality,'
             ' printed_page_label FROM page_revisions WHERE id = :r'),
             {'r': result.native_revision_id}).mappings().one()
-        native_blocks = conn.execute(text(
+        whole_page = result.mode == 'page'
+        native_blocks = [] if whole_page else conn.execute(text(
             'SELECT ordinal, kind, bbox, start_offset, end_offset, text, table_cells,'
             ' speaker_layer, attributes FROM blocks WHERE page_revision_id = :r ORDER BY ordinal'),
             {'r': native['id']}).mappings().all()
-        merged = native['normalized_text']
+        merged = '' if whole_page else native['normalized_text']
         ocr_rows = []
         next_ordinal = (native_blocks[-1]['ordinal'] + 1) if native_blocks else 0
         for i, block in enumerate(result.blocks):
@@ -190,32 +193,35 @@ class OcrStage:
             merged += block.text
             ocr_rows.append((next_ordinal + i, block, start, len(merged)))
         text_hash = hashlib.sha256(merged.encode('utf-8')).hexdigest()
+        body = ''.join(b.text for b in result.blocks if not b.role)
+        garbled = bool(body) and body.count(REPLACEMENT) / len(body) > 0.01
         existing = conn.execute(text(
             'SELECT id FROM page_revisions WHERE page_id = :p AND text_hash = :h'
             " AND base_revision_id = :base AND quality->'ocr'->>'version' = :v"),
             {'p': page_id, 'h': text_hash, 'base': native['id'], 'v': OCR_VERSION}).scalar()
         if existing:
-            return existing
-        whole_page = result.mode == 'page'
-        state = 'accepted' if (result.mean_conf or 0) >= MIN_CONFIDENCE else 'review_required'
-        if not whole_page and native['quality'].get('replacement_chars'):
-            state = 'review_required'
+            return existing, garbled
         quality = {**native['quality'], 'needs_ocr': False,
                    'ocr': {'version': OCR_VERSION, 'engine': result.engine, 'dpi': result.dpi,
-                           'mode': result.mode, 'mean_conf': result.mean_conf,
-                           'blocks': len(result.blocks)}}
+                           'mode': result.mode, 'blocks': len(result.blocks),
+                           'labels': sorted({b.label for b in result.blocks})}}
+        if whole_page:
+            quality['page_class'] = 'scan'
         latest_no = conn.execute(text('SELECT max(revision_no) FROM page_revisions WHERE page_id = :p'),
                                  {'p': page_id}).scalar_one()
-        offset_map = list(native['offset_map']) + [[s, e, o] for o, _, s, e in ocr_rows]
+        offset_map = ([] if whole_page else list(native['offset_map'])) + \
+            [[s, e, o] for o, _, s, e in ocr_rows]
         revision_id = conn.execute(text(
             'INSERT INTO page_revisions (page_id, revision_no, base_revision_id, raw_text,'
             ' normalized_text, offset_map, layout, printed_page_label, text_hash, quality, state)'
             ' VALUES (:p, :no, :base, :raw, :norm, CAST(:map AS jsonb), CAST(:layout AS jsonb),'
             ' :label, :hash, CAST(:quality AS jsonb), :state) RETURNING id'),
-            {'p': page_id, 'no': latest_no + 1, 'base': native['id'], 'raw': native['raw_text'],
-             'norm': merged, 'map': json.dumps(offset_map), 'layout': json.dumps(native['layout']),
+            {'p': page_id, 'no': latest_no + 1, 'base': native['id'],
+             'raw': merged if whole_page else native['raw_text'], 'norm': merged,
+             'map': json.dumps(offset_map), 'layout': json.dumps(native['layout']),
              'label': native['printed_page_label'], 'hash': text_hash,
-             'quality': json.dumps(quality), 'state': state}).scalar_one()
+             'quality': json.dumps(quality),
+             'state': 'review_required' if garbled else 'accepted'}).scalar_one()
         insert = text(
             'INSERT INTO blocks (page_revision_id, ordinal, kind, bbox, start_offset, end_offset,'
             ' text, table_cells, speaker_layer, attributes) VALUES (:r, :o, :k, CAST(:b AS jsonb),'
@@ -229,10 +235,17 @@ class OcrStage:
                                   'sp': block['speaker_layer'],
                                   'a': json.dumps({**block['attributes'], 'origin': 'native'})})
         for ordinal, block, start, end in ocr_rows:
-            conn.execute(insert, {'r': revision_id, 'o': ordinal, 'k': 'paragraph',
+            attributes = {**block.attributes, 'origin': 'ocr', 'ocr_label': block.label,
+                          'region': block.region, 'engine': result.engine}
+            speaker = attributes.pop('speaker', 'unknown')
+            if block.role:
+                attributes['role'] = block.role
+            if block.level is not None:
+                attributes['level'] = block.level
+            conn.execute(insert, {'r': revision_id, 'o': ordinal, 'k': block.kind,
                                   'b': json.dumps(block.bbox), 's': start, 'e': end,
-                                  't': block.text, 'cells': None, 'sp': 'unknown',
-                                  'a': json.dumps({'origin': 'ocr', 'conf': block.conf,
-                                                   'region': block.region,
-                                                   'engine': result.engine})})
-        return revision_id
+                                  't': block.text,
+                                  'cells': json.dumps(block.table_cells, ensure_ascii=False)
+                                  if block.table_cells is not None else None,
+                                  'sp': speaker, 'a': json.dumps(attributes, ensure_ascii=False)})
+        return revision_id, garbled

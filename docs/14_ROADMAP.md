@@ -152,6 +152,17 @@ khác tra tại bảng cuối file này.
   đoạn, trang Tra cứu + giới hạn sách trong chat, phản hồi câu trả lời (M017), checklist
   khởi động, chia sẻ sách và gán trường phái trên UI — T043/T046 ✅.
 - Việc kế tiếp: những gì cần môi trường Ubuntu, chuyên gia và mô hình thật (xem trên).
+- **RAG pilot (21/10/2026, chủ dự án chốt, thay T036/T038.1 cho giai đoạn này):**
+  - Đã có trong code:
+    - OCR SenOCR-Vi.
+    - `chunker-3`, chia chunk cha/con, kèm `chunk_meta` và tóm tắt Qwen cho mỗi cha.
+    - Embedding và reranker Jina trên CPU.
+    - Trộn hybrid 0,8/0,2.
+    - `POST /ask` và chat research mode chạy trên pipeline mới.
+    - `scripts/rag_eval.py` chạy 20 câu trong `test_questions.txt` rồi publish lên trang `/judge`, nơi người chấm vào bằng mật khẩu chung.
+    - Qwen đề xuất quy tắc nguyên văn cho chuyên gia duyệt.
+  - Quyết định và số đo: decision log ở 15.
+  - Mục tiêu ngắn hạn: người chấm cho điểm, từ đó biết cần sửa OCR, chunk, truy xuất hay sinh câu trả lời.
 
 ## Các giai đoạn
 

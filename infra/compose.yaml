@@ -53,8 +53,10 @@ services:
           create_host_path: false
     command: ["python", "scripts/inspect_corpus.py", "/inputs/books"]
 
-  # Ingestion worker (all stages incl. OCR) and watchdog/dispatcher. Internal network
-  # only: parsers and OCR never reach the Internet (docs/12). Needs POSTGRES_APP_USER.
+  # Ingestion worker (all stages incl. OCR) and watchdog/dispatcher. Needs POSTGRES_APP_USER.
+  # RAG pilot: OCR (SenOCR-Vi, ~2.5 GB VRAM) runs here on the GPU; embeddings on CPU; parent
+  # summaries and rule candidates call the host's Qwen (vLLM, port 8000) through the edge
+  # network + host-gateway — so this worker is no longer cut off from the network (docs/12).
   worker:
     profiles: [app]
     image: bazi-ai-app:local
@@ -69,20 +71,29 @@ services:
       POSTGRES_PORT: "5432"
       REDIS_URL: redis://redis:6379/0
       STORAGE_ROOT: /data/objects
+      HF_HUB_OFFLINE: "1"        # models come from the model_cache volume (cli fetch-models)
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True   # less fragmentation in OCR
     depends_on: &app_deps
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+    extra_hosts: &qwen_host ["host.docker.internal:host-gateway"]
     user: "10001:10001"
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    pids_limit: 256
-    mem_limit: 4g
-    cpus: 2
+    pids_limit: 512
+    mem_limit: 16g
+    cpus: 16
+    shm_size: 2g
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     volumes:
       - objects:/data/objects
-    networks: [internal]
+      - model_cache:/models:ro
+    networks: [internal, edge]
 
   # Reasoning runs of chat (docs/09): one at a time, as the run's owner under RLS. Needs
   # the network of the configured model (llama.cpp on the host or another container).
@@ -94,14 +105,18 @@ services:
     environment: *app_env
     depends_on: *app_deps
     command: ["python", "-m", "backend.app.reasoning.worker"]
+    extra_hosts: *qwen_host
     user: "10001:10001"
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    pids_limit: 64
-    mem_limit: 1g
-    networks: [internal]
+    pids_limit: 128
+    mem_limit: 8g
+    cpus: 16
+    volumes:
+      - model_cache:/models:ro
+    networks: [internal, edge]
 
   watchdog:
     profiles: [app]
@@ -121,6 +136,8 @@ services:
 
   # HTTP API (uvicorn). Same image as the workers; only the gateway reaches it, so the
   # forwarded client address from the gateway is trusted for login rate limiting.
+  # RAG pilot: loads the Jina embedder and reranker (CPU) at startup and calls the host's
+  # Qwen for /ask; one process so the models are held once.
   api:
     profiles: [app]
     image: bazi-ai-app:local
@@ -129,23 +146,27 @@ services:
     environment: *app_env
     depends_on: *app_deps
     command: ["uvicorn", "backend.app.main:create_app", "--factory", "--host", "0.0.0.0",
-              "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+              "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*",
+              "--timeout-keep-alive", "650"]
+    extra_hosts: *qwen_host
     user: "10001:10001"
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     pids_limit: 256
-    mem_limit: 2g
-    cpus: 2
+    mem_limit: 8g
+    cpus: 16
     volumes:
       - objects:/data/objects
-    networks: [internal]
+      - model_cache:/models:ro
+    networks: [internal, edge]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 120s
 
   # Next.js UI (T043.1), standalone server; it never talks to the database.
   frontend:
@@ -154,6 +175,9 @@ services:
     build:
       context: ../frontend
       dockerfile: ../infra/frontend.Dockerfile
+      # UI sub-path from .env PUBLIC_BASE_PATH (e.g. /bazi for a Tailscale Funnel mount).
+      args:
+        NEXT_PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-}
     init: true
     read_only: true
     tmpfs: [/tmp, /app/.next/cache]
@@ -177,6 +201,9 @@ services:
       api: {condition: service_healthy}
       frontend: {condition: service_healthy}
     ports: ["127.0.0.1:${GATEWAY_PORT:-3000}:3000"]
+    environment:
+      PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-}        # e.g. /bazi (see infra/Caddyfile)
+      PUBLIC_BASE_ROOT: ${PUBLIC_BASE_PATH:-/}       # app root: the base path, or "/"
     user: "65534:65534"
     read_only: true
     tmpfs: [/data, /config]

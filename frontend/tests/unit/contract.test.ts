@@ -36,7 +36,9 @@ test('every /api/v1 URL in the frontend is a contract path', () => {
   assert.deepEqual(unknown, [])
 })
 
-test('URLs built by hand are the streaming, upload and page image routes', () => {
+test('URLs built by hand are the streaming, upload, page image and score export routes', () => {
   const raw = urls().filter(({ url }) => !url.includes('{') && /\/x(\/|$)/.test(url)).map(({ url }) => url)
-  for (const url of raw) assert.match(url, /^\/api\/v1\/(runs\/x\/events|page-revisions\/x\/render)$/)
+  for (const url of raw) {
+    assert.match(url, /^\/api\/v1\/(runs\/x\/events|page-revisions\/x\/render|judge\/runs\/x\/scores\.csv)$/)
+  }
 })

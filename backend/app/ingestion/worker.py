@@ -123,6 +123,12 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
         return 'failed'
 
     for handler in handlers:
+        # Stages after publish (candidates) run on a sealed generation: anything a resumed
+        # job reuses from before the seal is already linked, and re-linking would write
+        # into frozen membership tables.
+        with engine.connect() as conn:
+            sealed = conn.execute(text('SELECT state <> \'building\' FROM generations'
+                                       ' WHERE id = :g'), {'g': ctx.generation_id}).scalar()
         units = handler.units(ctx)
         if units:
             with engine.begin() as conn:
@@ -154,7 +160,7 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
                 # Computed before (retry job or another generation of the same version):
                 # reuse the output, but still link it to this generation.
                 attach = getattr(handler, 'attach', None)
-                if attach is not None:
+                if attach is not None and not sealed:
                     with engine.begin() as conn:
                         attach(conn, ctx, unit, claimed.output_ref)
                 reused += 1

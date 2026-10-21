@@ -168,6 +168,8 @@ def process(engine: Engine, run_id, owner_id, app_env: str = 'dev', transport=No
     context, mode, question = run['context_snapshot'], run['mode'], run['question']
     emit(engine, owner_id, run_id, 'run.started', {'mode': mode})
     tools = Tools(engine, principal, run_id)
+    if mode == 'research' and _rag_enabled():
+        return _research(engine, owner_id, run, principal, question, context)
     try:
         facts, analysis, rule_claims, notes = None, None, [], []
         paths: dict = {}
@@ -301,6 +303,51 @@ def process(engine: Engine, run_id, owner_id, app_env: str = 'dev', transport=No
         return 'failed'
     except Exception:  # noqa: BLE001 - never leave a run running; the log has the stack
         log.exception('reasoning run failed', extra={'event': 'run_failed'})
+        _close(engine, owner_id, run, 'failed', {'code': 'INTERNAL', 'message': 'internal error'})
+        emit(engine, owner_id, run_id, 'run.failed', {'code': 'INTERNAL'})
+        return 'failed'
+
+
+def _rag_enabled() -> bool:
+    from ..rag.chat import enabled
+    return enabled()
+
+
+def _research(engine: Engine, owner_id, run: dict, principal: Principal, question: str,
+              context: dict) -> str:
+    """Research mode on the RAG pilot: parent/child retrieval + grounded Qwen answer."""
+    from ..rag.chat import run_research, to_answer
+    run_id = run['id']
+    try:
+        if _state(engine, owner_id, run_id) == 'cancelled':
+            raise Cancelled()
+        with transaction(engine, owner_id) as conn:
+            keys = [r[0] for r in conn.execute(text(
+                'SELECT key FROM schools WHERE id = ANY(CAST(:ids AS uuid[]))'),
+                {'ids': [str(s) for s in context.get('school_ids') or []]})]
+        emit(engine, owner_id, run_id, 'tool.started', {'tool': 'rag_answer'})
+        _move(engine, owner_id, run_id, 'waiting_provider')
+        out = run_research(engine, principal, question, keys, context.get('book_ids') or [])
+        _move(engine, owner_id, run_id, 'running')
+        emit(engine, owner_id, run_id, 'tool.completed',
+             {'tool': 'rag_answer', 'status': out.status, 'parents': len(out.parents)})
+        emit(engine, owner_id, run_id, 'retrieval.ready',
+             {'status': out.status, 'groups': len(out.parents)})
+        answer = to_answer(out, {'run_id': str(run_id), 'bundle_id': None, 'analysis_id': None,
+                                 'corpus_release_id': None})
+        if _state(engine, owner_id, run_id) == 'cancelled':
+            raise Cancelled()
+        for claim in answer.claims:
+            emit(engine, owner_id, run_id, 'answer.claim', {'claim': claim.model_dump()})
+        _finish(engine, owner_id, run, answer, context)
+        emit(engine, owner_id, run_id, 'answer.completed', {'answer': answer.model_dump()})
+        return 'completed'
+    except Cancelled:
+        _close(engine, owner_id, run, 'cancelled', None)
+        emit(engine, owner_id, run_id, 'run.cancelled', {})
+        return 'cancelled'
+    except Exception:  # noqa: BLE001 - never leave a run running; the log has the stack
+        log.exception('research run failed', extra={'event': 'run_failed'})
         _close(engine, owner_id, run, 'failed', {'code': 'INTERNAL', 'message': 'internal error'})
         emit(engine, owner_id, run_id, 'run.failed', {'code': 'INTERNAL'})
         return 'failed'
