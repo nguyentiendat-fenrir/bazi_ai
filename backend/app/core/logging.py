@@ -96,6 +96,7 @@ def configure_logging(level: str, secrets: list[str], stream=None) -> logging.Ha
         logging.getLogger(name).handlers.clear()
         logging.getLogger(name).propagate = True
     # HTTP client libraries log full URLs (with query strings) at INFO/DEBUG.
-    for name in ('httpx', 'httpcore'):
+    # httpx2/httpcore2 are the renamed forks huggingface_hub 2.x pulls in.
+    for name in ('httpx', 'httpcore', 'httpx2', 'httpcore2'):
         logging.getLogger(name).setLevel(logging.WARNING)
     return handler

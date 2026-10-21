@@ -79,6 +79,7 @@ class McpHttpTests(unittest.TestCase):
             settings(mcp_user_email=None)
         self.assertTrue(settings().mcp_enabled)
         self.assertIn(TOKEN, settings().secret_values())          # redacted from logs
+        self.assertIsNone(settings(mcp_time_budget='').mcp_time_budget)   # blank in .env.example
 
     def test_initialize_and_list_read_only_tools(self):
         with self.client() as c:

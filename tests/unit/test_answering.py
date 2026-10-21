@@ -12,10 +12,13 @@ from backend.app.answering.adapters import QwenModel, RagRetriever
 from backend.app.answering.glossary_index import GlossaryIndex
 from backend.app.answering.harness import Config, Harness
 from backend.app.answering.ports import ModelError, Passage
-from backend.app.answering.run import markdown, parse_questions, run_all, write_run
+from backend.app.answering.run import (
+    HARNESS_KEYS, judge_payload, markdown, parse_questions, run_all, write_run,
+)
 from backend.app.answering.verify import quote_found, risky_question, support
 from backend.app.documents.text import fold
 from backend.app.rag.llm import LLMConfig
+from backend.app.rag.schemas import ChildOut, ParentOut, Scores
 
 # Passages copied from the books (TBCT tr.26, tr.75; MPSC tr.19, tr.37, tr.41, tr.291).
 TBCT_26 = ('Dụng thần của bát tự, chuyên tìm ở nguyệt lệnh, tức là lấy can ngày phối cùng chi'
@@ -341,7 +344,8 @@ class Adapters(unittest.TestCase):
         class Found:
             status = 'ok'
             candidates = [Cand('c1'), Cand('c2')]
-            children = {'c1': {'text': 'a', 'meta': {'header': 'h'}}, 'c2': {'text': 'b', 'meta': {}}}
+            children = {'c1': {'text': 'a', 'meta': {'header': 'h'}, 'parent_id': 'p1'},
+                        'c2': {'text': 'b', 'meta': {}, 'parent_id': 'p9'}}
 
         class Parent:
             def __init__(self, pid, school):
@@ -367,11 +371,28 @@ class Adapters(unittest.TestCase):
                 self.order = [c.chunk_id for c in ranked]
                 return [Parent('p1', 'Manh Phái'), Parent('p2', None)]
 
+            def _children_out(self, ranked, children, parents):
+                Child = type('Child', (), {})
+                out = []
+                for c in ranked:
+                    child = Child()
+                    child.chunk_id, child.meta = c.chunk_id, {}
+                    child.parent_handle = 'P1' if children[c.chunk_id]['parent_id'] == 'p1' else None
+                    out.append(child)
+                return out
+
         service = Service()
-        out = RagRetriever(service, principal=None).search('tố công', None, 5)
+        retriever = RagRetriever(service, principal=None)
+        out = retriever.search('tố công', None, 5)
         self.assertEqual(service.order, ['c2', 'c1'])                 # reranked
         self.assertEqual([(p.pid, p.school, p.pages) for p in out],
                          [('p1', 'manh_phai', 'tr.26–27'), ('p2', None, 'tr.26–27')])
+        # what the judge page shows: parents returned, children that selected one of them
+        self.assertEqual(sorted(retriever.seen_parents), ['p1', 'p2'])
+        self.assertEqual(list(retriever.seen_children), ['c1'])
+        self.assertEqual(retriever.seen_children['c1'].meta, {'query': 'tố công', 'parent_id': 'p1'})
+        retriever.reset()
+        self.assertEqual((retriever.seen_parents, retriever.seen_children), ({}, {}))
         RagRetriever(service, None).search('x', 'tu_binh', 1)
         self.assertEqual(service.asked, ['tu_binh'])
 
@@ -395,6 +416,30 @@ class Runner(unittest.TestCase):
         self.assertIn('## Câu 1', md)
         self.assertIn('### Các ý cần biết', md)
         self.assertIn('Câu trả lời', markdown(data))
+
+    def test_judge_payload_has_the_judge_page_shape(self):
+        model = FakeModel(judge=honest_judge, synthesize=cite_all, rewrite={'queries': ['mộ khố']})
+        result = Harness(model, Library(), config=Config(decompose_min_chars=10_000)).answer(
+            'Mộ bị xung gọi là gì?')
+        source = result.sources[0]
+        parent = ParentOut(handle='P9', parent_id=source['pid'], book_title='Sách', text='t',
+                           tokens=3, child_ids=['c1'])
+        child = ChildOut(chunk_id='c1', rank=4, book_title='Sách', section_path='1',
+                         speaker_layer='unknown', unit_kind='paragraph', text='t',
+                         scores=Scores(dense=1, sparse=0, fused=0.8), parent_handle='P9',
+                         meta={'parent_id': source['pid']})
+        stray = child.model_copy(update={'chunk_id': 'c2', 'meta': {'parent_id': 'other'}})
+        out = judge_payload(result, {source['pid']: parent}, {'c1': child, 'c2': stray},
+                            [{'prompt_tokens': 5, 'completion_tokens': 2}], {'k': 4}, {'llm': 'q'})
+        self.assertEqual(out['status'], result.status)
+        self.assertEqual((out['parents'][0]['handle'], out['parents'][0]['cited']),
+                         (source['handle'], source['cited']))
+        self.assertEqual([(c['chunk_id'], c['rank'], c['parent_handle']) for c in out['children']],
+                         [('c1', 1, source['handle'])])
+        self.assertNotRegex(out['answer'], r'\[P\d+\s*,')      # one marker per handle
+        self.assertEqual(out['usage'], {'prompt_tokens': 5, 'completion_tokens': 2, 'calls': 1})
+        self.assertEqual(set(out['harness']), set(HARNESS_KEYS))
+        json.dumps(out, ensure_ascii=False)
 
 
 if __name__ == '__main__':

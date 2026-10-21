@@ -59,6 +59,13 @@ class RagRetriever(Retriever):
         # school label in parent meta -> school key ('Manh Phái' -> 'manh_phai' …)
         self.school_keys = school_keys or {'Tử Bình': 'tu_binh', 'Manh Phái': 'manh_phai',
                                            'Manh phái': 'manh_phai'}
+        # What the searches returned since reset(), for the judge page: ParentOut by parent id,
+        # and the scored children that selected a returned parent (first search wins).
+        self.seen_parents: dict[str, object] = {}
+        self.seen_children: dict[str, object] = {}
+
+    def reset(self) -> None:
+        self.seen_parents, self.seen_children = {}, {}
 
     def _school(self, value: str | None, asked: str | None) -> str | None:
         if asked:
@@ -87,9 +94,15 @@ class RagRetriever(Retriever):
             for candidate, score in zip(head, service.reranker.rerank(query, docs)):
                 candidate.rerank = score
             ranked = sorted(head, key=lambda c: -c.rerank) + ranked[depth:]
-        parents = service._parents(self.principal, ranked, found.children)
+        parents = service._parents(self.principal, ranked, found.children)[:k]
+        for child in service._children_out(ranked, found.children, parents):
+            if child.parent_handle and child.chunk_id not in self.seen_children:
+                child.meta['query'] = query
+                child.meta['parent_id'] = str(found.children[child.chunk_id]['parent_id'])
+                self.seen_children[child.chunk_id] = child
         out = []
-        for p in parents[:k]:
+        for p in parents:
+            self.seen_parents.setdefault(p.parent_id, p)
             pages = ''
             if p.page_start:
                 pages = f'tr.{p.page_start}' + (f'–{p.page_end}' if p.page_end and p.page_end != p.page_start else '')

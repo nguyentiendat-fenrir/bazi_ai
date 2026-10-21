@@ -11,9 +11,10 @@ import { ApiError, describe } from '@/api/problem'
 import { withBase } from '@/lib/base'
 import { Badge, Loading } from '@/components/ui'
 import {
-  answerParts, judgeName, pages, RELEVANCE, RUBRIC, score, SPEAKER_LABELS, STATUS_LABELS,
+  answerParts, DROP_LABELS, judgeName, NEED_KINDS, NEED_LABELS, pages, RELEVANCE, RUBRIC, score,
+  SPEAKER_LABELS, STATUS_LABELS, statusTone, STOP_LABELS,
 } from '@/lib/judge'
-import type { AskOut, ChildOut, ChunkLabel, ParentOut, Relevance } from '@/lib/judge'
+import type { AskOut, ChildOut, ChunkLabel, HarnessTrace, ParentOut, Relevance } from '@/lib/judge'
 
 type Judge = Schemas['JudgeMe']
 type Run = Schemas['RunSummary']
@@ -223,6 +224,7 @@ function ResultView({ resultId, onSaved }: { resultId: string, onSaved: () => vo
   }, [resultId])
 
   const answer = detail?.payload as AskOut | undefined
+  const harness = (detail?.payload as { harness?: HarnessTrace } | undefined)?.harness
   const parentsByHandle = useMemo(() => Object.fromEntries(
     (answer?.parents ?? []).map((p) => [p.handle, p])), [answer])
 
@@ -261,7 +263,7 @@ function ResultView({ resultId, onSaved }: { resultId: string, onSaved: () => vo
     <article className="judge-result">
       <h2>Câu {detail.ordinal}. {detail.question}</h2>
       <p className="small muted">
-        <Badge tone={answer.status === 'ok' ? 'ok' : answer.status === 'insufficient_evidence' ? 'warning' : 'danger'}>
+        <Badge tone={statusTone(answer.status)}>
           {STATUS_LABELS[answer.status] ?? answer.status}
         </Badge>{' '}
         {detail.latency_ms ? `${(detail.latency_ms / 1000).toFixed(1)} s` : ''}
@@ -293,6 +295,8 @@ function ResultView({ resultId, onSaved }: { resultId: string, onSaved: () => vo
             <pre className="judge-pre">{answer.raw_answer}</pre></details>
         ) : null}
       </section>
+
+      {harness && <HarnessPanel harness={harness} onCite={showParent} />}
 
       <section className="panel judge-form">
         <h3>Phiếu chấm</h3>
@@ -370,6 +374,48 @@ function ResultView({ resultId, onSaved }: { resultId: string, onSaved: () => vo
         </div>
       </section>
     </article>
+  )
+}
+
+function HarnessPanel({ harness, onCite }: { harness: HarnessTrace, onCite: (handle: string) => void }) {
+  const cite = (handle: string) => /^P\d+$/.test(handle)
+    ? <button key={handle} className="cite" onClick={() => onCite(handle)}>[{handle}]</button>
+    : <span key={handle} className="cite">[{handle}]</span>
+  return (
+    <section className="panel">
+      <h3>Quá trình trả lời</h3>
+      <p className="small muted">
+        {harness.rounds} vòng tìm · dừng vì {STOP_LABELS[harness.stop_reason ?? ''] ?? harness.stop_reason ?? '—'}
+        {' · '}{harness.llm_calls} lần gọi Qwen
+        {harness.focus ? ` · trọng tâm ${harness.focus}` : ''}
+      </p>
+      {harness.facts && (
+        <details><summary className="small muted">Dữ kiện lá số [F] (tính bằng bảng tra)</summary>
+          <pre className="judge-pre small">{harness.facts}</pre></details>
+      )}
+      <h4>Các ý cần biết</h4>
+      <ul className="small">
+        {harness.needs.map((n) => (
+          <li key={n.id}>
+            <Badge tone={n.status === 'du' ? 'ok' : n.status === 'thieu' ? 'danger' : 'warning'}>
+              {NEED_LABELS[n.status] ?? n.status}</Badge>{' '}
+            <strong>{n.id}</strong> <span className="muted">({NEED_KINDS[n.kind] ?? n.kind}{n.school ? `, ${n.school}` : ''})</span>{' '}
+            {n.text}
+            {n.quotes.length ? (
+              <ul>{n.quotes.slice(0, 3).map((q, i) => <li key={i}>{cite(q.handle)} “{q.quote}”</li>)}</ul>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {harness.dropped.length ? (
+        <details><summary className="small muted">Nhận định bị loại khi kiểm nguồn ({harness.dropped.length})</summary>
+          <ul className="small">{harness.dropped.map((d, i) => (
+            <li key={i}><span className="muted">({DROP_LABELS[d.reason.split(':')[0]] ?? d.reason})</span> {d.text}{' '}
+              {d.sources.map(cite)}</li>
+          ))}</ul>
+        </details>
+      ) : null}
+    </section>
   )
 }
 

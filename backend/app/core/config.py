@@ -108,7 +108,7 @@ class Settings(BaseSettings):
                      'llm_api_key', 'llm_base_url', 'judge_password_hash',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
                      's3_access_key_id', 's3_secret_access_key', 'mcp_token', 'mcp_user_email',
-                     mode='before')
+                     'mcp_time_budget', mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".

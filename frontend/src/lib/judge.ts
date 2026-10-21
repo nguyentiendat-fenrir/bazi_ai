@@ -62,6 +62,52 @@ export const STATUS_LABELS: Record<string, string> = {
   provider_not_configured: 'Chưa có mô hình',
   provider_error: 'Lỗi mô hình',
   request_failed: 'Lỗi gọi API',
+  // answering harness (backend/app/answering)
+  partial: 'Trả lời một phần',
+  insufficient: 'Không đủ căn cứ',
+  no_evidence: 'Không tìm thấy nguồn',
+  refused: 'Từ chối (câu hỏi rủi ro)',
+  model_error: 'Lỗi mô hình',
+}
+
+export function statusTone(status: string): 'ok' | 'warning' | 'danger' {
+  if (status === 'ok') return 'ok'
+  return ['partial', 'insufficient', 'insufficient_evidence', 'no_evidence', 'refused', 'no_match']
+    .includes(status) ? 'warning' : 'danger'
+}
+
+/** What the answering harness did for one question (payload.harness of a harness run). */
+export interface HarnessTrace {
+  needs: {
+    id: string, kind: string, school: string | null, text: string, status: string,
+    quotes: { handle: string, quote: string }[], tried: string[], missing: string | null,
+  }[]
+  claims: { text: string, sources: string[], part: string }[]
+  dropped: { text: string, sources: string[], reason: string }[]
+  facts: string | null
+  focus: string | null
+  agreement: string
+  stop_reason: string | null
+  rounds: number
+  llm_calls: number
+}
+
+export const NEED_LABELS: Record<string, string> = {
+  du: 'đủ', mot_phan: 'một phần', thieu: 'thiếu', mau_thuan: 'mâu thuẫn',
+}
+
+export const NEED_KINDS: Record<string, string> = {
+  main: 'câu chính', sub: 'ý con', concept: 'khái niệm', analysis: 'phân tích lá số',
+}
+
+export const STOP_LABELS: Record<string, string> = {
+  du_het: 'đủ mọi ý', khong_co_gi_moi: 'không tìm thêm được gì mới',
+  khong_tien_trien: 'hai vòng không tiến triển', het_gio: 'hết thời gian', het_vong: 'hết số vòng',
+}
+
+export const DROP_LABELS: Record<string, string> = {
+  khong_nguon: 'không có nguồn', khang_dinh_rui_ro: 'khẳng định rủi ro',
+  khong_du_ung_ho: 'nguồn không đủ ủng hộ', nguon_khong_hop_le: 'nguồn không hợp lệ',
 }
 
 export const SPEAKER_LABELS: Record<string, string> = {
