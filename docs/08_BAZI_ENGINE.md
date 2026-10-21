@@ -58,6 +58,18 @@ Tập 1900–2100, đặc biệt 12 tiết ±1s/±1m/±1h, Lập Xuân trước/
 
 Đã kiểm (T029, `tests/unit/test_calc_engine.py`, `test_calc_oracle.py`): mọi tiết khí 1900–2100 (4.824) so với PyEphem/VSOP87 (kinh độ biểu kiến địa tâm, không chung mã với sxwnl): trung vị 9,5 s, lớn nhất 57 s (ΔT ngoại suy sau 2025) — dung sai 60 s; tứ trụ + tuổi khởi vận + đại vận khớp lunar-python ở UTC+8 cố định (400 lá số ngẫu nhiên × 2 phương pháp, 0 lệch); Lập Xuân ±1 s/±1 phút/±1 giờ ở UTC+7/+8, Tý 22:59/23:00/23:59/00:00/00:01 cho hai policy, DST gap/fold, múi giờ lịch sử VN, 29/02, tháng nhuận âm, kinh độ ±180, khoảng bất định qua ranh giới, cùng `facts_hash` khi đổi TZ máy; 32 lá số hồi quy đóng băng. Chưa có: bảng HKO (cần dữ liệu ngoài), chuyên gia duyệt policy/bảng mệnh lý — T029 vẫn ⏳ phần đó.
 
+### Dữ kiện từ lá số viết sẵn (`calc/pillar_facts.py`)
+
+Câu hỏi có thể chứa sẵn tứ trụ và đại vận dạng chữ ("Lá số nam: Mậu Ngọ – Ất Mão – Nhâm Tý – Canh Tý. Đại vận: …"). `find_chart` đọc tứ trụ, đại vận (chỉ chuỗi liền nhau sau "Đại vận", cho phép tuổi/năm trong ngoặc) và giới tính; `facts` tính bằng bảng tra, không dùng lịch hay LLM:
+
+- B1 Nhật chủ (can ngày), B2 Nguyệt lệnh (chi tháng, chủ khí và thập thần của nó);
+- thập thần của can, tàng can theo thứ tự chủ khí → trung khí → dư khí, vòng trường sinh của Nhật chủ tại mỗi chi;
+- Lộc (Lâm quan), Kình Dương (Đế vượng, chỉ can dương), Thiên Mã truyền thống theo chi năm và chi ngày;
+- quan hệ trong tứ trụ và giữa từng đại vận với tứ trụ: ngũ hợp, can xung, lục hợp/xung/hại/phá, hình, tự hình, tam hợp (đủ/bán hợp/củng), tam hội, tam hình, ám hợp (MPSC tr.179), tự hợp và chi hợp khắc can (DOCX ¶200–202); khung đủ ba chi ghi rõ "đã đủ trong tứ trụ" hay "đủ nhờ vận";
+- cảnh báo khi lá số không thể có (cặp can chi sai âm dương, can tháng sai Ngũ Hổ độn, can giờ sai Ngũ Thử độn, đại vận không nối tiếp trụ tháng hoặc sai chiều theo giới tính).
+
+Hợp chỉ ghi là hợp, không bao giờ ghi hóa. `render` xuất khối tiếng Việt cho prompt, mở đầu bằng nhãn "tính bằng bảng tra, không phải trích sách" để không bị coi là nguồn trích dẫn.
+
 ## B. Rule Engine độc lập LLM
 
 ### DSL contract v1
