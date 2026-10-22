@@ -30,8 +30,8 @@ class FakeGemini:
             return httpx.Response(400, json={'error': {'message': 'Unknown name "$defs"'}})
         system = body['messages'][0]['content']
         if 'liệt kê những KHÁI NIỆM' in system:
-            out = {'concepts': [{'name': 'Khách chủ', 'kind': 'explains', 'quote': QUOTE},
-                                {'name': 'Câu không có trong sách', 'kind': 'explains',
+            out = {'concepts': [{'section': 'S1', 'name': 'Khách chủ', 'kind': 'explains', 'quote': QUOTE},
+                                {'section': 'S9', 'name': 'Câu không có trong sách', 'kind': 'explains',
                                  'quote': 'đoạn này không hề có trên trang'}]}
         elif 'biên tập viên' in system:
             out = {'status': 'ready', 'essential_notes': 'Phải xác định cấp độ trước.',
@@ -130,9 +130,18 @@ class CurationTests(PipelineTestCase):
         self.assertTrue(plain and 'JSON Schema' in plain[0]['messages'][-1]['content'])
         self.assertEqual(plain[0].get('reasoning_effort'), 'low')
 
+    def test_small_sections_of_one_book_share_a_call(self):
+        parents = [{'book_version_id': 'b1', 'school_id': 's', 'text': 'x' * 5000},
+                   {'book_version_id': 'b1', 'school_id': 's', 'text': 'y' * 5000},
+                   {'book_version_id': 'b1', 'school_id': 's', 'text': 'z' * 5000},
+                   {'book_version_id': 'b2', 'school_id': 's', 'text': 'w' * 100}]
+        self.assertEqual([len(b) for b in curation.batches(parents)], [2, 1, 1])
+
     def test_budget_and_dry_run(self):
         dry = curation.run(self.engine, self.principal, self.settings, dry_run=True)
-        self.assertEqual(dry['units'], 1)
+        self.assertEqual((dry['units'], dry['discover_calls']), (1, 1))
+        self.assertEqual(curation.run(self.engine, self.principal, self.settings, dry_run=True,
+                                      exclude=['khach chu', 'tieng'])['units'], dry['units'])
         self.assertGreater(dry['estimated_input_tokens'], 0)
         stopped = self.run_curation(FakeGemini(), max_calls=0, refresh=True,
                                     steps=('compose',), names=['Một tên mới'])

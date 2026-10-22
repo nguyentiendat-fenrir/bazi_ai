@@ -154,13 +154,15 @@ class Calls:
 # ---- 1. discover -----------------------------------------------------------------------------
 
 def units(conn: Connection, principal: Principal, school: str | None = None,
-          book: str | None = None, limit: int | None = None) -> list[dict]:
+          book: str | None = None, limit: int | None = None,
+          exclude: list[str] | None = None) -> list[dict]:
     """Parent sections of the active release the principal may read, with their school
-    (the reviewed classification most of the section's children carry)."""
+    (the reviewed classification most of the section's children carry). A section whose text
+    is identical to one already listed (another copy of the same book) is left out."""
     clause, params = catalog.visibility_clause(principal)
     rows = conn.execute(text(
-        'SELECT cp.id, cp.generation_id, cp.ordinal, cp.text, cp.meta, m.book_version_id,'
-        ' b.title, s.key AS school_key, s.id AS school_id FROM active_corpus a'
+        'SELECT cp.id, cp.generation_id, cp.ordinal, cp.text, cp.meta, cp.content_hash,'
+        ' m.book_version_id, b.title, s.key AS school_key, s.id AS school_id FROM active_corpus a'
         ' JOIN corpus_members m ON m.release_id = a.release_id'
         ' JOIN book_versions v ON v.id = m.book_version_id JOIN books b ON b.id = v.book_id'
         ' JOIN chunk_parents cp ON cp.generation_id = m.generation_id'
@@ -171,10 +173,33 @@ def units(conn: Connection, principal: Principal, school: str | None = None,
         ' JOIN schools s ON s.id = top.school_id'
         f" WHERE a.slot = 'default' AND v.status = 'active' AND b.deleted_at IS NULL AND {clause}"
         ' ORDER BY b.title, cp.ordinal'), params).mappings().all()
-    out = [dict(r) for r in rows
-           if (not school or r['school_key'] == school)
-           and (not book or fold(book) in fold(r['title']))]
+    excluded = [fold(e) for e in exclude or []]
+    seen, out = set(), []
+    for r in rows:
+        title = fold(r['title'])
+        if (school and r['school_key'] != school) or (book and fold(book) not in title) \
+                or any(e in title for e in excluded) or r['content_hash'] in seen:
+            continue
+        seen.add(r['content_hash'])
+        out.append(dict(r))
     return out[:limit] if limit else out
+
+
+def batches(parents: list[dict]) -> list[list[dict]]:
+    """Consecutive sections of one book and school, packed up to ``UNIT_CHARS`` per call (the
+    instructions are sent once per call, so small sections are read together)."""
+    out: list[list[dict]] = []
+    size = 0
+    for parent in parents:
+        last = out[-1][-1] if out else None
+        same = last is not None and (last['book_version_id'], last['school_id']) == \
+            (parent['book_version_id'], parent['school_id'])
+        if not same or size + len(parent['text']) > UNIT_CHARS:
+            out.append([])
+            size = 0
+        out[-1].append(parent)
+        size += len(parent['text'])
+    return out
 
 
 def _pages(conn: Connection, parent: dict) -> list[dict]:
@@ -225,19 +250,36 @@ def _slices(body: str) -> list[str]:
     return out + ([current] if current else [])
 
 
-def discover(engine: Engine, principal: Principal, calls: Calls, parent: dict, stats: Stats) -> None:
-    header = (parent['meta'] or {}).get('header') or parent['title']
+def discover(engine: Engine, principal: Principal, calls: Calls, batch: list[dict], stats: Stats) -> None:
+    """One call per batch (a long section alone, in slices); each mention names its [S#]."""
+    first = batch[0]
+    school = SCHOOL_LABELS.get(first['school_key'], first['school_key'])
+    labelled = {f'S{i + 1}': parent for i, parent in enumerate(batch)}
     found: list[prompts.Mention] = []
-    for piece in _slices(parent['text']):
-        result = calls.run('discover', prompts.discover(
-            parent['title'], SCHOOL_LABELS.get(parent['school_key'], parent['school_key']), header,
-            piece), prompts.Discovery, 8000)
-        found.extend(result.concepts)
-    stats.units += 1
+    if len(batch) == 1 and len(first['text']) > UNIT_CHARS:
+        header = (first['meta'] or {}).get('header') or first['title']
+        for piece in _slices(first['text']):
+            result = calls.run('discover', prompts.discover(first['title'], school, [('S1', header, piece)]),
+                               prompts.Discovery, 8000)
+            found.extend(result.concepts)
+    else:
+        sections = [(label, (p['meta'] or {}).get('header') or p['title'], p['text'])
+                    for label, p in labelled.items()]
+        found = calls.run('discover', prompts.discover(first['title'], school, sections),
+                          prompts.Discovery, 8000).concepts
+    stats.units += len(batch)
     with transaction(engine, principal.user_id) as conn:
-        pages = _pages(conn, parent)
+        pages = {label: _pages(conn, p) for label, p in labelled.items()}
         for mention in found:
-            evidence_id, located = locate(conn, principal, pages, mention.quote)
+            label = mention.section.strip('[] ').upper()
+            # The named section first; a wrong label still finds the quote in the others.
+            order = ([label] if label in labelled else []) + [x for x in labelled if x != label]
+            evidence_id, located, parent = None, 'not_found', labelled.get(label, first)
+            for candidate in order:
+                evidence_id, located = locate(conn, principal, pages[candidate], mention.quote)
+                if evidence_id:
+                    parent = labelled[candidate]
+                    break
             stats.candidates += 1
             stats.not_located += located == 'not_found'
             conn.execute(text(
@@ -453,14 +495,16 @@ def review(engine: Engine, principal: Principal, calls: Calls, concept_id: str, 
 def run(engine: Engine, principal: Principal, settings, steps: tuple[str, ...] = ('discover', 'compose',
         'review'), school: str | None = None, book: str | None = None, max_units: int | None = None,
         max_calls: int = 200, names: list[str] | None = None, refresh: bool = False,
-        dry_run: bool = False, transport=None) -> dict:
+        dry_run: bool = False, transport=None, exclude: list[str] | None = None) -> dict:
     stats = Stats()
     with transaction(engine, principal.user_id) as conn:
-        todo = units(conn, principal, school, book, max_units)
+        todo = units(conn, principal, school, book, max_units, exclude)
+    packed = batches(todo)
     if dry_run:
         chars = sum(len(u['text']) for u in todo)
-        return {'dry_run': True, 'units': len(todo), 'chars': chars,
-                'estimated_input_tokens': int(chars / 3.2) + 1500 * len(todo),
+        discover_calls = sum(len(_slices(b[0]['text'])) if len(b) == 1 else 1 for b in packed)
+        return {'dry_run': True, 'units': len(todo), 'discover_calls': discover_calls, 'chars': chars,
+                'estimated_input_tokens': int(chars / 3.2) + 1500 * discover_calls,
                 'books': sorted({u['title'] for u in todo})}
     compose_cfg, review_cfg = config_from(settings), config_from(settings, review=True)
     if compose_cfg is None:
@@ -470,8 +514,8 @@ def run(engine: Engine, principal: Principal, settings, steps: tuple[str, ...] =
     calls = Calls(engine, compose_llm, review_llm, max_calls, stats)
     try:
         if 'discover' in steps:
-            for parent in todo:
-                discover(engine, principal, calls, parent, stats)
+            for batch in packed:
+                discover(engine, principal, calls, batch, stats)
         written = []
         if 'compose' in steps:
             with transaction(engine, principal.user_id) as conn:

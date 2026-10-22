@@ -368,7 +368,7 @@ def curate(args) -> int:
     try:
         report = curation.run(engine, principal, settings, tuple(args.steps.split(',')),
                               args.school, args.book, args.units, args.max_calls, args.name,
-                              args.refresh, args.dry_run)
+                              args.refresh, args.dry_run, exclude=args.exclude_book)
     except LLMError as exc:
         _print({'ok': False, 'code': exc.code, 'message': str(exc)})
         return 2
@@ -462,6 +462,8 @@ def main(argv: list[str] | None = None) -> int:
                      help='comma list of discover, compose, review')
     cur.add_argument('--school', choices=('tu_binh', 'manh_phai'))
     cur.add_argument('--book', help='only books whose title contains this')
+    cur.add_argument('--exclude-book', action='append',
+                     help='skip books whose title contains this (repeatable), e.g. a duplicate edition')
     cur.add_argument('--units', type=int, help='read at most this many sections')
     cur.add_argument('--name', action='append', help='compose only this concept name (repeatable)')
     cur.add_argument('--max-calls', type=int, default=200, help='model calls this run may make')
