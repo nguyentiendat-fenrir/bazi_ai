@@ -285,6 +285,10 @@ details.panel summary { cursor: pointer; font-weight: 600; }
 textarea.code, pre.code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
 pre.code { background: var(--surface-2); padding: 10px; border-radius: 4px; overflow: auto; max-height: 420px; }
 .statement { white-space: pre-wrap; font-size: 15px; }
+/* Curated definitions (knowledge/curation): the definition reads as prose; evidence quotes as citations. */
+.definition { font-size: 16px; line-height: 1.6; white-space: pre-wrap; }
+.panel .hint { font-size: 13px; color: var(--muted); }
+.panel ol.plain-list blockquote { margin: 4px 0 10px; padding: 4px 10px; border-left: 3px solid var(--teal); background: var(--surface-2); white-space: pre-wrap; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
 .inline-form .field { margin: 0; }
 .review-history { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }

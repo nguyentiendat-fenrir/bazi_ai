@@ -253,7 +253,9 @@ def create_concept(conn: Connection, school_id, canonical_key: str, label: str,
 
 
 def revise_concept(conn: Connection, concept_id, base_revision: int, label: str | None,
-                   description: str | None) -> dict:
+                   description: str | None, carry_curation: bool = True) -> dict:
+    """New draft revision. A person's edit keeps the curated sources and model review of the
+    revision it edits (``carry_curation``); a new machine draft brings its own."""
     base = _one(conn, f'{CONCEPT_SELECT} WHERE c.id = :i', {'i': concept_id}, 'Concept')
     conn.execute(text('SELECT pg_advisory_xact_lock(hashtext(:k))'),
                  {'k': f"concept:{base['school_id']}:{base['canonical_key']}"})
@@ -274,6 +276,18 @@ def revise_concept(conn: Connection, concept_id, base_revision: int, label: str 
         if term['state'] in LIVE and term['alias_kind'] != 'canonical':
             _insert_term(conn, new_id, term['form'], term['language'], term['alias_kind'],
                          term['evidence_id'])
+    if carry_curation:
+        conn.execute(text('INSERT INTO concept_sources (concept_id, evidence_id, ordinal)'
+                          ' SELECT :n, evidence_id, ordinal FROM concept_sources WHERE concept_id = :o'),
+                     {'n': new_id, 'o': concept_id})
+        conn.execute(text(
+            'INSERT INTO concept_curation (concept_id, name_key, essential_notes, claims, issues, status,'
+            ' llm_verdict, llm_problems, independent_sources, dossier_hash, rewrite_note, compose_model,'
+            " review_model, prompt_version) SELECT :n, name_key, essential_notes, claims,"
+            " issues || '[\"đã sửa tay sau khi máy soạn\"]'::jsonb, CASE WHEN status ="
+            " 'rewrite_requested' THEN 'ready' ELSE status END, llm_verdict, llm_problems,"
+            " independent_sources, dossier_hash, '', compose_model, review_model, prompt_version"
+            ' FROM concept_curation WHERE concept_id = :o'), {'n': new_id, 'o': concept_id})
     return get_concept(conn, new_id)
 
 

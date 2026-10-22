@@ -266,3 +266,20 @@ vì vector bf16 lệch nhẹ so với vector fp32 cũ.
 Trên máy chính, đặt `OCR_REMOTE_URL=http://<máy OCR>:8010` và `OCR_REMOTE_TOKEN=<token>` trong
 `.env`, rồi `up -d worker`. Chỉ mở cổng 8010 trong mạng riêng (Tailscale/VPN/firewall). Máy OCR
 tắt thì job chuyển sang chờ và tự thử lại, không đưa trang vào hàng duyệt.
+
+### 7. Biên soạn định nghĩa bằng model ngoài
+
+Model ngoài (Gemini, endpoint kiểu OpenAI) đọc sách đã nạp, soạn định nghĩa kèm nguồn và tự kiểm; người
+duyệt ở **Tri thức → Biên soạn** (duyệt từng mục hoặc hàng loạt mục máy chấm đạt, sửa, yêu cầu viết lại).
+Đặt trong `.env`: `CURATOR_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`,
+`CURATOR_LLM_MODEL=<model>`, `CURATOR_LLM_API_KEY=<key>`. Chạy:
+
+```bash
+C="docker compose --env-file .env -f infra/compose.yaml"
+$C run --rm api python -m backend.app.cli curate --as admin@example.test --dry-run          # đếm, không gọi
+$C run --rm api python -m backend.app.cli curate --as admin@example.test --units 20 --max-calls 60
+$C run --rm api python -m backend.app.cli curate --as admin@example.test --school manh_phai --max-calls 2000
+```
+
+Chạy lại không tốn thêm cho phần đã làm. `--steps compose,review` chỉ soạn và kiểm lại; `--name "Khách chủ"`
+soạn đúng một khái niệm.

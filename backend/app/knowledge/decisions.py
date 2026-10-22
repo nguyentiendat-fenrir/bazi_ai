@@ -98,6 +98,11 @@ def _approved(conn: Connection, table: str, ids: list) -> bool:
 
 def _gate(conn: Connection, kind: str, entity_id) -> str | None:
     """Why ``entity_id`` cannot be approved yet, or ``None``."""
+    if kind == 'concept':
+        # A curated definition is approved only while the pages it cites are usable.
+        evidence = conn.execute(text('SELECT evidence_id FROM concept_sources WHERE concept_id = :i'),
+                                {'i': entity_id}).scalars().all()
+        return sources_usable(conn, evidence) if evidence else None
     if kind == 'assertion':
         row = conn.execute(text('SELECT method_id, concept_id FROM assertions WHERE id = :i'),
                            {'i': entity_id}).one()

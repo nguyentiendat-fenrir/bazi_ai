@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const TABS = [
   { href: '/knowledge/terms', label: 'Khái niệm & thuật ngữ', match: ['/knowledge/terms', '/knowledge/concepts'] },
+  { href: '/knowledge/curation', label: 'Biên soạn', match: ['/knowledge/curation'] },
   { href: '/knowledge/assertions', label: 'Luận điểm', match: ['/knowledge/assertions'] },
   { href: '/knowledge/rules', label: 'Quy tắc', match: ['/knowledge/rules'] },
   { href: '/knowledge/rulesets', label: 'Bộ quy tắc', match: ['/knowledge/rulesets'] },

@@ -414,6 +414,81 @@
         "title": "AnalysisInput",
         "type": "object"
       },
+      "ApproveInput": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApproveItem"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "reason"
+        ],
+        "title": "ApproveInput",
+        "type": "object"
+      },
+      "ApproveItem": {
+        "properties": {
+          "base_revision": {
+            "minimum": 1.0,
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "concept_id": {
+            "format": "uuid",
+            "title": "Concept Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept_id",
+          "base_revision"
+        ],
+        "title": "ApproveItem",
+        "type": "object"
+      },
+      "ApproveResult": {
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "concept_id": {
+            "format": "uuid",
+            "title": "Concept Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "required": [
+          "concept_id",
+          "approved"
+        ],
+        "title": "ApproveResult",
+        "type": "object"
+      },
       "AskIn": {
         "additionalProperties": false,
         "properties": {
@@ -4325,6 +4400,259 @@
         "title": "Coverage",
         "type": "object"
       },
+      "CuratedClaim": {
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "title": "CuratedClaim",
+        "type": "object"
+      },
+      "CuratedDefinition": {
+        "properties": {
+          "canonical_key": {
+            "title": "Canonical Key",
+            "type": "string"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/CuratedClaim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "compose_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compose Model"
+          },
+          "concept_id": {
+            "format": "uuid",
+            "title": "Concept Id",
+            "type": "string"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "essential_notes": {
+            "title": "Essential Notes",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "independent_sources": {
+            "title": "Independent Sources",
+            "type": "integer"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "latest_revision": {
+            "title": "Latest Revision",
+            "type": "integer"
+          },
+          "llm_problems": {
+            "items": {
+              "$ref": "#/components/schemas/LlmProblem"
+            },
+            "title": "Llm Problems",
+            "type": "array"
+          },
+          "llm_verdict": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pass",
+                  "fix",
+                  "fail"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Verdict"
+          },
+          "review_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Model"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "rewrite_note": {
+            "title": "Rewrite Note",
+            "type": "string"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "needs_context",
+              "needs_split",
+              "rewrite_requested"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept_id",
+          "canonical_key",
+          "label",
+          "school_key",
+          "revision",
+          "latest_revision",
+          "state",
+          "definition",
+          "essential_notes",
+          "claims",
+          "issues",
+          "status",
+          "llm_verdict",
+          "llm_problems",
+          "independent_sources",
+          "rewrite_note",
+          "compose_model",
+          "review_model",
+          "evidence"
+        ],
+        "title": "CuratedDefinition",
+        "type": "object"
+      },
+      "CuratedRow": {
+        "properties": {
+          "concept_id": {
+            "format": "uuid",
+            "title": "Concept Id",
+            "type": "string"
+          },
+          "independent_sources": {
+            "title": "Independent Sources",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "llm_verdict": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pass",
+                  "fix",
+                  "fail"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Verdict"
+          },
+          "problems": {
+            "title": "Problems",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "school_key": {
+            "title": "School Key",
+            "type": "string"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "needs_context",
+              "needs_split",
+              "rewrite_requested"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "concept_id",
+          "label",
+          "school_key",
+          "revision",
+          "state",
+          "status",
+          "llm_verdict",
+          "problems",
+          "sources",
+          "independent_sources",
+          "updated_at"
+        ],
+        "title": "CuratedRow",
+        "type": "object"
+      },
       "Cycles": {
         "properties": {
           "da_yun": {
@@ -4969,6 +5297,22 @@
           "meta"
         ],
         "title": "Envelope[CorrectionResult]",
+        "type": "object"
+      },
+      "Envelope_CuratedDefinition_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CuratedDefinition"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[CuratedDefinition]",
         "type": "object"
       },
       "Envelope_DatasetDTO_": {
@@ -5825,6 +6169,26 @@
         "title": "Envelope[list[AnalysisDTO]]",
         "type": "object"
       },
+      "Envelope_list_ApproveResult__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApproveResult"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[list[ApproveResult]]",
+        "type": "object"
+      },
       "Envelope_list_Grant__": {
         "properties": {
           "data": {
@@ -6489,6 +6853,56 @@
           "end_offset"
         ],
         "title": "EvidenceInput",
+        "type": "object"
+      },
+      "EvidenceItem": {
+        "properties": {
+          "book_title": {
+            "title": "Book Title",
+            "type": "string"
+          },
+          "end_offset": {
+            "title": "End Offset",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_revision_id": {
+            "format": "uuid",
+            "title": "Page Revision Id",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "speaker_layer": {
+            "title": "Speaker Layer",
+            "type": "string"
+          },
+          "start_offset": {
+            "title": "Start Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "quote",
+          "book_title",
+          "page",
+          "speaker_layer",
+          "page_revision_id",
+          "start_offset",
+          "end_offset"
+        ],
+        "title": "EvidenceItem",
         "type": "object"
       },
       "Expansion": {
@@ -8059,6 +8473,29 @@
         "title": "ListEnvelope[ConversationDTO]",
         "type": "object"
       },
+      "ListEnvelope_CuratedRow_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CuratedRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ListEnvelope[CuratedRow]",
+        "type": "object"
+      },
       "ListEnvelope_DatasetDTO_": {
         "properties": {
           "data": {
@@ -8564,6 +9001,24 @@
           "status"
         ],
         "title": "LiveStatus",
+        "type": "object"
+      },
+      "LlmProblem": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "detail"
+        ],
+        "title": "LlmProblem",
         "type": "object"
       },
       "LoginInput": {
@@ -11616,6 +12071,18 @@
           "text"
         ],
         "title": "ReviewedRule",
+        "type": "object"
+      },
+      "RewriteInput": {
+        "properties": {
+          "note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "title": "RewriteInput",
         "type": "object"
       },
       "RuleDTO": {
@@ -29158,6 +29625,1025 @@
           "releases"
         ],
         "x-permission": "A"
+      }
+    },
+    "/api/v1/curation/definitions": {
+      "get": {
+        "operationId": "list_definitions_api_v1_curation_definitions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "verdict",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pass",
+                    "fix",
+                    "fail",
+                    "pending"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ready",
+                    "needs_context",
+                    "needs_split",
+                    "rewrite_requested"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 20,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "school_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "concept_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                      "independent_sources": 1,
+                      "label": "example",
+                      "llm_verdict": "pass",
+                      "problems": 1,
+                      "revision": 1,
+                      "school_key": "example",
+                      "sources": 1,
+                      "state": "example",
+                      "status": "ready",
+                      "updated_at": "2026-10-18T08:00:00Z"
+                    }
+                  ],
+                  "meta": {
+                    "request_id": "example"
+                  },
+                  "page": {
+                    "has_more": false,
+                    "next_cursor": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ListEnvelope_CuratedRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List Definitions",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/curation/definitions/approve": {
+      "post": {
+        "description": "Approve several drafts at once; each goes through the concept review and its gate, and\none that cannot be approved (moved on, sources withdrawn) does not stop the others.",
+        "operationId": "approve_definitions_api_v1_curation_definitions_approve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "items": [
+                  {
+                    "base_revision": 1,
+                    "concept_id": "0b6e6600-2026-4a10-8000-00000000b471"
+                  }
+                ],
+                "reason": "example"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/ApproveInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "approved": true,
+                      "concept_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                      "error": "example"
+                    }
+                  ],
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_list_ApproveResult__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Approve Definitions",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/curation/definitions/{concept_id}": {
+      "get": {
+        "operationId": "get_definition_api_v1_curation_definitions__concept_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "canonical_key": "example",
+                    "claims": [
+                      {
+                        "evidence_ids": [
+                          "0b6e6600-2026-4a10-8000-00000000b471"
+                        ],
+                        "text": "example"
+                      }
+                    ],
+                    "compose_model": "example",
+                    "concept_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                    "definition": "example",
+                    "essential_notes": "example",
+                    "evidence": [
+                      {
+                        "book_title": "example",
+                        "end_offset": 1,
+                        "id": "0b6e6600-2026-4a10-8000-00000000b471",
+                        "page": 1,
+                        "page_revision_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                        "quote": "example",
+                        "speaker_layer": "example",
+                        "start_offset": 1
+                      }
+                    ],
+                    "independent_sources": 1,
+                    "issues": [
+                      "example"
+                    ],
+                    "label": "example",
+                    "latest_revision": 1,
+                    "llm_problems": [
+                      {
+                        "detail": "example",
+                        "kind": "example"
+                      }
+                    ],
+                    "llm_verdict": "pass",
+                    "review_model": "example",
+                    "revision": 1,
+                    "rewrite_note": "example",
+                    "school_key": "example",
+                    "state": "example",
+                    "status": "ready"
+                  },
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_CuratedDefinition_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get Definition",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
+      }
+    },
+    "/api/v1/curation/definitions/{concept_id}/rewrite": {
+      "post": {
+        "description": "The next ``cli curate`` composes this concept again, with the note as an instruction.",
+        "operationId": "request_rewrite_api_v1_curation_definitions__concept_id__rewrite_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "note": ""
+              },
+              "schema": {
+                "$ref": "#/components/schemas/RewriteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "canonical_key": "example",
+                    "claims": [
+                      {
+                        "evidence_ids": [
+                          "0b6e6600-2026-4a10-8000-00000000b471"
+                        ],
+                        "text": "example"
+                      }
+                    ],
+                    "compose_model": "example",
+                    "concept_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                    "definition": "example",
+                    "essential_notes": "example",
+                    "evidence": [
+                      {
+                        "book_title": "example",
+                        "end_offset": 1,
+                        "id": "0b6e6600-2026-4a10-8000-00000000b471",
+                        "page": 1,
+                        "page_revision_id": "0b6e6600-2026-4a10-8000-00000000b471",
+                        "quote": "example",
+                        "speaker_layer": "example",
+                        "start_offset": 1
+                      }
+                    ],
+                    "independent_sources": 1,
+                    "issues": [
+                      "example"
+                    ],
+                    "label": "example",
+                    "latest_revision": 1,
+                    "llm_problems": [
+                      {
+                        "detail": "example",
+                        "kind": "example"
+                      }
+                    ],
+                    "llm_verdict": "pass",
+                    "review_model": "example",
+                    "revision": 1,
+                    "rewrite_note": "example",
+                    "school_key": "example",
+                    "state": "example",
+                    "status": "ready"
+                  },
+                  "meta": {
+                    "request_id": "example"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_CuratedDefinition_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "AUTH_REQUIRED",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 401,
+                  "title": "Auth Required",
+                  "type": "urn:bazi:problem:auth_required"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "FORBIDDEN",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 403,
+                  "title": "Forbidden",
+                  "type": "urn:bazi:problem:forbidden"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "NOT_FOUND",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "urn:bazi:problem:not_found"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "CONFLICT",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "urn:bazi:problem:conflict"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "detail": null,
+                  "field_errors": [
+                    {
+                      "message": "Field required",
+                      "path": "body.name"
+                    }
+                  ],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 422,
+                  "title": "Validation Error",
+                  "type": "urn:bazi:problem:validation_error"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "code": "INTERNAL_ERROR",
+                  "detail": null,
+                  "field_errors": [],
+                  "request_id": "req_0123456789abcdef",
+                  "status": 500,
+                  "title": "Internal Error",
+                  "type": "urn:bazi:problem:internal_error"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Request Rewrite",
+        "tags": [
+          "knowledge"
+        ],
+        "x-permission": "V"
       }
     },
     "/api/v1/eval-runs": {
