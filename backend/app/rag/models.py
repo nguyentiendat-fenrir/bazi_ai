@@ -1,4 +1,4 @@
-"""In-process Jina models on CPU: embeddings (query/document) and the listwise reranker.
+"""In-process Jina models: embeddings (query/document) and the listwise reranker.
 
 Loaded once per process — by the API lifespan, or on first use in a worker —
 from the model cache (``HF_HOME``) at a pinned revision, because both repos
@@ -10,11 +10,18 @@ batched shortest-first, 2.2× faster than input order on mixed lengths, same vec
 query embedding ~100 ms; documents ~1.8/s at ~300 tokens; reranking 8
 candidates of ~600 chars ~4 s, 12 ~7 s. int8 dynamic quantisation gave no gain
 (no AVX-512/AMX), so fp32 stays.
+
+GPU: ``RAG_DEVICE=cuda`` loads both on the GPU (OCR moved to another machine, so the 4090 has
+room); ``RAG_DTYPE`` picks the weights' precision there (bf16 by default on the GPU: fp32 of
+both models does not fit next to Qwen and Gemma). Vectors from bf16 differ from fp32 ones in
+the last digits, so a collection embedded on the CPU should be re-embedded (or measured) after
+the switch. No GPU in the container → the CPU, with a warning, so the API still starts.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
+import os
 import threading
 import time
 
@@ -23,17 +30,54 @@ _LOCK = threading.Lock()
 _CACHE: dict[tuple, object] = {}
 
 
+DTYPES = {'fp32': 'float32', 'bf16': 'bfloat16', 'fp16': 'float16'}
+
+
+def _env_device() -> str:
+    return os.environ.get('RAG_DEVICE', 'cpu').strip() or 'cpu'
+
+
+def _env_dtype() -> str:
+    return os.environ.get('RAG_DTYPE', '').strip()
+
+
 @dataclass(frozen=True)
 class ModelSpec:
     name: str
     revision: str
     threads: int = 16
+    device: str = field(default_factory=_env_device)     # cpu | cuda | cuda:N
+    dtype: str = field(default_factory=_env_dtype)       # fp32 | bf16 | fp16; '' = by device
 
 
 def _torch(threads: int):
     import torch
     torch.set_num_threads(threads)
     return torch
+
+
+def placement(spec: ModelSpec, torch) -> tuple[str, object]:
+    """(device, torch dtype) to load with: CUDA only when present; half precision only there."""
+    device = spec.device
+    if device.startswith('cuda') and not torch.cuda.is_available():
+        log.warning('no GPU visible; Jina models stay on the CPU',
+                    extra={'event': 'rag_device_fallback', 'model': spec.name})
+        device = 'cpu'
+    name = spec.dtype or ('bf16' if device.startswith('cuda') else 'fp32')
+    if name not in DTYPES:
+        raise ValueError(f'RAG_DTYPE must be one of {sorted(DTYPES)}')
+    if device == 'cpu':
+        name = 'fp32'                 # half precision on this CPU is slower, not faster
+    return device, getattr(torch, DTYPES[name])
+
+
+def _load(spec: ModelSpec):
+    torch = _torch(spec.threads)
+    from transformers import AutoModel
+    device, dtype = placement(spec, torch)
+    model = AutoModel.from_pretrained(spec.name, revision=spec.revision, trust_remote_code=True,
+                                      dtype=dtype).to(device).eval()
+    return model, device, str(dtype).removeprefix('torch.')
 
 
 class JinaEmbedder:
@@ -43,14 +87,12 @@ class JinaEmbedder:
     batch_size = 16
 
     def __init__(self, spec: ModelSpec):
-        torch = _torch(spec.threads)
-        from transformers import AutoModel
         started = time.perf_counter()
-        self.model = AutoModel.from_pretrained(spec.name, revision=spec.revision,
-                                               trust_remote_code=True, dtype=torch.float32).eval()
+        self.model, self.device, self.dtype = _load(spec)
         self.spec = spec
         self.dimension = int(self.model.config.hidden_size)
         log.info('embedder loaded', extra={'event': 'model_loaded', 'model': spec.name,
+                                           'device': self.device, 'dtype': self.dtype,
                                            'seconds': round(time.perf_counter() - started, 1)})
 
     def encode(self, texts: list[str], prompt: str = 'document') -> list[list[float]]:
@@ -73,13 +115,11 @@ class JinaReranker:
     """jina-reranker-v3.5 (listwise): one forward pass scores all candidates together."""
 
     def __init__(self, spec: ModelSpec):
-        torch = _torch(spec.threads)
-        from transformers import AutoModel
         started = time.perf_counter()
-        self.model = AutoModel.from_pretrained(spec.name, revision=spec.revision,
-                                               trust_remote_code=True, dtype=torch.float32).eval()
+        self.model, self.device, self.dtype = _load(spec)
         self.spec = spec
         log.info('reranker loaded', extra={'event': 'model_loaded', 'model': spec.name,
+                                           'device': self.device, 'dtype': self.dtype,
                                            'seconds': round(time.perf_counter() - started, 1)})
 
     def rerank(self, query: str, documents: list[str]) -> list[float]:

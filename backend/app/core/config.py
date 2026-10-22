@@ -81,6 +81,10 @@ class Settings(BaseSettings):
     rag_temperature: float = Field(0.2, ge=0, le=1.5)
     rag_llm_timeout: float = Field(180.0, gt=0)
     rag_cpu_threads: int = Field(16, ge=1, le=64)
+    # Where the Jina embedder/reranker run (rag/models.py reads RAG_DEVICE/RAG_DTYPE itself;
+    # declared here so a typo fails at startup). Empty dtype: bf16 on the GPU, fp32 on the CPU.
+    rag_device: str = Field('cpu', pattern=r'^(cpu|cuda(:\d+)?)$')
+    rag_dtype: Literal['', 'fp32', 'bf16', 'fp16'] = ''
     rag_embedding_model: str = 'jinaai/jina-embeddings-v5-text-small'
     rag_embedding_revision: str = 'dd76d535f5447ca3897a9c893fb1e612ead98192'
     rag_reranker_model: str = 'jinaai/jina-reranker-v3.5'

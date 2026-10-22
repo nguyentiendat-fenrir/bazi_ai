@@ -259,6 +259,10 @@ echo "$OCR_SERVER_TOKEN"            # chép sang .env của máy chính
 docker compose -f infra/compose.ocr.yaml up -d
 ```
 
+Khi OCR đã ở máy khác, 4090 còn chỗ cho Jina: đặt `RAG_DEVICE=cuda` (mặc định bf16) để embedding
+và rerank chạy GPU trong `api` và `worker`. Sau khi đổi, embed lại bộ sách hoặc đo lại tìm kiếm,
+vì vector bf16 lệch nhẹ so với vector fp32 cũ.
+
 Trên máy chính, đặt `OCR_REMOTE_URL=http://<máy OCR>:8010` và `OCR_REMOTE_TOKEN=<token>` trong
 `.env`, rồi `up -d worker`. Chỉ mở cổng 8010 trong mạng riêng (Tailscale/VPN/firewall). Máy OCR
 tắt thì job chuyển sang chờ và tự thử lại, không đưa trang vào hàng duyệt.

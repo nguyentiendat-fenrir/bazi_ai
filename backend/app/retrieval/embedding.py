@@ -110,7 +110,8 @@ class OpenAICompatibleEmbedder:
 
 
 class LocalJinaEmbedder:
-    """jina-embeddings-v5 in this process (CPU), loaded once per process from the model cache.
+    """jina-embeddings-v5 in this process (CPU, or GPU with RAG_DEVICE=cuda), loaded once per
+    process from the model cache.
 
     Profile config: ``revision`` (pinned commit), ``threads``; documents use the
     ``document`` prompt, queries (``embed_query``) the ``query`` prompt.

@@ -136,8 +136,8 @@ services:
 
   # HTTP API (uvicorn). Same image as the workers; only the gateway reaches it, so the
   # forwarded client address from the gateway is trusted for login rate limiting.
-  # RAG pilot: loads the Jina embedder and reranker (CPU) at startup and calls the host's
-  # Qwen for /ask; one process so the models are held once.
+  # RAG pilot: loads the Jina embedder and reranker at startup (GPU when RAG_DEVICE=cuda) and
+  # calls the host's Qwen for /ask; one process so the models are held once.
   api:
     profiles: [app]
     image: bazi-ai-app:local
@@ -157,6 +157,10 @@ services:
     pids_limit: 256
     mem_limit: 8g
     cpus: 16
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     volumes:
       - objects:/data/objects
       - model_cache:/models:ro
