@@ -28,7 +28,7 @@ Cấu hình Qwen nằm ở [infra/qwen.md](infra/qwen.md); quyết định và s
 
 ```bash
 C="docker compose --env-file .env -f infra/compose.yaml"
-$C build && $C up -d --wait postgres redis
+$C --profile app build && $C up -d --wait postgres redis   # app services live in the "app" profile
 python3 scripts/dev migrate --without-backup
 # Mô hình vào volume model_cache (cần mạng; service mount volume read-only nên dùng docker run)
 docker run --rm --user 0 -v bazi-ai_model_cache:/models -e HF_HUB_OFFLINE=0 bazi-ai-app:local \
@@ -169,7 +169,7 @@ cp .env.example .env && chmod 600 .env
 # BACKUP_ENCRYPTION_KEY ra nơi ngoại tuyến: mất chúng thì lá số và backup không giải mã được.
 python3 scripts/dev doctor --target deploy          # phải READY
 docker compose --env-file .env -f infra/compose.yaml config --quiet
-docker compose --env-file .env -f infra/compose.yaml build
+docker compose --env-file .env -f infra/compose.yaml --profile app build
 docker compose --env-file .env -f infra/compose.yaml up -d --wait postgres redis
 python3 scripts/dev migrate --without-backup         # DB trống, chưa có gì để backup
 read -s BAZI_BOOTSTRAP_PASSWORD && export BAZI_BOOTSTRAP_PASSWORD   # không ghi vào history
@@ -208,7 +208,7 @@ docker image tag bazi-ai-app:local bazi-ai-app:previous             # image đan
 python3 scripts/dev backup --dest /srv/bazi-backups                 # bắt buộc trước migrate
 git pull --ff-only
 python3 scripts/dev doctor --target deploy
-docker compose --env-file .env -f infra/compose.yaml build
+docker compose --env-file .env -f infra/compose.yaml --profile app build
 python3 scripts/dev migrate --status                                # current vs head
 python3 scripts/dev migrate --backup-dest /srv/bazi-backups         # từ chối nếu backup > 24 h
 docker compose --env-file .env -f infra/compose.yaml --profile app up -d
