@@ -276,11 +276,13 @@ _ENGINE_LOCK = threading.Lock()
 
 
 def shared_engine() -> SenOcrEngine:
-    """One engine per worker process (the model is held once, released when idle)."""
+    """One engine per worker process (the model is held once, released when idle), or the
+    remote OCR server when ``OCR_REMOTE_URL`` is set (``ocr_remote``)."""
     global _ENGINE
     with _ENGINE_LOCK:
         if _ENGINE is None:
-            _ENGINE = SenOcrEngine()
+            from .ocr_remote import engine_from_env
+            _ENGINE = engine_from_env() or SenOcrEngine()
         return _ENGINE
 
 

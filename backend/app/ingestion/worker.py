@@ -129,7 +129,18 @@ def run_job(engine: Engine, store: ObjectStore, job_id: uuid.UUID,
         with engine.connect() as conn:
             sealed = conn.execute(text('SELECT state <> \'building\' FROM generations'
                                        ' WHERE id = :g'), {'g': ctx.generation_id}).scalar()
-        units = handler.units(ctx)
+        try:
+            units = handler.units(ctx)
+        except RetryableError as exc:
+            # e.g. the remote OCR server is down while listing pages: the whole job waits.
+            retry_at = _due(queue.retry_delay(3))
+            with engine.begin() as conn:
+                queue.set_job_state(conn, job_id, 'retry_wait', {
+                    'code': exc.code, 'retryable': True, 'message': str(exc)[:500],
+                    'retry_at': retry_at})
+                events.log(conn, job_id, 'warning', 'STAGE_RETRY',
+                           {'stage': handler.name, 'code': exc.code, 'retry_at': retry_at})
+            return 'retry_wait'
         if units:
             with engine.begin() as conn:
                 events.log(conn, job_id, 'info', 'STAGE_STARTED',

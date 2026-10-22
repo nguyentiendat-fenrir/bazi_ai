@@ -1,0 +1,49 @@
+# OCR server for a second GPU machine (backend/app/ingestion/ocr_remote.py).
+# Needs only the app image and the OCR models; no database, Redis or books here.
+#
+#   docker compose -f infra/compose.ocr.yaml build
+#   docker volume create bazi-ocr_model_cache
+#   docker run --rm --user 0 -v bazi-ocr_model_cache:/models -e HF_HUB_OFFLINE=0 #       bazi-ai-app:local python -m backend.app.cli fetch-models --ocr-only
+#   OCR_SERVER_TOKEN=... docker compose -f infra/compose.ocr.yaml up -d
+#
+# The main machine's worker then sets OCR_REMOTE_URL=http://<this host>:8010 and
+# OCR_REMOTE_TOKEN to the same token. Expose the port only on a private network
+# (Tailscale, VPN, firewall allow-list): the token is the only guard and the traffic is HTTP.
+name: bazi-ocr
+
+services:
+  ocr:
+    image: bazi-ai-app:local
+    build:
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+      target: app
+    command: ["uvicorn", "backend.app.ingestion.ocr_remote:create_server", "--factory",
+              "--host", "0.0.0.0", "--port", "8010", "--workers", "1"]
+    environment:
+      OCR_SERVER_TOKEN: ${OCR_SERVER_TOKEN:?set OCR_SERVER_TOKEN (>= 32 characters)}
+      OCR_GPU_MEMORY_GB: ${OCR_GPU_MEMORY_GB:-3.0}
+      HF_HUB_OFFLINE: "1"
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+    ports: ["${OCR_PORT:-8010}:8010"]
+    volumes: ["model_cache:/models:ro"]
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    shm_size: 2g
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,urllib.request as u; u.urlopen(u.Request('http://127.0.0.1:8010/health', headers={'Authorization': 'Bearer ' + os.environ['OCR_SERVER_TOKEN']}), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  model_cache:

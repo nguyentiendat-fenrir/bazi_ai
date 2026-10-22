@@ -31,6 +31,10 @@ thay sandbox ingestion có timeout/retry của T011–T014. OCR khởi đầu co
 benchmark chia CPU/RAM/VRAM với Gemma trên máy thật. Embedding chạy batch riêng;
 không giả GPU còn rảnh.
 
+## OCR trên máy khác
+
+`infra/compose.ocr.yaml` chạy `backend.app.ingestion.ocr_remote` (một process, cổng 8010) trên máy GPU thứ hai. Máy đó không giữ DB, Redis hay sách: worker gửi ảnh trang đã render (BGR thô, nén zlib, `X-Shape`), nhận lại `parsing_res_list`. Bảo vệ: bearer token ≥ 32 ký tự so khớp hằng thời gian (`OCR_SERVER_TOKEN` trên máy OCR, `OCR_REMOTE_TOKEN` trên worker, bị che trong log); request nén tối đa 64 MB, ảnh giải nén giới hạn theo `MAX_PIXELS` (chống bom giải nén); container non-root, read-only, model mount chỉ đọc. Lưu lượng là HTTP: chỉ mở cổng trong mạng riêng (Tailscale, VPN, allow-list). Lỗi mạng hoặc 5xx → unit/job `retry_wait` (`OCR_REMOTE_UNREACHABLE`, `OCR_REMOTE_ERROR`); 507 = hết VRAM ở máy OCR, worker giảm dpi như khi chạy cục bộ; token sai → `OCR_UNAVAILABLE` vào hàng duyệt.
+
 ## Kết nối Gemma llama.cpp
 
 Người dùng xác nhận Gemma chạy bằng `ghcr.io/ggml-org/llama.cpp:server-cuda`; không

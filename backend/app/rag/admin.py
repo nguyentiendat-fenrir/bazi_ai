@@ -33,12 +33,15 @@ SENOCR_DIR = Path('/models/senocr-vi')
 EXTENSIONS = {'.pdf', '.docx'}
 
 
-def fetch_models(settings=None) -> dict:
+def fetch_models(settings=None, ocr_only: bool = False) -> dict:
+    """``ocr_only``: just SenOCR-Vi + the layout model (a remote OCR server needs no Jina)."""
     from huggingface_hub import snapshot_download
     settings = settings or load_settings()
     out = {}
-    for name, revision in ((settings.rag_embedding_model, settings.rag_embedding_revision),
-                           (settings.rag_reranker_model, settings.rag_reranker_revision)):
+    rag_models = () if ocr_only else (
+        (settings.rag_embedding_model, settings.rag_embedding_revision),
+        (settings.rag_reranker_model, settings.rag_reranker_revision))
+    for name, revision in rag_models:
         out[name] = snapshot_download(name, revision=revision)
     snapshot = Path(snapshot_download(settings.ocr_model, revision=settings.ocr_revision))
     target = SENOCR_DIR / snapshot.name[:12]

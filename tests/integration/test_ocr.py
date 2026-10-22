@@ -211,6 +211,40 @@ class StageTests(unittest.TestCase):
         self.assertEqual(self.sql('SELECT reason_code FROM review_items WHERE generation_id = %s',
                                   gen), [('OCR_TIMEOUT',)])
 
+    def test_remote_ocr_server_reads_the_scan_like_the_local_engine(self):
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            from fastapi.testclient import TestClient
+        from backend.app.ingestion.ocr_remote import RemoteOcrEngine, create_server
+        token = 'ocr-integration-token-0123456789-abcdef'
+        fake = FakeEngine()
+        client = TestClient(create_server(fake, token), base_url='http://ocr.test')
+        remote = RemoteOcrEngine('http://ocr.test', token, client=client)
+        state, _, gen = self.run_with(self.scan_pdf(), remote)
+        self.assertEqual(state, 'succeeded')
+        self.assertEqual(fake.calls, 1)
+        _, revision_no, _, text_, quality = self.linked(gen)
+        self.assertEqual(revision_no, 2)
+        self.assertIn('Thiên can địa chi', text_)
+        self.assertEqual(quality['ocr']['engine'], fake.version)
+
+    def test_unreachable_remote_ocr_server_makes_the_job_wait(self):
+        import httpx
+        from backend.app.ingestion.ocr_remote import RemoteOcrEngine
+        job, _ = self.job_for(self.scan_pdf())
+
+        def down(request):
+            raise httpx.ConnectError('refused', request=request)
+
+        def factory():
+            client = httpx.Client(base_url='http://ocr.test', transport=httpx.MockTransport(down))
+            return RemoteOcrEngine('http://ocr.test', 'x' * 40, client=client)
+        stages = [ValidatePdfStage(), ExtractPdfStage(), OcrStage(engine_factory=factory)]
+        self.assertEqual(run_job(self.engine, self.store, job, stages, 'w1'), 'retry_wait')
+        self.assertEqual(self.sql("SELECT state, error->>'code' FROM ingestion_jobs WHERE id = %s", job),
+                         [('retry_wait', 'OCR_REMOTE_UNREACHABLE')])
+
     def test_missing_engine_is_a_review_not_a_failure(self):
         job, gen = self.job_for(self.scan_pdf())
 

@@ -243,3 +243,22 @@ kiểm xong, giữ volume cũ một thời gian. `drill` làm cùng việc vào 
 Trang Cài đặt → Hệ thống & ngân sách (admin): cảnh báo ổ đĩa, backup, job lỗi lặp, hàng đợi
 kẹt, ngân sách, embedding; số liệu hàng đợi/lỗi/độ trễ tra cứu. `GET /api/v1/operations/metrics`
 cho công cụ ngoài. Log là JSON trên stdout của từng container (`docker compose logs api`).
+
+### 6. OCR trên máy GPU khác
+
+Worker vẫn render trang trên máy chính; chỉ ảnh trang được gửi sang máy OCR (SenOCR-Vi trên
+PaddleOCR-VL). Máy OCR chỉ cần image app và model, không cần DB, Redis hay sách. Trên máy OCR:
+
+```bash
+git clone https://github.com/nguyentiendat-fenrir/bazi_ai.git && cd bazi_ai
+docker compose -f infra/compose.ocr.yaml build
+docker volume create bazi-ocr_model_cache
+docker run --rm --user 0 -v bazi-ocr_model_cache:/models -e HF_HUB_OFFLINE=0     bazi-ai-app:local python -m backend.app.cli fetch-models --ocr-only
+export OCR_SERVER_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(36))")
+echo "$OCR_SERVER_TOKEN"            # chép sang .env của máy chính
+docker compose -f infra/compose.ocr.yaml up -d
+```
+
+Trên máy chính, đặt `OCR_REMOTE_URL=http://<máy OCR>:8010` và `OCR_REMOTE_TOKEN=<token>` trong
+`.env`, rồi `up -d worker`. Chỉ mở cổng 8010 trong mạng riêng (Tailscale/VPN/firewall). Máy OCR
+tắt thì job chuyển sang chờ và tự thử lại, không đưa trang vào hàng duyệt.

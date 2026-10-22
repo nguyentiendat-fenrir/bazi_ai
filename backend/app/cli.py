@@ -348,7 +348,7 @@ def run_restore(args) -> int:
 def rag_command(args) -> int:
     from .rag import admin
     if args.command == 'fetch-models':
-        _print(admin.fetch_models())
+        _print(admin.fetch_models(ocr_only=args.ocr_only))
     elif args.command == 'rag-setup':
         _print(admin.rag_setup())
     elif args.command == 'ingest-folder':
@@ -425,7 +425,9 @@ def main(argv: list[str] | None = None) -> int:
     glo.add_argument('--file', help='default: backend/app/knowledge/data/glossary_v1.json')
     glo.add_argument('--publish', action='store_true',
                      help='then publish an ontology release (repins the corpus)')
-    commands.add_parser('fetch-models', help='download the pinned RAG/OCR models (network)')
+    fetch = commands.add_parser('fetch-models', help='download the pinned RAG/OCR models (network)')
+    fetch.add_argument('--ocr-only', action='store_true',
+                       help='only SenOCR-Vi and its layout model (remote OCR server)')
     commands.add_parser('rag-setup', help='RAG pilot embedding profile, collection, pipeline')
     ingest = commands.add_parser('ingest-folder', help='upload every PDF/DOCX of a folder tree')
     ingest.add_argument('root', help='folder whose sub-folders name the school')

@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     ocr_revision: str = 'main'
     ocr_precision: Literal['bf16', 'fp32'] = 'bf16'
     ocr_dpi: int = Field(200, ge=100, le=400)
+    # OCR on another machine (ingestion/ocr_remote.py): the worker sends rendered pages there.
+    ocr_remote_url: str | None = None
+    ocr_remote_token: SecretStr | None = None
     # Shared judging password (argon2 hash, never the password) and its cookie lifetime.
     judge_password_hash: SecretStr | None = None
     judge_session_hours: int = Field(8, ge=1, le=72)
@@ -108,7 +111,7 @@ class Settings(BaseSettings):
                      'llm_api_key', 'llm_base_url', 'judge_password_hash',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
                      's3_access_key_id', 's3_secret_access_key', 'mcp_token', 'mcp_user_email',
-                     'mcp_time_budget', mode='before')
+                     'mcp_time_budget', 'ocr_remote_url', 'ocr_remote_token', mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".
@@ -137,6 +140,17 @@ class Settings(BaseSettings):
             raise ValueError(f'mcp_token must be at least {MIN_SECRET_LENGTH} characters')
         if not self.mcp_user_email:
             raise ValueError('mcp_token requires mcp_user_email (the account the tools search as)')
+        return self
+
+    @model_validator(mode='after')
+    def ocr_remote_complete(self) -> 'Settings':
+        if self.ocr_remote_url is None:
+            return self
+        if not self.ocr_remote_url.startswith(('http://', 'https://')):
+            raise ValueError('ocr_remote_url must be an http(s) URL')
+        token = self.ocr_remote_token.get_secret_value() if self.ocr_remote_token else ''
+        if len(token) < MIN_SECRET_LENGTH:
+            raise ValueError(f'ocr_remote_url requires ocr_remote_token of at least {MIN_SECRET_LENGTH} characters')
         return self
 
     @model_validator(mode='after')
@@ -190,7 +204,8 @@ class Settings(BaseSettings):
         """Configured secret strings, used by the log redactor."""
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
                    self.field_encryption_key, self.backup_encryption_key, self.llm_api_key,
-                   self.s3_secret_access_key, self.judge_password_hash, self.mcp_token)
+                   self.s3_secret_access_key, self.judge_password_hash, self.mcp_token,
+                   self.ocr_remote_token)
         return [s.get_secret_value() for s in secrets if s is not None]
 
     @property
