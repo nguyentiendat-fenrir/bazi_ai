@@ -37,7 +37,7 @@ class GlossaryTests(PipelineTestCase):
         reviewed = self.sql(
             "SELECT count(DISTINCT c.id) FROM concepts c JOIN reviews r ON r.entity_kind = 'concept'"
             " AND r.entity_id = c.id AND r.decision = 'approve' AND r.reviewer_id = %s"
-            " AND r.reason LIKE 'Danh sách thuật ngữ glossary-1%%'", self.user)[0][0]
+            " AND r.reason LIKE 'Danh sách thuật ngữ glossary-%%'", self.user)[0][0]
         self.assertEqual(reviewed, len(data['concepts']))
 
         # the seed stem got the reviewed description as revision 2 and kept its Hán alias

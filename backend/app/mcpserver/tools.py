@@ -126,7 +126,7 @@ def build_server(backend: Backend, settings) -> FastMCP:
             opened = iter([sources.unresolved(r) for r in refs])
         return {'terms': [{'label': c['label'], 'school': SCHOOL_LABELS.get(
             None if c['school'] == 'tu_tru' else c['school']), 'school_key': c['school'],
-            'category': c['category'], 'aliases': c['aliases'], 'description': c['description'],
+            'category': c['category'], 'aliases': c['aliases'], 'definition': c.get('definition') or c.get('description', ''), 'notes': c.get('notes', ''),
             'sources': [next(opened) for _ in c['sources'][:SOURCES_PER_TERM]]} for c in found]}
 
     return server
