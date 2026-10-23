@@ -170,15 +170,6 @@ Có GET detail cho schools/methods/topics/concepts/terms theo `/{id}`. Sửa sch
 
 POST charts analyses tạo conversation nội bộ gắn analysis để dùng cùng run model; DB giữ conversation_id và privacy, UI không cần hiện thread tự động trong chat list (`context.origin=analysis`). Hoặc triển khai service tạo explicit analysis thread và trả conversation_id; contract response luôn có ID này. Research không chart vẫn có source statements; chart mode không source trả facts và limitations.
 
-## Biên soạn định nghĩa
-
-Định nghĩa do model biên soạn (`cli curate`, `CURATOR_LLM_*`) từ sách đã publish; người duyệt quyết định. Quyền: reviewer (V).
-- `GET /api/v1/curation/definitions?verdict=pass|fix|fail|pending&status=&state=&school_id=&q=` — bản mới nhất của mỗi khái niệm có bản soạn; sắp theo trạng thái, kết quả máy kiểm, số sách độc lập.
-- `GET /api/v1/curation/definitions/{concept_id}` — định nghĩa, ghi chú thiết yếu, các ý kèm `evidence_ids`, ghi chú khi soạn, kết quả máy kiểm và vấn đề, đoạn nguồn (sách, trang, người nói, offset để mở `/pages/{revision}?from=&to=`).
-- `POST /api/v1/curation/definitions/approve` `{items:[{concept_id, base_revision}], reason}` — duyệt nhiều bản qua luồng duyệt khái niệm (có cổng: nguồn phải còn dùng được); mục nào lỗi không chặn mục khác.
-- `POST /api/v1/curation/definitions/{concept_id}/rewrite` `{note}` — lần `curate` sau soạn lại theo ghi chú; 409 nếu không phải bản mới nhất chưa duyệt.
-- Sửa tay: `POST /api/v1/concepts/{id}/revisions` như cũ; bản mới giữ nguồn và kết quả kiểm của bản được sửa.
-
 ## Nguồn sách (link mềm)
 
 `GET /api/v1/sources/resolve?book=&page=|para=&q=` (R) — tìm một nguồn của glossary trong thư viện của máy này: `book` là mã sách ổn định trong `knowledge/data/books.json`, `page` trang PDF gợi ý (hoặc `para` đoạn DOCX), `q` câu neo in trên trang. Trả tên sách, `page`, `printed_page`, `revision_id`, `url` (`/pages/{revision}?from=&to=` tô sáng câu neo), `excerpt`, `matched` (`exact` / `nearby` ±2 trang / `search` cả cuốn / `not_found` kèm `reason`) và `matched_by` (`sha256` / `title`). Chỉ xét sách trong release đang active mà người gọi được đọc. `GET /api/v1/sources/open` cùng tham số: 302 tới trang xem (sau `PUBLIC_BASE_PATH`), 404 `SOURCE_NOT_FOUND` khi không tìm được.

@@ -95,14 +95,6 @@ class Settings(BaseSettings):
     ocr_revision: str = 'main'
     ocr_precision: Literal['bf16', 'fp32'] = 'bf16'
     ocr_dpi: int = Field(200, ge=100, le=400)
-    # Definition curation (knowledge/curation.py): an outside OpenAI-compatible model, e.g.
-    # Gemini at https://generativelanguage.googleapis.com/v1beta/openai. Off unless set.
-    curator_llm_base_url: str | None = None
-    curator_llm_model: str | None = None
-    curator_llm_api_key: SecretStr | None = None
-    curator_review_model: str | None = None              # second opinion; default: same model
-    curator_timeout: float = Field(300.0, ge=10, le=1800)
-    curator_reasoning_effort: Literal['', 'none', 'low', 'medium', 'high'] = 'low'
     # OCR on another machine (ingestion/ocr_remote.py): the worker sends rendered pages there.
     ocr_remote_url: str | None = None
     ocr_remote_token: SecretStr | None = None
@@ -123,8 +115,7 @@ class Settings(BaseSettings):
                      'llm_api_key', 'llm_base_url', 'judge_password_hash',
                      'llm_model', 'embedding_model', 's3_endpoint_url', 's3_bucket',
                      's3_access_key_id', 's3_secret_access_key', 'mcp_token', 'mcp_user_email',
-                     'mcp_time_budget', 'ocr_remote_url', 'ocr_remote_token', 'curator_llm_base_url',
-                     'curator_llm_model', 'curator_llm_api_key', 'curator_review_model', mode='before')
+                     'mcp_time_budget', 'ocr_remote_url', 'ocr_remote_token', mode='before')
     @classmethod
     def empty_is_unset(cls, value):
         # .env.example ships blank placeholders; treat them as "not configured".
@@ -218,7 +209,7 @@ class Settings(BaseSettings):
         secrets = (self.postgres_password, self.postgres_app_password, self.session_signing_key,
                    self.field_encryption_key, self.backup_encryption_key, self.llm_api_key,
                    self.s3_secret_access_key, self.judge_password_hash, self.mcp_token,
-                   self.ocr_remote_token, self.curator_llm_api_key)
+                   self.ocr_remote_token)
         return [s.get_secret_value() for s in secrets if s is not None]
 
     @property

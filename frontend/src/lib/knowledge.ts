@@ -13,26 +13,6 @@ export const KNOWLEDGE_STATES: Labels = {
 
 export const STATE_OPTIONS = Object.entries(KNOWLEDGE_STATES).map(([value, [text]]) => ({ value, text }))
 
-/** What the curator model concluded about a drafted definition (it never approves). */
-export const CURATION_VERDICTS: Labels = {
-  pass: ['Máy chấm đạt', 'ok'],
-  fix: ['Cần sửa', 'warning'],
-  fail: ['Không đạt', 'danger'],
-}
-
-export const CURATION_STATUSES: Labels = {
-  ready: ['Đã soạn', 'neutral'],
-  needs_context: ['Thiếu căn cứ', 'warning'],
-  needs_split: ['Cần tách nghĩa', 'warning'],
-  rewrite_requested: ['Chờ viết lại', 'warning'],
-}
-
-export const CURATION_PROBLEMS: Record<string, string> = {
-  unsupported: 'Không có nguồn ủng hộ', circular: 'Định nghĩa vòng tròn', merged_senses: 'Trộn nhiều nghĩa',
-  missing_condition: 'Thiếu điều kiện', wrong_scope: 'Sai phạm vi', policy_conflict: 'Trái chính sách ứng dụng',
-  unclear: 'Khó hiểu', other: 'Khác',
-}
-
 export const ASSERTION_ORIGINS: Record<string, string> = {
   source_explicit: 'Sách nói rõ', editor_interpretation: 'Biên tập diễn giải', ai_inferred: 'AI suy ra',
 }

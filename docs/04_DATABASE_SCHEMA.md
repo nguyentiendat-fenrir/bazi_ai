@@ -212,30 +212,6 @@ Extension: pgvector, pg_trgm, unaccent, citext. Không làm generated column g�
 |---|---|
 | result_id uuid FK eval_results CASCADE; judge_name text; scores jsonb; chunk_labels jsonb; notes text | UQ(result_id,judge_name); người chấm không có tài khoản (mật khẩu chung), một phiếu mỗi người mỗi câu |
 
-### `curation_calls`
-
-| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
-|---|---|
-| call_key sha256 UQ; step text (discover/compose/review); model text; prompt_version text; output jsonb; prompt_tokens, completion_tokens, latency_ms int | câu trả lời của model biên soạn theo khóa (bước, model, phiên bản prompt, input): chạy lại không gọi lại (M020) |
-
-### `curation_candidates`
-
-| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
-|---|---|
-| book_version_id FK book_versions; parent_id FK chunk_parents; school_id FK schools; name text; name_key text; kind text (explains/mentions/example); quote text; quote_hash sha256; located text (exact/fuzzy/not_found); evidence_id uuid? FK evidence_spans; context_missing bool | UQ(parent_id,name_key,quote_hash); model chỉ chép câu trích, code tìm vị trí và tạo evidence `ai_inferred` (M020) |
-
-### `concept_sources`
-
-| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
-|---|---|
-| concept_id FK concepts; evidence_id FK evidence_spans; ordinal int | PK(concept_id,evidence_id); nguồn của một revision định nghĩa; duyệt khái niệm chặn khi nguồn không còn dùng được (M020) |
-
-### `concept_curation`
-
-| Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |
-|---|---|
-| concept_id PK FK concepts; name_key text; essential_notes text; claims jsonb; issues jsonb; status text (ready/needs_context/needs_split/rewrite_requested); llm_verdict text? (pass/fix/fail); llm_problems jsonb; independent_sources int; dossier_hash sha256; rewrite_note text; compose_model, review_model text?; prompt_version text | bản soạn của máy cho một revision; người duyệt quyết định, model không tự duyệt (M020) |
-
 ### `schools`
 
 | Cột bổ sung (ngoài các cột chung) | Ràng buộc / index / ghi chú |

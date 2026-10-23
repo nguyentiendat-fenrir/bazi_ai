@@ -13,7 +13,6 @@
         --revision <rev> --dimension 1024 --base-url http://embed:8080/v1 --locality local \
         --provision
     python -m backend.app.cli load-glossary --as reviewer@example.test --publish   # term list
-    python -m backend.app.cli curate --as reviewer@example.test --dry-run           # definitions
     python -m backend.app.cli pipeline-profile --name "Sách in"         --embedding-profile <id> --ocr-languages vie+eng
 
 RAG pilot (backend/app/rag/admin.py):
@@ -346,36 +345,6 @@ def run_restore(args) -> int:
     return 0
 
 
-def curate(args) -> int:
-    """Definition curation by the outside model (knowledge/curation.py); people approve in the UI."""
-    import uuid
-
-    from .auth.service import Principal
-    from .core.db import make_engine
-    from .knowledge import curation
-    from .rag.llm import LLMError
-    settings = load_settings()
-    engine = make_engine(settings.runtime_database_url)
-    with engine.begin() as conn:
-        user = conn.execute(text(
-            "SELECT id, email, role FROM users WHERE email = :e AND enabled"
-            " AND role IN ('reviewer', 'admin')"), {'e': args.as_user}).mappings().first()
-    if user is None:
-        _print({'ok': False, 'code': 'USER_NOT_FOUND',
-                'message': 'run as an enabled reviewer or admin (--as)'})
-        return 2
-    principal = Principal(user['id'], user['email'], user['role'], uuid.UUID(int=0), '')
-    try:
-        report = curation.run(engine, principal, settings, tuple(args.steps.split(',')),
-                              args.school, args.book, args.units, args.max_calls, args.name,
-                              args.refresh, args.dry_run, exclude=args.exclude_book)
-    except LLMError as exc:
-        _print({'ok': False, 'code': exc.code, 'message': str(exc)})
-        return 2
-    _print({'ok': not report.get('errors'), **report})
-    return 0
-
-
 def rag_command(args) -> int:
     from .rag import admin
     if args.command == 'fetch-models':
@@ -456,19 +425,6 @@ def main(argv: list[str] | None = None) -> int:
     glo.add_argument('--file', help='default: backend/app/knowledge/data/glossary_v1.json')
     glo.add_argument('--publish', action='store_true',
                      help='then publish an ontology release (repins the corpus)')
-    cur = commands.add_parser('curate', help='draft and check definitions with the curator model')
-    cur.add_argument('--as', dest='as_user', required=True, help='a reviewer or admin email')
-    cur.add_argument('--steps', default='discover,compose,review',
-                     help='comma list of discover, compose, review')
-    cur.add_argument('--school', choices=('tu_binh', 'manh_phai'))
-    cur.add_argument('--book', help='only books whose title contains this')
-    cur.add_argument('--exclude-book', action='append',
-                     help='skip books whose title contains this (repeatable), e.g. a duplicate edition')
-    cur.add_argument('--units', type=int, help='read at most this many sections')
-    cur.add_argument('--name', action='append', help='compose only this concept name (repeatable)')
-    cur.add_argument('--max-calls', type=int, default=200, help='model calls this run may make')
-    cur.add_argument('--refresh', action='store_true', help='compose again even when unchanged')
-    cur.add_argument('--dry-run', action='store_true', help='count sections and tokens, call nothing')
     fetch = commands.add_parser('fetch-models', help='download the pinned RAG/OCR models (network)')
     fetch.add_argument('--ocr-only', action='store_true',
                        help='only SenOCR-Vi and its layout model (remote OCR server)')
@@ -506,8 +462,6 @@ def main(argv: list[str] | None = None) -> int:
             return run_evaluate(args)
         if args.command == 'load-glossary':
             return load_glossary(args)
-        if args.command == 'curate':
-            return curate(args)
         if args.command == 'deletion-ledger':
             from .ops.backup import export_ledger
             ledger = export_ledger(_owner_database(load_settings()))

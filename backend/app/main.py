@@ -10,8 +10,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
-from .api import (ask, assertions, auth, books, cases, charts, chat, curation, evaluation, health,
-                  jobs, judge, knowledge, models, ontology, openapi, operations, pages, pipelines,
+from .api import (ask, assertions, auth, books, cases, charts, chat, evaluation, health, jobs,
+                  judge, knowledge, models, ontology, openapi, operations, pages, pipelines,
                   releases, reviews, rules, rulesets, search, settings as settings_api, sources,
                   uploads, users)
 from .auth.ratelimit import LoginLimiter
@@ -74,7 +74,7 @@ def create_app(settings: Settings | None = None,
                    knowledge.router, assertions.router, rules.router, cases.router,
                    ontology.router, search.router, evaluation.router, models.router,
                    pipelines.router, charts.router, rulesets.router, chat.router,
-                   operations.router, ask.router, judge.router, sources.router, curation.router):
+                   operations.router, ask.router, judge.router, sources.router):
         app.include_router(router, prefix=API_PREFIX)
     openapi.install(app)
     # MCP server of the RAG at /api/v1/mcp/ (bearer token), off unless configured.

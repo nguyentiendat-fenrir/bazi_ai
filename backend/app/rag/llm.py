@@ -38,10 +38,6 @@ class LLMConfig:
     model: str
     timeout: float = 180.0
     api_key: str | None = None
-    # vLLM/Qwen take chat_template_kwargs (thinking switch); hosted OpenAI-compatible APIs
-    # such as Gemini's reject unknown fields, so they get the plain body.
-    vllm: bool = True
-    reasoning_effort: str | None = None      # hosted reasoning models (e.g. Gemini): low/medium/high
 
 
 @dataclass
@@ -56,11 +52,8 @@ class Completion:
 def _body(config: LLMConfig, messages: list[dict], max_tokens: int, temperature: float,
           thinking: bool, schema: type[BaseModel] | None) -> dict:
     body = {'model': config.model, 'messages': messages, 'max_tokens': max_tokens,
-            'temperature': temperature}
-    if config.vllm:
-        body['chat_template_kwargs'] = {'enable_thinking': thinking}
-    elif config.reasoning_effort:
-        body['reasoning_effort'] = config.reasoning_effort
+            'temperature': temperature,
+            'chat_template_kwargs': {'enable_thinking': thinking}}
     if schema is not None:
         body['response_format'] = {'type': 'json_schema', 'json_schema': {
             'name': schema.__name__, 'schema': schema.model_json_schema()}}
